@@ -1,0 +1,441 @@
+#cloud-config
+# Update apt database on first boot
+# (ie run apt-get update)
+#
+# Default: true
+#
+apt_update: false
+
+# Upgrade the instance on first boot
+# (ie run apt-get upgrade)
+#
+# Default: false
+#
+apt_upgrade: true
+
+# Add apt repositories
+#
+# Default: auto select based on cloud metadata
+#  in ec2, the default is <region>.archive.ubuntu.com
+apt_mirror: http://us.archive.ubuntu.com/ubuntu/
+
+# Preserve existing /etc/apt/sources.list
+# Default: overwrite sources_list with mirror.  If this is true
+# then apt_mirror above will have no effect
+apt_preserve_sources_list: true
+
+apt_sources:
+ - source: "deb http://ppa.launchpad.net/byobu/ppa/ubuntu karmic main"
+   keyid: F430BBA5 # GPG key ID published on a key server
+   filename: byobu-ppa.list
+
+ # PPA shortcut:
+ #  * Setup correct apt sources.list line
+ #  * Import the signing key from LP
+ #
+ #  See https://help.launchpad.net/Packaging/PPA for more information
+ #  this requires 'add-apt-repository'
+ - source: "ppa:smoser/ppa"    # Quote the string
+
+ # Custom apt repository:
+ #  * all that is required is 'source'
+ #  * Creates a file in /etc/apt/sources.list.d/ for the sources list entry
+ #  * [optional] Import the apt signing key from the keyserver 
+ #  * Defaults:
+ #    + keyserver: keyserver.ubuntu.com
+ #    + filename: cloud_config_sources.list
+ #
+ #    See sources.list man page for more information about the format
+ - source: deb http://archive.ubuntu.com/ubuntu karmic-backports main universe multiverse restricted
+
+ # sources can use $MIRROR and $RELEASE and they will be replaced
+ # with the local mirror for this cloud, and the running release
+ # the entry below would be possibly turned into:
+ # - source: deb http://us-east-1.ec2.archive.ubuntu.com/ubuntu natty multiverse
+ - source: deb $MIRROR $RELEASE multiverse
+
+ # this would have the same end effect as 'ppa:byobu/ppa'
+ - source: "deb http://ppa.launchpad.net/byobu/ppa/ubuntu karmic main"
+   keyid: F430BBA5 # GPG key ID published on a key server
+   filename: byobu-ppa.list
+
+ # Custom apt repository:
+ #  * The apt signing key can also be specified
+ #    by providing a pgp public key block
+ #  * Providing the PBG key here is the most robust method for
+ #    specifying a key, as it removes dependency on a remote key server
+
+ - source: deb http://ppa.launchpad.net/alestic/ppa/ubuntu karmic main 
+   key: | # The value needs to start with -----BEGIN PGP PUBLIC KEY BLOCK-----
+      -----BEGIN PGP PUBLIC KEY BLOCK-----
+      Version: SKS 1.0.10
+
+      mI0ESpA3UQEEALdZKVIMq0j6qWAXAyxSlF63SvPVIgxHPb9Nk0DZUixn+akqytxG4zKCONz6
+      qLjoBBfHnynyVLfT4ihg9an1PqxRnTO+JKQxl8NgKGz6Pon569GtAOdWNKw15XKinJTDLjnj
+      9y96ljJqRcpV9t/WsIcdJPcKFR5voHTEoABE2aEXABEBAAG0GUxhdW5jaHBhZCBQUEEgZm9y
+      IEFsZXN0aWOItgQTAQIAIAUCSpA3UQIbAwYLCQgHAwIEFQIIAwQWAgMBAh4BAheAAAoJEA7H
+      5Qi+CcVxWZ8D/1MyYvfj3FJPZUm2Yo1zZsQ657vHI9+pPouqflWOayRR9jbiyUFIn0VdQBrP
+      t0FwvnOFArUovUWoKAEdqR8hPy3M3APUZjl5K4cMZR/xaMQeQRZ5CHpS4DBKURKAHC0ltS5o
+      uBJKQOZm5iltJp15cgyIkBkGe8Mx18VFyVglAZey
+      =Y2oI
+      -----END PGP PUBLIC KEY BLOCK-----
+
+# Install additional packages on first boot
+#
+# Default: none
+#
+# if packages are specified, this apt_update will be set to true
+#
+packages:
+ - pwgen
+ - pastebinit
+
+# set up mount points
+# 'mounts' contains a list of lists
+#  the inner list are entries for an /etc/fstab line
+#  ie : [ fs_spec, fs_file, fs_vfstype, fs_mntops, fs-freq, fs_passno ]
+#
+# default:
+# mounts:
+#  - [ ephemeral0, /mnt ]
+#  - [ swap, none, swap, sw, 0, 0 ]
+#
+# in order to remove a previously listed mount (ie, one from defaults)
+# list only the fs_spec.  For example, to override the default, of
+# mounting swap:
+# - [ swap ]
+# or
+# - [ swap, null ]
+#
+# - if a device does not exist at the time, an entry will still be
+#   written to /etc/fstab.
+# - '/dev' can be ommitted for device names that begin with: xvd, sd, hd, vd
+# - if an entry does not have all 6 fields, they will be filled in
+#   with values from 'mount_default_fields' below.
+#
+# Note, that you should set 'nobootwait' (see man fstab) for volumes that may
+# not be attached at instance boot (or reboot)
+#
+mounts:
+ - [ ephemeral0, /mnt, auto, "defaults,noexec" ]
+ - [ sdc, /opt/data ]
+ - [ xvdh, /opt/data, "auto", "defaults,nobootwait", "0", "0" ]
+ - [ dd, /dev/zero ]
+
+# mount_default_fields
+# These values are used to fill in any entries in 'mounts' that are not
+# complete.  This must be an array, and must have 7 fields.
+mount_default_fields: [ None, None, "auto", "defaults,nobootwait", "0", "2" ]
+
+# add each entry to ~/.ssh/authorized_keys for the configured user
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAGEA3FSyQwBI6Z+nCSjUUk8EEAnnkhXlukKoUPND/RRClWz2s5TCzIkd3Ou5+Cyz71X0XmazM3l5WgeErvtIwQMyT1KjNoMhoJMrJnWqQPOt5Q8zWd9qG7PBl9+eiH5qV7NZ mykey@host
+  - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA3I7VUf2l5gSn5uavROsc5HRDpZdQueUq5ozemNSj8T7enqKHOEaFoU2VoPgGEWC9RyzSQVeyD6s7APMcE82EtmW4skVEgEGSbDc1pvxzxtchBj78hJP6Cf5TCMFSXw+Fz5rF1dR23QDbN1mkHs7adr8GW4kSWqU7Q7NDwfIrJJtO7Hi42GyXtvEONHbiRPOe8stqUly7MvUoN+5kfjBM8Qqpfl2+FNhTYWpMfYdPUnE7u536WqzFmsaqJctz3gBxH9Ex7dFtrxR4qiqEr9Qtlu3xGn7Bw07/+i1D+ey3ONkZLN+LQ714cgj8fRS4Hj29SCmXp5Kt5/82cD/VN3NtHw== smoser@brickies
+
+# Send pre-generated ssh private keys to the server
+# If these are present, they will be written to /etc/ssh and
+# new random keys will not be generated
+ssh_keys:
+  rsa_private: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIBxwIBAAJhAKD0YSHy73nUgysO13XsJmd4fHiFyQ+00R7VVu2iV9Qcon2LZS/x
+    1cydPZ4pQpfjEha6WxZ6o8ci/Ea/w0n+0HGPwaxlEG2Z9inNtj3pgFrYcRztfECb
+    1j6HCibZbAzYtwIBIwJgO8h72WjcmvcpZ8OvHSvTwAguO2TkR6mPgHsgSaKy6GJo
+    PUJnaZRWuba/HX0KGyhz19nPzLpzG5f0fYahlMJAyc13FV7K6kMBPXTRR6FxgHEg
+    L0MPC7cdqAwOVNcPY6A7AjEA1bNaIjOzFN2sfZX0j7OMhQuc4zP7r80zaGc5oy6W
+    p58hRAncFKEvnEq2CeL3vtuZAjEAwNBHpbNsBYTRPCHM7rZuG/iBtwp8Rxhc9I5w
+    ixvzMgi+HpGLWzUIBS+P/XhekIjPAjA285rVmEP+DR255Ls65QbgYhJmTzIXQ2T9
+    luLvcmFBC6l35Uc4gTgg4ALsmXLn71MCMGMpSWspEvuGInayTCL+vEjmNBT+FAdO
+    W7D4zCpI43jRS9U06JVOeSc9CDk2lwiA3wIwCTB/6uc8Cq85D9YqpM10FuHjKpnP
+    REPPOyrAspdeOAV+6VKRavstea7+2DZmSUgE
+    -----END RSA PRIVATE KEY-----
+
+  rsa_public: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAGEAoPRhIfLvedSDKw7XdewmZ3h8eIXJD7TRHtVW7aJX1ByifYtlL/HVzJ09nilCl+MSFrpbFnqjxyL8Rr/DSf7QcY/BrGUQbZn2Kc22PemAWthxHO18QJvWPocKJtlsDNi3 smoser@localhost
+
+  dsa_private: |
+    -----BEGIN DSA PRIVATE KEY-----
+    MIIBuwIBAAKBgQDP2HLu7pTExL89USyM0264RCyWX/CMLmukxX0Jdbm29ax8FBJT
+    pLrO8TIXVY5rPAJm1dTHnpuyJhOvU9G7M8tPUABtzSJh4GVSHlwaCfycwcpLv9TX
+    DgWIpSj+6EiHCyaRlB1/CBp9RiaB+10QcFbm+lapuET+/Au6vSDp9IRtlQIVAIMR
+    8KucvUYbOEI+yv+5LW9u3z/BAoGBAI0q6JP+JvJmwZFaeCMMVxXUbqiSko/P1lsa
+    LNNBHZ5/8MOUIm8rB2FC6ziidfueJpqTMqeQmSAlEBCwnwreUnGfRrKoJpyPNENY
+    d15MG6N5J+z81sEcHFeprryZ+D3Ge9VjPq3Tf3NhKKwCDQ0240aPezbnjPeFm4mH
+    bYxxcZ9GAoGAXmLIFSQgiAPu459rCKxT46tHJtM0QfnNiEnQLbFluefZ/yiI4DI3
+    8UzTCOXLhUA7ybmZha+D/csj15Y9/BNFuO7unzVhikCQV9DTeXX46pG4s1o23JKC
+    /QaYWNMZ7kTRv+wWow9MhGiVdML4ZN4XnifuO5krqAybngIy66PMEoQCFEIsKKWv
+    99iziAH0KBMVbxy03Trz
+    -----END DSA PRIVATE KEY-----
+
+  dsa_public: ssh-dss AAAAB3NzaC1kc3MAAACBAM/Ycu7ulMTEvz1RLIzTbrhELJZf8Iwua6TFfQl1ubb1rHwUElOkus7xMhdVjms8AmbV1Meem7ImE69T0bszy09QAG3NImHgZVIeXBoJ/JzByku/1NcOBYilKP7oSIcLJpGUHX8IGn1GJoH7XRBwVub6Vqm4RP78C7q9IOn0hG2VAAAAFQCDEfCrnL1GGzhCPsr/uS1vbt8/wQAAAIEAjSrok/4m8mbBkVp4IwxXFdRuqJKSj8/WWxos00Ednn/ww5QibysHYULrOKJ1+54mmpMyp5CZICUQELCfCt5ScZ9GsqgmnI80Q1h3Xkwbo3kn7PzWwRwcV6muvJn4PcZ71WM+rdN/c2EorAINDTbjRo97NueM94WbiYdtjHFxn0YAAACAXmLIFSQgiAPu459rCKxT46tHJtM0QfnNiEnQLbFluefZ/yiI4DI38UzTCOXLhUA7ybmZha+D/csj15Y9/BNFuO7unzVhikCQV9DTeXX46pG4s1o23JKC/QaYWNMZ7kTRv+wWow9MhGiVdML4ZN4XnifuO5krqAybngIy66PMEoQ= smoser@localhost
+
+
+# remove access to the ec2 metadata service early in boot via null route
+#  the null route can be removed (by root) with:
+#    route del -host 169.254.169.254 reject
+# default: false (service available)
+disable_ec2_metadata: true
+
+# run commands
+# default: none
+# runcmd contains a list of either lists or a string
+# each item will be executed in order at rc.local like level with
+# output to the console
+# - if the item is a list, the items will be properly executed as if
+#   passed to execve(3) (with the first arg as the command).
+# - if the item is a string, it will be simply written to the file and
+#   will be interpreted by 'sh'
+#
+# Note, that the list has to be proper yaml, so you have to escape
+# any characters yaml would eat (':' can be problematic)
+runcmd:
+ - [ ls, -l, / ]
+ - [ sh, -xc, "echo $(date) ': hello world!'" ]
+ - [ sh, -c, echo "=========hello world'=========" ]
+ - ls -l /root
+ - [ wget, "http://slashdot.org", -O, /tmp/index.html ]
+
+
+# boot commands
+# default: none
+# this is very similar to runcmd above, but commands run very early
+# in the boot process, only slightly after a 'boothook' would run.
+# bootcmd should really only be used for things that could not be
+# done later in the boot process.  bootcmd is very much like
+# boothook, but possibly with more friendly
+bootcmd:
+ - echo 192.168.1.130 us.archive.ubuntu.com > /etc/hosts
+
+# cloud_config_modules:
+# default:
+# cloud_config_modules:
+# - mounts
+# - ssh
+# - apt-update-upgrade
+# - puppet
+# - updates-check
+# - disable-ec2-metadata
+# - runcmd
+#
+# This is an array of arrays or strings.
+# if item is a string, then it is read as a module name
+# if the item is an array it is of the form:
+#   name, frequency, arguments
+# where 'frequency' is one of:
+#   once-per-instance
+#   always
+# a python file in the CloudConfig/ module directory named 
+# cc_<name>.py
+# example:
+cloud_config_modules:
+ - mounts
+ - ssh-import-id
+ - ssh
+ - grub-dpkg
+ - [ apt-update-upgrade, always ]
+ - puppet
+ - updates-check
+ - disable-ec2-metadata
+ - runcmd
+ - byobu
+
+# ssh_import_id: [ user1, user2 ]
+# ssh_import_id will feed the list in that variable to
+#  ssh-import-id, so that public keys stored in launchpad
+#  can easily be imported into the configured user
+# This can be a single string ('smoser') or a list ([smoser, kirkland])
+ssh_import_id: [smoser]
+
+# Provide debconf answers
+#
+# See debconf-set-selections man page.
+#
+# Default: none
+# 
+debconf_selections: |     # Need to perserve newlines
+        # Force debconf priority to critical.
+        debconf debconf/priority select critical
+
+        # Override default frontend to readline, but allow user to select.
+        debconf debconf/frontend select readline
+        debconf debconf/frontend seen false
+
+# manage byobu defaults
+# byobu_by_default:
+#   'user' or 'enable-user': set byobu 'launch-by-default' for the default user
+#   'system' or 'enable-system' or 'enable':
+#      enable 'launch-by-default' for all users, do not modify default user
+#   'disable': disable both default user and system
+#   'disable-system': disable system
+#   'disable-user': disable for default user
+#   not-set: no changes made
+byobu_by_default: system
+
+# disable ssh access as root.
+# if you want to be able to ssh in to the system as the root user
+# rather than as the 'ubuntu' user, then you must set this to false
+# default: true
+disable_root: false
+
+# disable_root_opts: the value of this variable will prefix the
+# respective key in /root/.ssh/authorized_keys if disable_root is true
+# see 'man authorized_keys' for more information on what you can do here
+#
+# The string '$USER' will be replaced with the username of the default user
+#
+# disable_root_opts: no-port-forwarding,no-agent-forwarding,no-X11-forwarding,command="echo 'Please login as the user \"$USER\" rather than the user \"root\".';echo;sleep 10"
+
+
+# set the locale to a given locale
+# default: en_US.UTF-8
+locale: en_US.UTF-8
+
+# add entries to rsyslog configuration
+# The first occurance of a given filename will truncate. 
+# subsequent entries will append.
+# if value is a scalar, its content is assumed to be 'content', and the
+# default filename is used.
+# if filename is not provided, it will default to 'rsylog_filename'
+# if filename does not start with a '/', it will be put in 'rsyslog_dir'
+# rsyslog_dir default: /etc/rsyslog.d
+# rsyslog_filename default: 20-cloud-config.conf
+rsyslog:
+ - ':syslogtag, isequal, "[CLOUDINIT]" /var/log/cloud-foo.log'
+ - content: "*.*   @@192.0.2.1:10514"
+ - filename: 01-examplecom.conf
+   content: |
+   *.*   @@syslogd.example.com
+
+# resize_rootfs should the / filesytem be resized on first boot
+# this allows you to launch an instance with a larger disk / partition
+# and have the instance automatically grow / to accomoddate it
+# set to 'False' to disable
+resize_rootfs: True
+
+# if hostname is set, cloud-init will set the system hostname 
+# appropriately to its value
+# if not set, it will set hostname from the cloud metadata
+# default: None
+
+# final_message
+# default: cloud-init boot finished at $TIMESTAMP. Up $UPTIME seconds
+# this message is written by cloud-final when the system is finished
+# its first boot
+final_message: "The system is finally up, after $UPTIME seconds"
+
+# configure where output will go
+# 'output' entry is a dict with 'init', 'config', 'final' or 'all'
+# entries.  Each one defines where 
+#  cloud-init, cloud-config, cloud-config-final or all output will go
+# each entry in the dict can be a string, list or dict.
+#  if it is a string, it refers to stdout and stderr
+#  if it is a list, entry 0 is stdout, entry 1 is stderr
+#  if it is a dict, it is expected to have 'output' and 'error' fields
+# default is to write to console only
+# the special entry "&1" for an error means "same location as stdout"
+#  (Note, that '&1' has meaning in yaml, so it must be quoted)
+output:
+ init: "> /var/log/my-cloud-init.log"
+ config: [ ">> /tmp/foo.out", "> /tmp/foo.err" ]
+ final:
+   output: "| tee /tmp/final.stdout | tee /tmp/bar.stdout"
+   error: "&1"
+
+
+# phone_home: if this dictionary is present, then the phone_home
+# cloud-config module will post specified data back to the given
+# url
+# default: none
+# phone_home:
+#  url: http://my.foo.bar/$INSTANCE/
+#  post: all
+#  tries: 10
+#
+phone_home:
+ url: http://my.example.com/$INSTANCE_ID/
+ post: [ pub_key_dsa, pub_key_rsa, instance_id ]
+
+# timezone: set the timezone for this instance
+# the value of 'timezone' must exist in /usr/share/zoneinfo
+timezone: US/Eastern
+
+# def_log_file and syslog_fix_perms work together
+# if 
+# - logging is set to go to a log file 'L' both with and without syslog
+# - and 'L' does not exist
+# - and syslog is configured to write to 'L'
+# then 'L' will be initially created with root:root ownership (during
+# cloud-init), and then at cloud-config time (when syslog is available)
+# the syslog daemon will be unable to write to the file.
+# 
+# to remedy this situation, 'def_log_file' can be set to a filename
+# and syslog_fix_perms to a string containing "<user>:<group>"
+#
+# the default values are '/var/log/cloud-init.log' and 'syslog:adm'
+# the value of 'def_log_file' should match what is configured in logging
+# if either is empty, then no change of ownership will be done
+def_log_file: /var/log/my-logging-file.log
+syslog_fix_perms: syslog:root
+
+# you can set passwords for a user or multiple users
+# this is off by default.
+# to set the default user's password, use the 'password' option.
+# if set, to 'R' or 'RANDOM', then a random password will be
+# generated and written to stdout (the console)
+# password: passw0rd
+#
+# also note, that this will expire the password, forcing a change
+# on first login. If you do not want to expire, see 'chpasswd' below.
+#
+# By default in the UEC images password authentication is disabled
+# Thus, simply setting 'password' as above will only allow you to login
+# via the console.
+#
+# in order to enable password login via ssh you must set
+# 'ssh_pwauth'.
+# If it is set, to 'True' or 'False', then sshd_config will be updated
+# to ensure the desired function.  If not set, or set to '' or 'unchanged'
+# then sshd_config will not be updated.
+# ssh_pwauth: True
+#
+# there is also an option to set multiple users passwords, using 'chpasswd'
+# That looks like the following, with 'expire' set to 'True' by default.
+# to not expire users passwords, set 'expire' to 'False':
+# chpasswd:
+#  list: |
+#    user1:password1
+#    user2:RANDOM
+#  expire: True
+# ssh_pwauth: [ True, False, "" or "unchanged" ]
+#
+# So, a simple working example to allow login via ssh, and not expire
+# for the default user would look like:
+password: passw0rd
+chpasswd: { expire: False }
+ssh_pwauth: True
+
+# manual cache clean.
+#  By default, the link from /var/lib/cloud/instance to
+#  the specific instance in /var/lib/cloud/instances/ is removed on every
+#  boot.  The cloud-init code then searches for a DataSource on every boot
+#  if your DataSource will not be present on every boot, then you can set
+#  this option to 'True', and maintain (remove) that link before the image
+#  will be booted as a new instance.
+# default is False
+manual_cache_clean: False
+
+# if you wish to have /etc/hosts written from /etc/cloud/templates/hosts.tmpl
+# on a per-always basis (to account for ebs stop/start), then set
+# manage_etc_hosts to True. The default is 'False'
+manage_etc_hosts: False
+
+# When cloud-init is finished running including having run 
+# cloud_init_modules, then it will run this command.  The default
+# is to emit an upstart signal as shown below.  If the value is a
+# list, it will be passed to Popen.  If it is a string, it will be
+# invoked through 'sh -c'.
+# 
+# default value:
+# cc_ready_cmd: [ initctl, emit, cloud-config, CLOUD_CFG=/var/lib/instance//cloud-config.txt ]
+# example:
+# cc_ready_cmd: [ sh, -c, 'echo HI MOM > /tmp/file' ]
+

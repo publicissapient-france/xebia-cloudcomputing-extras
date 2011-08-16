@@ -1,0 +1,10 @@
+#cloud-config
+
+timezone: Europe/Paris
+
+packages:
+- openjdk-7-jdk
+- tomcat7
+- tomcat7-docs
+- tomcat7-admin
+- tomcat7-examples
