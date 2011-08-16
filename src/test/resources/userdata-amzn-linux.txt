@@ -1,0 +1,94 @@
+Message-ID: <2076141737.3.1312982781589.JavaMail.cyrilleleclerc@cyrille-le-clercs-macbook-pro.local>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; 
+	boundary="----=_Part_2_386765137.1312982781588"
+
+------=_Part_2_386765137.1312982781588
+Content-Type: text/x-shellscript; charset=UTF-8; 
+	name=cloudinit-userdata-script.txt
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=cloudinit-userdata-script.txt
+
+#!/usr/bin/env python
+from urllib import urlretrieve, URLopener
+from io import open
+import shutil
+from time import gmtime, strftime
+
+ 
+catalinaBase = '/usr/share/tomcat6'
+
+# BACKUP catalina.properties
+src = catalinaBase + '/conf/catalina.properties'
+dst = catalinaBase + '/conf/catalina-' + strftime('%Y%m%d-%H%M%S', gmtime()) + '.properties'
+shutil.copy(src, dst)
+
+print('Created backup ' + dst)
+
+f = open(src, 'ab')
+
+f.write('\n\n')
+f.write('# BEGIN OF ADDED BY CLOUD-INIT ' + strftime('%Y/%m/%d-%H:%M:%S', gmtime()) + '#\n')
+f.write('\n')
+
+f.write('jdbc.url=jdbc:mysql://petclinic.cccb4ickfoh9.eu-west-1.rds.amazonaws.com:3306/petclinic\n')
+f.write('jdbc.username=petclinic\n')
+f.write('jdbc.password=petclinic\n')
+
+f.write('\n')
+f.write('jdbc.driverClassName=com.mysql.jdbc.Driver\n')
+f.write('\n')
+f.write('# Properties that control the population of schema and data for a new data source\n')
+f.write('jdbc.initLocation=classpath:db/mysql/initDB.txt\n')
+f.write('jdbc.dataLocation=classpath:db/mysql/populateDB.txt\n')
+f.write('\n')
+f.write('# Property that determines which Hibernate dialect to use\n')
+f.write('# (only applied with "applicationContext-hibernate.xml")\n')
+f.write('hibernate.dialect=org.hibernate.dialect.MySQLDialect\n')
+f.write('\n')
+f.write('# Property that determines which database to use with an AbstractJpaVendorAdapter\n')
+f.write('jpa.database=MYSQL')
+
+f.write('\n')
+f.write('# END OF ADDED BY CLOUD-INIT #\n')
+f.write('\n')
+f.close()
+
+print('Updated ' + src)
+
+# DOWNLOAD WAR
+proxies = {}
+url = 'http://xebia-france.googlecode.com/svn/repository/maven2/fr/xebia/demo/xebia-petclinic/1.0.2/xebia-petclinic-1.0.2.war'
+temporaryfilename = '/tmp//petclinic.war'
+
+URLopener(proxies).retrieve(url, temporaryfilename)
+print('Downloaded ' + temporaryfilename)
+
+# DEPLOY WAR
+filename = catalinaBase + '/webapps//petclinic.war'
+shutil.move(temporaryfilename, filename)
+print('Deployed ' + filename)
+
+------=_Part_2_386765137.1312982781588
+Content-Type: text/cloud-config; charset=UTF-8; 
+	name=cloudinit-cloud-config.txt
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=cloudinit-cloud-config.txt
+
+#cloud-config
+
+timezone: Europe/Paris
+
+packages:
+- yum-utils
+- java-1.6.0-openjdk
+- tomcat6
+- tomcat6-webapps
+- tomcat6-docs-webapp
+- tomcat6-admin-webapps
+
+runcmd:
+ - [chkconfig, tomcat6, on]
+ - [service, tomcat6, restart ]
+
+------=_Part_2_386765137.1312982781588--
