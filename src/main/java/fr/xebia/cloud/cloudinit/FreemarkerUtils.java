@@ -40,12 +40,12 @@ public class FreemarkerUtils {
      * @param rootMap
      *            root node of the freemarker datamodel.
      * @param templatePath
-     *            classpath of the template
+     *            classpath classpath path of the template (e.g. "/my-template.fmt")
      * @return generated file
      */
     @SuppressWarnings("unchecked")
     @Nonnull
-    public static String generate(@Nullable Map<String, Object> rootMap, @Nonnull String templatePath) {
+    public static String generate(@Nullable Map<String, ? extends Object> rootMap, @Nonnull String templatePath) {
         Preconditions.checkNotNull(templatePath, "'templatePath' can NOT be null");
         rootMap = (Map<String, Object>) Objects.firstNonNull(rootMap, Collections.emptyMap());
 
