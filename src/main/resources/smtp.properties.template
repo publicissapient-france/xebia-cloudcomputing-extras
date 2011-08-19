@@ -1,0 +1,13 @@
+mail.transport.protocol=smtp
+mail.smtp.starttls.enable=true
+mail.smtp.host=owa.exchange-login.net
+mail.smtp.port=25
+mail.smtp.auth=true
+
+mail.from=cleclerc@xebia.fr
+
+mail.username=cleclerc@xebia.com
+mail.password=
+
+mail.debug=false
+
