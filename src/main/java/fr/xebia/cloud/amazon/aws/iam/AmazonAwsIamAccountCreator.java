@@ -23,6 +23,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -363,9 +364,7 @@ public class AmazonAwsIamAccountCreator {
             templatesParams.put("x509CertificateId", signingCertificate.getCertificateId());
         }
 
-        String subject = "Xebia France Amazon EC2 Credentials";
-        String body = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email.fmt");
-        sendEmail(subject, body, attachments, userName);
+        sendEmail(templatesParams, attachments, userName);
     }
 
     public void createUsers(String groupName) {
@@ -440,7 +439,32 @@ public class AmazonAwsIamAccountCreator {
      * @param toAddress
      * @throws MessagingException
      */
-    public void sendEmail(String subject, String htmlBody, List<BodyPart> attachments, String toAddress) throws MessagingException {
+    public void sendEmail(Map<String, String> templatesParams, List<BodyPart> attachments, String toAddress) throws MessagingException {
+
+        MimeBodyPart htmlAndPlainTextAlternativeBody = new MimeBodyPart();
+
+        // TEXT AND HTML MESSAGE (gmail requires plain text alternative, otherwise, it displays tes 1st plain text attachment in the preview)
+        MimeMultipart cover = new MimeMultipart("alternative");
+        htmlAndPlainTextAlternativeBody.setContent(cover);
+        BodyPart textHtmlBodyPart = new MimeBodyPart();
+        String textHtmlBody = FreemarkerUtils.generate(templatesParams,
+                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email.html.fmt");
+        textHtmlBodyPart.setContent(textHtmlBody, "text/html");
+        cover.addBodyPart(textHtmlBodyPart);
+
+        BodyPart textPlainBodyPart = new MimeBodyPart();
+        cover.addBodyPart(textPlainBodyPart);
+        String textPlainBody = FreemarkerUtils.generate(templatesParams,
+                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email.txt.fmt");
+        textPlainBodyPart.setContent(textPlainBody, "text/plain");
+
+        MimeMultipart content = new MimeMultipart("related");
+        content.addBodyPart(htmlAndPlainTextAlternativeBody);
+
+        // ATTACHMENTS
+        for (BodyPart bodyPart : attachments) {
+            content.addBodyPart(bodyPart);
+        }
 
         MimeMessage msg = new MimeMessage(mailSession);
 
@@ -448,20 +472,8 @@ public class AmazonAwsIamAccountCreator {
         msg.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress));
         msg.addRecipient(javax.mail.Message.RecipientType.CC, mailFrom);
 
-        msg.setSubject(subject);
-
-        MimeMultipart mimeMultiPart = new MimeMultipart();
-        msg.setContent(mimeMultiPart);
-
-        // body
-        BodyPart textHtmlBodyPart = new MimeBodyPart();
-        mimeMultiPart.addBodyPart(textHtmlBodyPart);
-        textHtmlBodyPart.setContent(htmlBody, "text/html");
-
-        // attachments
-        for (BodyPart bodyPart : attachments) {
-            mimeMultiPart.addBodyPart(bodyPart);
-        }
+        msg.setSubject("Xebia France Amazon EC2 Credentials");
+        msg.setContent(content);
 
         mailTransport.sendMessage(msg, msg.getAllRecipients());
     }
