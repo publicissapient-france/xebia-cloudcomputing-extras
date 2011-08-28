@@ -1,22 +1,25 @@
 #cloud-config
 
-repo_additions:
- - source: jenkins
-   filename: jenkins.repo
-   name: Jenkins
-   baseurl: http://pkg.jenkins-ci.org/redhat/
-   key: http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
-   enabled: 1
+timezone: Europe/Paris
 
 packages:
 - yum-utils
 - java-1.6.0-openjdk
-- jenkins
 
 runcmd:
- - [ sh, -xc, "echo $(date) ': cloudinit runcmd begin'" ]
+ - [ sh, -xc, "echo $(date) ': cloudinit runcmd begin' >> /var/log/cloud-init.log" ]
+ - [wget, -O, /etc/yum.repos.d/jenkins.repo, "http://pkg.jenkins-ci.org/redhat/jenkins.repo"]
+ - [rpm, --import, "http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key"]
+ - [sh, -xc, "echo $(date) ': jenkins install starting...' >> /var/log/cloud-init.log"]
+ - [yum, -y, install, jenkins]
  - [chkconfig, jenkins, on]
- - [service, jenkins, start ]
+ - [service, jenkins, restart ]
+ - [sh, -xc, "echo $(date) ': jenkins has started' >> /var/log/cloud-init.log"]
  - [usermod, -a, -G, jenkins, ec2-user]
- - [ sh, -xc, "echo $(date) ': cloudinit runcmd end'" ]
+ - [sh, -xc, "echo $(date) ': rundeck install starting...' >> /var/log/cloud-init.log"]
+ - [rpm, -U, -v, -h, "http://rundeck.org/latest.rpm"] 
+ - [sh, -xc, "echo $(date) ': rundeck is downloaded' >> /var/log/cloud-init.log"]
+ - [yum, -y, install, rundeck]
+ - [sh, -xc, "echo $(date) ': rundeck is installed' >> /var/log/cloud-init.log"]
+ - [sh, -xc, "/etc/init.d/rundeckd restart"]
  
