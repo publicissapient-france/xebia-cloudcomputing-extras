@@ -1,0 +1,18 @@
+Hello,
+
+Here are the command line tools for the Xebia Amazon AWS/EC2 training.
+
+ - EC2 api tools: http://s3.amazonaws.com/ec2-downloads/ec2-api-tools.zip
+ - RDS command line tools: http://s3.amazonaws.com/rds-downloads/RDSCli.zip
+ - ElasticLoadBalancing tools: http://ec2-downloads.s3.amazonaws.com/ElasticLoadBalancing.zip
+
+For the training, we install the tools in the following directories:
+ - EC2 api tools: ${awsCommandLinesHome}/ec2
+ - RDS command line tools: ${awsCommandLinesHome}/rds
+ - ElasticLoadBalancing tools: ${awsCommandLinesHome}/elb
+
+You will find attached a profile fragment to add to your profile. DO NOT FORGET TO MODIFY THE JAVA_HOME VARIABLE TO MATCH YOURS.
+
+Thanks,
+
+Cyrille
