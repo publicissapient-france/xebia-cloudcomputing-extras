@@ -135,19 +135,11 @@ public class AmazonAwsToolsSender {
 
 	/**
 	 * <p>
-	 * Create an Amazon IAM account and send the details by email.
+	 * Send the tools info by email.
 	 * </p>
-	 * <p>
-	 * Created elements:
-	 * </p>
-	 * <ul>
-	 * <li>password to login to the management console if none exists,</li>
-	 * <li>accesskey if none is active,</li>
-	 * <li></li>
-	 * </ul>
 	 * 
 	 * @param userName
-	 *            valid email used as userName of the created account.
+	 *            valid email used as userName.
 	 */
 	public void sendEmail(@Nonnull final String userName) throws Exception {
 		Preconditions.checkNotNull(userName, "Given userName can NOT be null");
@@ -210,7 +202,7 @@ public class AmazonAwsToolsSender {
 			try {
 				sendEmail(userName);
 			} catch (Exception e) {
-				logger.error("Failure to create user '{}'", userName, e);
+				logger.error("Failure to send email to user '{}'", userName, e);
 			}
 
 			// sleep 10 seconds to prevent "Throttling exception"
