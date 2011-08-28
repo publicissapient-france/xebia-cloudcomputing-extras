@@ -23,16 +23,13 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import javax.annotation.Nonnull;
-import javax.mail.Authenticator;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
@@ -310,7 +307,7 @@ public class AmazonAwsIamAccountCreator {
                 BodyPart keyPairBodyPart = new MimeBodyPart();
                 keyPairBodyPart.setFileName(keyPair.getKeyName() + ".pem");
                 templatesParams.put("attachedSshKeyFileName", keyPairBodyPart.getFileName());
-                keyPairBodyPart.setContent(keyPair.getKeyMaterial(), "application/octet-stream");
+                keyPairBodyPart.setContent(keyPair.getKeyMaterial(), "application/x-x509-ca-cert");
                 attachments.add(keyPairBodyPart);
             } else {
                 throw e;
@@ -347,7 +344,7 @@ public class AmazonAwsIamAccountCreator {
                 x509PrivateKeyBodyPart.setFileName("pk-" + signingCertificate.getCertificateId() + ".pem");
                 templatesParams.put("attachedX509PrivateKeyFileName", x509PrivateKeyBodyPart.getFileName());
                 String x509privateKeyPem = Pems.pem(x509KeyPair.getPrivate());
-                x509PrivateKeyBodyPart.setContent(x509privateKeyPem, "application/octet-stream");
+                x509PrivateKeyBodyPart.setContent(x509privateKeyPem, "application/x-x509-ca-cert");
                 attachments.add(x509PrivateKeyBodyPart);
             }
             // email attachment: x509 certifiate pem
@@ -355,7 +352,7 @@ public class AmazonAwsIamAccountCreator {
                 BodyPart x509CertificateBodyPart = new MimeBodyPart();
                 x509CertificateBodyPart.setFileName("cert-" + signingCertificate.getCertificateId() + ".pem");
                 templatesParams.put("attachedX509CertificateFileName", x509CertificateBodyPart.getFileName());
-                x509CertificateBodyPart.setContent(x509CertificatePem, "application/octet-stream");
+                x509CertificateBodyPart.setContent(x509CertificatePem, "application/x-x509-ca-cert");
                 attachments.add(x509CertificateBodyPart);
             }
 
