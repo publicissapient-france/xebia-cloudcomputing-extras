@@ -74,218 +74,220 @@ import fr.xebia.cloud.cloudinit.FreemarkerUtils;
  */
 public class AmazonAwsToolsSender {
 
-	public static void main(String[] args) throws Exception {
-		try {
-			AmazonAwsToolsSender amazonAwsToolsSender = new AmazonAwsToolsSender();
-			amazonAwsToolsSender.sendEmails();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public static void main(String[] args) throws Exception {
+        try {
+            AmazonAwsToolsSender amazonAwsToolsSender = new AmazonAwsToolsSender();
+            amazonAwsToolsSender.sendEmails();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	protected AmazonEC2 ec2;
+    protected AmazonEC2 ec2;
 
-	protected AmazonIdentityManagement iam;
+    protected AmazonIdentityManagement iam;
 
-	protected final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-	protected Session mailSession;
+    protected Session mailSession;
 
-	protected Transport mailTransport;
-	protected InternetAddress mailFrom;
+    protected Transport mailTransport;
+    protected InternetAddress mailFrom;
 
-	protected AmazonSimpleEmailService ses;
+    protected AmazonSimpleEmailService ses;
 
-	public AmazonAwsToolsSender() {
-		try {
+    public AmazonAwsToolsSender() {
+        try {
 
-			InputStream credentialsAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("AwsCredentials.properties");
-			Preconditions.checkNotNull(credentialsAsStream, "File '/AwsCredentials.properties' NOT found in the classpath");
-			AWSCredentials awsCredentials = new PropertiesCredentials(credentialsAsStream);
-			iam = new AmazonIdentityManagementClient(awsCredentials);
+            InputStream credentialsAsStream = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream("AwsCredentials.properties");
+            Preconditions.checkNotNull(credentialsAsStream, "File '/AwsCredentials.properties' NOT found in the classpath");
+            AWSCredentials awsCredentials = new PropertiesCredentials(credentialsAsStream);
+            iam = new AmazonIdentityManagementClient(awsCredentials);
 
-			ses = new AmazonSimpleEmailServiceClient(awsCredentials);
+            ses = new AmazonSimpleEmailServiceClient(awsCredentials);
 
-			ec2 = new AmazonEC2Client(awsCredentials);
-			ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
+            ec2 = new AmazonEC2Client(awsCredentials);
+            ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
 
-			InputStream smtpPropertiesAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("smtp.properties");
-			Preconditions.checkNotNull(smtpPropertiesAsStream, "File '/smtp.properties' NOT found in the classpath");
+            InputStream smtpPropertiesAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("smtp.properties");
+            Preconditions.checkNotNull(smtpPropertiesAsStream, "File '/smtp.properties' NOT found in the classpath");
 
-			final Properties smtpProperties = new Properties();
-			smtpProperties.load(smtpPropertiesAsStream);
+            final Properties smtpProperties = new Properties();
+            smtpProperties.load(smtpPropertiesAsStream);
 
-			mailSession = Session.getInstance(smtpProperties, null);
-			mailTransport = mailSession.getTransport();
-			if (smtpProperties.containsKey("mail.username")) {
-				mailTransport.connect(smtpProperties.getProperty("mail.username"), smtpProperties.getProperty("mail.password"));
-			} else {
-				mailTransport.connect();
-			}
-			try {
-				mailFrom = new InternetAddress(smtpProperties.getProperty("mail.from"));
-			} catch (Exception e) {
-				throw new MessagingException("Exception parsing 'mail.from' from 'smtp.properties'", e);
-			}
+            mailSession = Session.getInstance(smtpProperties, null);
+            mailTransport = mailSession.getTransport();
+            if (smtpProperties.containsKey("mail.username")) {
+                mailTransport.connect(smtpProperties.getProperty("mail.username"), smtpProperties.getProperty("mail.password"));
+            } else {
+                mailTransport.connect();
+            }
+            try {
+                mailFrom = new InternetAddress(smtpProperties.getProperty("mail.from"));
+            } catch (Exception e) {
+                throw new MessagingException("Exception parsing 'mail.from' from 'smtp.properties'", e);
+            }
 
-		} catch (Exception e) {
-			throw Throwables.propagate(e);
-		}
-	}
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
 
-	/**
-	 * <p>
-	 * Send the tools info by email.
-	 * </p>
-	 * 
-	 * @param userName
-	 *            valid email used as userName.
-	 */
-	public void sendEmail(@Nonnull final String userName) throws Exception {
-		Preconditions.checkNotNull(userName, "Given userName can NOT be null");
-		logger.debug("Process user {}", userName);
+    /**
+     * <p>
+     * Send the tools info by email.
+     * </p>
+     * 
+     * @param userName
+     *            valid email used as userName.
+     */
+    public void sendEmail(@Nonnull final String userName) throws Exception {
+        Preconditions.checkNotNull(userName, "Given userName can NOT be null");
+        logger.debug("Process user {}", userName);
 
-		Map<String, String> templatesParams = Maps.newHashMap();
-		templatesParams.put("awsCredentialsHome", "~/.aws");
-		templatesParams.put("awsCommandLinesHome", "~/aws-tools");
+        Map<String, String> templatesParams = Maps.newHashMap();
+        templatesParams.put("awsCredentialsHome", "~/.aws");
+        templatesParams.put("awsCommandLinesHome", "~/aws-tools");
 
-		User user;
+        User user;
 
-		try {
-			user = iam.getUser(new GetUserRequest().withUserName(userName)).getUser();
-		} catch (NoSuchEntityException e) {
-			logger.debug("User {} does not exist,", userName, e);
-			throw e;
-		}
+        try {
+            user = iam.getUser(new GetUserRequest().withUserName(userName)).getUser();
+        } catch (NoSuchEntityException e) {
+            logger.debug("User {} does not exist,", userName, e);
+            throw e;
+        }
 
-		List<BodyPart> attachments = Lists.newArrayList();
+        List<BodyPart> attachments = Lists.newArrayList();
 
-		templatesParams.put("credentialsFileName", "aws-credentials.txt");
+        templatesParams.put("credentialsFileName", "aws-credentials.txt");
 
-		// X509 SELF SIGNED CERTIFICATE
-		Collection<SigningCertificate> certificates = iam.listSigningCertificates(new ListSigningCertificatesRequest().withUserName(user.getUserName())).getCertificates();
-		// filter active certificates
-		certificates = Collections2.filter(certificates, new Predicate<SigningCertificate>() {
-			@Override
-			public boolean apply(SigningCertificate signingCertificate) {
-				return statusType.Active.equals(statusType.fromValue(signingCertificate.getStatus()));
-			}
-		});
+        // X509 SELF SIGNED CERTIFICATE
+        Collection<SigningCertificate> certificates = iam.listSigningCertificates(
+                new ListSigningCertificatesRequest().withUserName(user.getUserName())).getCertificates();
+        // filter active certificates
+        certificates = Collections2.filter(certificates, new Predicate<SigningCertificate>() {
+            @Override
+            public boolean apply(SigningCertificate signingCertificate) {
+                return statusType.Active.equals(statusType.fromValue(signingCertificate.getStatus()));
+            }
+        });
 
-		SigningCertificate signingCertificate = Iterables.getFirst(certificates, null);
-		templatesParams.put("X509CertificateFileName", "cert-" + signingCertificate.getCertificateId() + ".pem");
-		templatesParams.put("X509PrivateKeyFileName", "pk-" + signingCertificate.getCertificateId() + ".pem");
+        SigningCertificate signingCertificate = Iterables.getFirst(certificates, null);
+        templatesParams.put("X509CertificateFileName", "cert-" + signingCertificate.getCertificateId() + ".pem");
+        templatesParams.put("X509PrivateKeyFileName", "pk-" + signingCertificate.getCertificateId() + ".pem");
 
-		// email attachment: profile-fragment
-		{
-			BodyPart profileFragmentBodyPart = new MimeBodyPart();
-			profileFragmentBodyPart.setFileName("profile-fragement");
-			templatesParams.put("attachedProfileFragmentFileName", profileFragmentBodyPart.getFileName());
-			String profileFragment = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/profile-fragment.fmt");
-			profileFragmentBodyPart.setContent(profileFragment, "text/plain");
-			attachments.add(profileFragmentBodyPart);
-		}
+        // email attachment: profile-fragment
+        {
+            BodyPart profileFragmentBodyPart = new MimeBodyPart();
+            profileFragmentBodyPart.setFileName("profile-fragement");
+            templatesParams.put("attachedProfileFragmentFileName", profileFragmentBodyPart.getFileName());
+            String profileFragment = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/profile-fragment.fmt");
+            profileFragmentBodyPart.setContent(profileFragment, "text/plain");
+            attachments.add(profileFragmentBodyPart);
+        }
 
-		sendEmail(templatesParams, attachments, userName);
-	}
+        sendEmail(templatesParams, attachments, userName);
+    }
 
-	public void sendEmails() {
-		URL emailsToVerifyURL = Thread.currentThread().getContextClassLoader().getResource("users-to-notify.txt");
-		Preconditions.checkNotNull(emailsToVerifyURL, "File 'users-to-notify.txt' NOT found in the classpath");
-		Collection<String> userNames;
-		try {
-			userNames = Resources.readLines(emailsToVerifyURL, Charsets.ISO_8859_1);
-		} catch (Exception e) {
-			throw Throwables.propagate(e);
-		}
-		for (String userName : userNames) {
-			try {
-				sendEmail(userName);
-			} catch (Exception e) {
-				logger.error("Failure to send email to user '{}'", userName, e);
-			}
+    public void sendEmails() {
+        URL emailsToVerifyURL = Thread.currentThread().getContextClassLoader().getResource("users-to-notify.txt");
+        Preconditions.checkNotNull(emailsToVerifyURL, "File 'users-to-notify.txt' NOT found in the classpath");
+        Collection<String> userNames;
+        try {
+            userNames = Resources.readLines(emailsToVerifyURL, Charsets.ISO_8859_1);
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+        for (String userName : userNames) {
+            try {
+                sendEmail(userName);
+            } catch (Exception e) {
+                logger.error("Failure to send email to user '{}'", userName, e);
+            }
 
-			// sleep 10 seconds to prevent "Throttling exception"
-			try {
-				Thread.sleep(10 * 1000);
-			} catch (InterruptedException e) {
-				throw Throwables.propagate(e);
-			}
-		}
-	}
+            // sleep 10 seconds to prevent "Throttling exception"
+            try {
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException e) {
+                throw Throwables.propagate(e);
+            }
+        }
+    }
 
-	/**
-	 * 
-	 * @param subject
-	 * @param htmlBody
-	 * @param toAddress
-	 * @throws MessagingException
-	 */
-	public void sendEmail(Map<String, String> templatesParams, List<BodyPart> attachments, String toAddress) throws MessagingException {
+    /**
+     * 
+     * @param subject
+     * @param htmlBody
+     * @param toAddress
+     * @throws MessagingException
+     */
+    public void sendEmail(Map<String, String> templatesParams, List<BodyPart> attachments, String toAddress) throws MessagingException {
 
-		MimeBodyPart htmlAndPlainTextAlternativeBody = new MimeBodyPart();
+        MimeBodyPart htmlAndPlainTextAlternativeBody = new MimeBodyPart();
 
-		// TEXT AND HTML MESSAGE (gmail requires plain text alternative,
-		// otherwise, it displays tes 1st plain text attachment in the preview)
-		MimeMultipart cover = new MimeMultipart("alternative");
-		htmlAndPlainTextAlternativeBody.setContent(cover);
-		BodyPart textHtmlBodyPart = new MimeBodyPart();
-		String textHtmlBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.html.fmt");
-		textHtmlBodyPart.setContent(textHtmlBody, "text/html");
-		cover.addBodyPart(textHtmlBodyPart);
+        // TEXT AND HTML MESSAGE (gmail requires plain text alternative,
+        // otherwise, it displays tes 1st plain text attachment in the preview)
+        MimeMultipart cover = new MimeMultipart("alternative");
+        htmlAndPlainTextAlternativeBody.setContent(cover);
+        BodyPart textHtmlBodyPart = new MimeBodyPart();
+        String textHtmlBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.html.fmt");
+        textHtmlBodyPart.setContent(textHtmlBody, "text/html");
+        cover.addBodyPart(textHtmlBodyPart);
 
-		BodyPart textPlainBodyPart = new MimeBodyPart();
-		cover.addBodyPart(textPlainBodyPart);
-		String textPlainBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.txt.fmt");
-		textPlainBodyPart.setContent(textPlainBody, "text/plain");
+        BodyPart textPlainBodyPart = new MimeBodyPart();
+        cover.addBodyPart(textPlainBodyPart);
+        String textPlainBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.txt.fmt");
+        textPlainBodyPart.setContent(textPlainBody, "text/plain");
 
-		MimeMultipart content = new MimeMultipart("related");
-		content.addBodyPart(htmlAndPlainTextAlternativeBody);
+        MimeMultipart content = new MimeMultipart("related");
+        content.addBodyPart(htmlAndPlainTextAlternativeBody);
 
-		// ATTACHMENTS
-		for (BodyPart bodyPart : attachments) {
-			content.addBodyPart(bodyPart);
-		}
+        // ATTACHMENTS
+        for (BodyPart bodyPart : attachments) {
+            content.addBodyPart(bodyPart);
+        }
 
-		MimeMessage msg = new MimeMessage(mailSession);
+        MimeMessage msg = new MimeMessage(mailSession);
 
-		msg.setFrom(mailFrom);
-		msg.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress));
-		msg.addRecipient(javax.mail.Message.RecipientType.CC, mailFrom);
+        msg.setFrom(mailFrom);
+        msg.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress));
+        msg.addRecipient(javax.mail.Message.RecipientType.CC, mailFrom);
 
-		msg.setSubject("Xebia France Amazon EC2 Training Tools");
-		msg.setContent(content);
+        msg.setSubject("Xebia France Amazon EC2 Training Tools");
+        msg.setContent(content);
 
-		mailTransport.sendMessage(msg, msg.getAllRecipients());
-	}
+        mailTransport.sendMessage(msg, msg.getAllRecipients());
+    }
 
-	/**
-	 * Send email with Amazon Simple Email Service.
-	 * <p/>
-	 * 
-	 * Please note that the sender (ie 'from') must be a verified address (see
-	 * {@link AmazonSimpleEmailService#verifyEmailAddress(com.amazonaws.services.simpleemail.model.VerifyEmailAddressRequest)}
-	 * ).
-	 * <p/>
-	 * 
-	 * Please note that the sender is a CC of the meail to ease support.
-	 * <p/>
-	 * 
-	 * @param subject
-	 * @param body
-	 * @param from
-	 * @param toAddresses
-	 */
+    /**
+     * Send email with Amazon Simple Email Service.
+     * <p/>
+     * 
+     * Please note that the sender (ie 'from') must be a verified address (see
+     * {@link AmazonSimpleEmailService#verifyEmailAddress(com.amazonaws.services.simpleemail.model.VerifyEmailAddressRequest)}
+     * ).
+     * <p/>
+     * 
+     * Please note that the sender is a CC of the meail to ease support.
+     * <p/>
+     * 
+     * @param subject
+     * @param body
+     * @param from
+     * @param toAddresses
+     */
 
-	public void sendEmail(String subject, String body, String from, String... toAddresses) {
+    public void sendEmail(String subject, String body, String from, String... toAddresses) {
 
-		SendEmailRequest sendEmailRequest = new SendEmailRequest( //
-				from, //
-				new Destination().withToAddresses(toAddresses).withCcAddresses(from), //
-				new Message(new Content(subject), //
-						new Body(new Content(body))));
-		SendEmailResult sendEmailResult = ses.sendEmail(sendEmailRequest);
-		System.out.println(sendEmailResult);
-	}
+        SendEmailRequest sendEmailRequest = new SendEmailRequest( //
+                from, //
+                new Destination().withToAddresses(toAddresses).withCcAddresses(from), //
+                new Message(new Content(subject), //
+                        new Body(new Content(body))));
+        SendEmailResult sendEmailResult = ses.sendEmail(sendEmailRequest);
+        System.out.println(sendEmailResult);
+    }
 
 }
