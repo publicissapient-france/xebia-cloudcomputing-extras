@@ -149,6 +149,7 @@ public class AmazonAwsToolsSender {
         Map<String, String> templatesParams = Maps.newHashMap();
         templatesParams.put("awsCredentialsHome", "~/.aws");
         templatesParams.put("awsCommandLinesHome", "~/aws-tools");
+        templatesParams.put("userName", userName);
 
         User user;
 
@@ -228,7 +229,7 @@ public class AmazonAwsToolsSender {
         MimeBodyPart htmlAndPlainTextAlternativeBody = new MimeBodyPart();
 
         // TEXT AND HTML MESSAGE (gmail requires plain text alternative,
-        // otherwise, it displays tes 1st plain text attachment in the preview)
+        // otherwise, it displays the 1st plain text attachment in the preview)
         MimeMultipart cover = new MimeMultipart("alternative");
         htmlAndPlainTextAlternativeBody.setContent(cover);
         BodyPart textHtmlBodyPart = new MimeBodyPart();
@@ -255,39 +256,10 @@ public class AmazonAwsToolsSender {
         msg.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress));
         msg.addRecipient(javax.mail.Message.RecipientType.CC, mailFrom);
 
-        msg.setSubject("Xebia France Amazon EC2 Training Tools");
+        msg.setSubject("[Xebia Amazon AWS Workshop] Tools installation procedure");
         msg.setContent(content);
 
         mailTransport.sendMessage(msg, msg.getAllRecipients());
-    }
-
-    /**
-     * Send email with Amazon Simple Email Service.
-     * <p/>
-     * 
-     * Please note that the sender (ie 'from') must be a verified address (see
-     * {@link AmazonSimpleEmailService#verifyEmailAddress(com.amazonaws.services.simpleemail.model.VerifyEmailAddressRequest)}
-     * ).
-     * <p/>
-     * 
-     * Please note that the sender is a CC of the meail to ease support.
-     * <p/>
-     * 
-     * @param subject
-     * @param body
-     * @param from
-     * @param toAddresses
-     */
-
-    public void sendEmail(String subject, String body, String from, String... toAddresses) {
-
-        SendEmailRequest sendEmailRequest = new SendEmailRequest( //
-                from, //
-                new Destination().withToAddresses(toAddresses).withCcAddresses(from), //
-                new Message(new Content(subject), //
-                        new Body(new Content(body))));
-        SendEmailResult sendEmailResult = ses.sendEmail(sendEmailRequest);
-        System.out.println(sendEmailResult);
     }
 
 }
