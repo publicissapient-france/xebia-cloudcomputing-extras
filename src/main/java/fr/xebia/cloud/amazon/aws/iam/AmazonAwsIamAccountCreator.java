@@ -440,7 +440,7 @@ public class AmazonAwsIamAccountCreator {
 
         MimeBodyPart htmlAndPlainTextAlternativeBody = new MimeBodyPart();
 
-        // TEXT AND HTML MESSAGE (gmail requires plain text alternative, otherwise, it displays tes 1st plain text attachment in the preview)
+        // TEXT AND HTML MESSAGE (gmail requires plain text alternative, otherwise, it displays the 1st plain text attachment in the preview)
         MimeMultipart cover = new MimeMultipart("alternative");
         htmlAndPlainTextAlternativeBody.setContent(cover);
         BodyPart textHtmlBodyPart = new MimeBodyPart();
@@ -469,7 +469,7 @@ public class AmazonAwsIamAccountCreator {
         msg.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress));
         msg.addRecipient(javax.mail.Message.RecipientType.CC, mailFrom);
 
-        msg.setSubject("Xebia France Amazon EC2 Credentials");
+        msg.setSubject("[Xebia Amazon AWS Workshop] Credentials");
         msg.setContent(content);
 
         mailTransport.sendMessage(msg, msg.getAllRecipients());
