@@ -49,12 +49,6 @@ import com.amazonaws.services.identitymanagement.model.User;
 import com.amazonaws.services.identitymanagement.model.statusType;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
-import com.amazonaws.services.simpleemail.model.Body;
-import com.amazonaws.services.simpleemail.model.Content;
-import com.amazonaws.services.simpleemail.model.Destination;
-import com.amazonaws.services.simpleemail.model.Message;
-import com.amazonaws.services.simpleemail.model.SendEmailRequest;
-import com.amazonaws.services.simpleemail.model.SendEmailResult;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -99,8 +93,7 @@ public class AmazonAwsToolsSender {
     public AmazonAwsToolsSender() {
         try {
 
-            InputStream credentialsAsStream = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream("AwsCredentials.properties");
+            InputStream credentialsAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("AwsCredentials.properties");
             Preconditions.checkNotNull(credentialsAsStream, "File '/AwsCredentials.properties' NOT found in the classpath");
             AWSCredentials awsCredentials = new PropertiesCredentials(credentialsAsStream);
             iam = new AmazonIdentityManagementClient(awsCredentials);
@@ -149,6 +142,8 @@ public class AmazonAwsToolsSender {
         Map<String, String> templatesParams = Maps.newHashMap();
         templatesParams.put("awsCredentialsHome", "~/.aws");
         templatesParams.put("awsCommandLinesHome", "~/aws-tools");
+        templatesParams.put("awsCredentialsWindowsHome", "c:\\aws");
+        templatesParams.put("awsCommandLinesWindowsHome", "c:\\aws-tools");
         templatesParams.put("userName", userName);
 
         User user;
@@ -165,8 +160,7 @@ public class AmazonAwsToolsSender {
         templatesParams.put("credentialsFileName", "aws-credentials.txt");
 
         // X509 SELF SIGNED CERTIFICATE
-        Collection<SigningCertificate> certificates = iam.listSigningCertificates(
-                new ListSigningCertificatesRequest().withUserName(user.getUserName())).getCertificates();
+        Collection<SigningCertificate> certificates = iam.listSigningCertificates(new ListSigningCertificatesRequest().withUserName(user.getUserName())).getCertificates();
         // filter active certificates
         certificates = Collections2.filter(certificates, new Predicate<SigningCertificate>() {
             @Override
@@ -182,7 +176,7 @@ public class AmazonAwsToolsSender {
         // email attachment: profile-fragment
         {
             BodyPart profileFragmentBodyPart = new MimeBodyPart();
-            profileFragmentBodyPart.setFileName("profile-fragement");
+            profileFragmentBodyPart.setFileName("profile-fragment");
             templatesParams.put("attachedProfileFragmentFileName", profileFragmentBodyPart.getFileName());
             String profileFragment = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/profile-fragment.fmt");
             profileFragmentBodyPart.setContent(profileFragment, "text/plain");

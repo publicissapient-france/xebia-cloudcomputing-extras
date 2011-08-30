@@ -11,6 +11,7 @@ export EC2_REGION=eu-west-1
 # for ec2 tools
 export EC2_URL=https://ec2.eu-west-1.amazonaws.com
 
+#Credentials files for user ${userName}, previously sent in email "[Xebia Amazon AWS Workshop] Credentials"
 export AWS_CREDENTIAL_FILE=${awsCredentialsHome}/${credentialsFileName}
 export EC2_CERT=${awsCredentialsHome}/${X509CertificateFileName}
 export EC2_PRIVATE_KEY=${awsCredentialsHome}/${X509PrivateKeyFileName}
