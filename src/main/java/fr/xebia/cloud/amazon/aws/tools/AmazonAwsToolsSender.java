@@ -173,16 +173,6 @@ public class AmazonAwsToolsSender {
         templatesParams.put("X509CertificateFileName", "cert-" + signingCertificate.getCertificateId() + ".pem");
         templatesParams.put("X509PrivateKeyFileName", "pk-" + signingCertificate.getCertificateId() + ".pem");
 
-        // email attachment: profile-fragment
-        {
-            BodyPart profileFragmentBodyPart = new MimeBodyPart();
-            profileFragmentBodyPart.setFileName("profile-fragment");
-            templatesParams.put("attachedProfileFragmentFileName", profileFragmentBodyPart.getFileName());
-            String profileFragment = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/profile-fragment.fmt");
-            profileFragmentBodyPart.setContent(profileFragment, "text/plain");
-            attachments.add(profileFragmentBodyPart);
-        }
-
         sendEmail(templatesParams, attachments, userName);
     }
 
