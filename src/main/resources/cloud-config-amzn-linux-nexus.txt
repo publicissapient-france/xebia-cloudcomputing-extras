@@ -1,0 +1,22 @@
+#cloud-config
+
+packages:
+- java-1.6.0-openjdk
+
+runcmd:
+ - [sh, -xc, "echo $(date) ': cloudinit runcmd begin'"]
+ - [cd, /opt]
+ - [wget, "http://nexus.sonatype.org/downloads/nexus-oss-webapp-1.9.2.2-bundle.tar.gz"]
+ - [tar, xvfz, nexus-oss-webapp-1.9.2.2-bundle.tar.gz]
+ - [cd, /etc/init.d]
+ - [sh, -xc, "echo 'NEXUS_HOME=/opt/nexus-oss-webapp-1.9.2.2' >> nexus"]
+ - [sh, -xc, "echo 'PLATFORM=linux-x86-32' >> nexus"]
+ - [sh, -xc, "cat /opt/nexus-oss-webapp-1.9.2.2/bin/jsw/linux-x86-32/nexus >> nexus"]
+ - [sed, -i, 's/PIDDIR=.*/PIDDIR=\/var\/run/', nexus]
+ - [sed, -i, 's/WRAPPER_CMD=.*/WRAPPER_CMD=$\{NEXUS_HOME\}\/bin\/jsw\/$\{PLATFORM\}\/wrapper/', nexus]
+ - [sed, -i, 's/WRAPPER_CONF=.*/WRAPPER_CONF=$\{NEXUS_HOME\}\/bin\/jsw\/conf\/wrapper\.conf/', nexus]
+ - [chmod, 755, nexus]
+ - [chkconfig, --add, nexus]
+ - [chkconfig, --levels, 345, nexus, on]
+ - [service, nexus, start]
+ - [sh, -xc, "echo $(date) ': cloudinit runcmd end'"]
