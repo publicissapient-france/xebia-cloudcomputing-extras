@@ -3,22 +3,38 @@
 packages:
 - java-1.6.0-openjdk
 
+
 runcmd:
  - [sh, -xc, "echo $(date) ': cloudinit runcmd begin'"]
- - [cd, /opt]
+ 
+# installs Nexus under /opt/nexus
+ - [mkdir, /opt/nexus]
+ - [cd, /opt/nexus]
  - [wget, "http://nexus.sonatype.org/downloads/nexus-oss-webapp-1.9.2.2-bundle.tar.gz"]
  - [tar, xvfz, nexus-oss-webapp-1.9.2.2-bundle.tar.gz]
+ 
+# creates a dedicated user for it
+ - [adduser, -M, -p, "''", nexus]
+ - [chown, -R, nexus, /opt/nexus]
+ - [mkdir, /var/run/nexus]
+ - [chown, nexus, /var/run/nexus]
+ 
+# prepares Nexus' script under /etc/init.d/
 # see "Configuring Nexus as a Service": http://www.sonatype.com/books/nexus-book/reference/ch03s06.html
-# TODO: create a user "nexus"
- - [sh, -xc, "echo 'NEXUS_HOME=/opt/nexus-oss-webapp-1.9.2.2' >> /etc/init.d/nexus"]
+ - [sh, -xc, "echo 'NEXUS_HOME=/opt/nexus/nexus-oss-webapp-1.9.2.2' >> /etc/init.d/nexus"]
  - [sh, -xc, "echo 'PLATFORM=linux-x86-32' >> /etc/init.d/nexus"]
- - [sh, -xc, "cat /opt/nexus-oss-webapp-1.9.2.2/bin/jsw/linux-x86-32/nexus >> /etc/init.d/nexus"]
- - [sed, -i, 's/PIDDIR=.*/PIDDIR=\/var\/run/', /etc/init.d/nexus]
+ - [sh, -xc, "cat /opt/nexus/nexus-oss-webapp-1.9.2.2/bin/jsw/linux-x86-32/nexus >> /etc/init.d/nexus"]
+ - [sed, -i, 's/PIDDIR=.*/PIDDIR=\/var\/run\/nexus/', /etc/init.d/nexus]
  - [sed, -i, 's/WRAPPER_CMD=.*/WRAPPER_CMD=$\{NEXUS_HOME\}\/bin\/jsw\/$\{PLATFORM\}\/wrapper/', /etc/init.d/nexus]
  - [sed, -i, 's/WRAPPER_CONF=.*/WRAPPER_CONF=$\{NEXUS_HOME\}\/bin\/jsw\/conf\/wrapper\.conf/', /etc/init.d/nexus]
+ - [sed, -i, 's/#RUN_AS_USER=.*/RUN_AS_USER=nexus/', /etc/init.d/nexus]
+ 
+# exposes Nexus as a service
  - [chmod, 755, /etc/init.d/nexus]
  - [cd, /etc/init.d]
  - [chkconfig, --add, nexus]
  - [chkconfig, --levels, 345, nexus, on]
+ 
  - [service, nexus, start]
+ 
  - [sh, -xc, "echo $(date) ': cloudinit runcmd end'"]
