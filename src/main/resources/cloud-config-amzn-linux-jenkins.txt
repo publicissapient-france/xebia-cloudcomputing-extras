@@ -12,9 +12,20 @@ packages:
 - yum-utils
 - java-1.6.0-openjdk
 - jenkins
+- git
+# TODO: install Maven. I (Nicolas) tried via http://www.jpackage.org/ but did not quite understand how to manage it
 
 runcmd:
  - [ sh, -xc, "echo $(date) ': cloudinit runcmd begin'" ]
+# Jenkins might not be completely installed, so let's create its folders
+ - [mkdir, -p, /var/lib/jenkins/plugins/]
+ - [chown, -R, "jenkins:jenkins", /var/lib/jenkins]
+# downloads additional plugins
+ - [cd, /var/lib/jenkins/plugins/]
+ - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/git.hpi"]
+ - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/github.hpi"]
+ - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/plugins]
+# activates the service
  - [chkconfig, jenkins, on]
  - [service, jenkins, start ]
  - [usermod, -a, -G, jenkins, ec2-user]
