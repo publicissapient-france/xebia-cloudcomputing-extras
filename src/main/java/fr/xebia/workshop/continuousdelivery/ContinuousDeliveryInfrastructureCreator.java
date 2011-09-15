@@ -94,7 +94,7 @@ public class ContinuousDeliveryInfrastructureCreator {
 
         // CREATE EC2 INSTANCES
         RunInstancesRequest runInstancesRequest = new RunInstancesRequest() //
-                .withInstanceType(InstanceType.T1Micro.toString()) //
+                .withInstanceType(InstanceType.M1Small.toString()) //
                 .withImageId(AmazonAwsUtils.AMI_AMZN_LINUX_EU_WEST) //
                 .withMinCount(identifiers.size()) //
                 .withMaxCount(identifiers.size()) //
