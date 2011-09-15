@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package fr.xebia.demo.amazon.aws;
+package fr.xebia.workshop.infrastructureascode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -381,7 +381,7 @@ public class AmazonAwsPetclinicInfrastructureEnforcer {
                 } catch (InterruptedException e) {
                     throw Throwables.propagate(e);
                 }
-                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instance.getImageId());
+                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instance.getInstanceId());
                 DescribeInstancesResult describeInstances = ec2.describeInstances(describeInstancesRequest);
 
                 instance = Iterables.getOnlyElement(toEc2Instances(describeInstances.getReservations()));

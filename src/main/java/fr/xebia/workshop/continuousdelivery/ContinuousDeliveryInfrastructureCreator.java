@@ -21,8 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,61 +32,70 @@ import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.AssociateAddressRequest;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeAddressesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.DisassociateAddressRequest;
 import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.InstanceType;
-import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Tag;
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
+import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 import fr.xebia.cloud.cloudinit.CloudInitUserDataBuilder;
-import fr.xebia.demo.amazon.aws.PetclinicJenkinsJobCreator;
-import fr.xebia.demo.amazon.aws.PetclinicProjectInstance;
 
 public class ContinuousDeliveryInfrastructureCreator {
 
+    private static final String ROLE_JENKINS_RUNDECK = "jenkins,rundeck";
+
     public static void main(String[] args) {
 
+        ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
+        try {
+            creator.buildNexus();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            creator.buildJenkins("clc");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     AmazonEC2 ec2;
 
-    public ContinuousDeliveryInfrastructureCreator() {
-        try {
-            InputStream credentialsAsStream = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream("AwsCredentials.properties");
-            Preconditions.checkNotNull(credentialsAsStream, "File 'AwsCredentials.properties' NOT found in the classpath");
-            AWSCredentials credentials = new PropertiesCredentials(credentialsAsStream);
-            ec2 = new AmazonEC2Client(credentials);
-            ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
-    }
-
     private Logger logger = LoggerFactory.getLogger(getClass());
 
-    List<Instance> buildJenkins(Set<String> identifiers) {
+    public final String ROLE_NEXUS = "nexus";
+
+    public ContinuousDeliveryInfrastructureCreator() {
+        AWSCredentials credentials = AmazonAwsUtils.loadAwsCredentials();
+        ec2 = new AmazonEC2Client(credentials);
+        ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
+    }
+
+    public List<Instance> buildJenkins(String... identifiers) {
+        return buildJenkins(Sets.newHashSet(identifiers));
+    }
+
+    public List<Instance> buildJenkins(Set<String> identifiers) {
         logger.info("ENFORCE JENKINS/RUNDECK SERVERS");
 
+        AmazonAwsUtils.terminateInstancesByRole(ROLE_JENKINS_RUNDECK, ec2);
+
         // CLOUD CONFIG
-        String cloudConfigFilePath = "fr/xebia/continuousdelivery/cloud-config-amzn-linux-jenkins-rundeck.txt";
+        String cloudConfigFilePath = "fr/xebia/workshop/continuousdelivery/cloud-config-amzn-linux-jenkins-rundeck.txt";
 
         String userData = CloudInitUserDataBuilder.start().addCloudConfigFromFilePath(cloudConfigFilePath).buildBase64UserData();
 
         // CREATE EC2 INSTANCES
         RunInstancesRequest runInstancesRequest = new RunInstancesRequest() //
                 .withInstanceType(InstanceType.T1Micro.toString()) //
-                .withImageId("ami-47cefa33") //
+                .withImageId(AmazonAwsUtils.AMI_AMZN_LINUX_EU_WEST) //
                 .withMinCount(identifiers.size()) //
                 .withMaxCount(identifiers.size()) //
                 .withSecurityGroupIds("accept-all") //
@@ -99,8 +106,6 @@ public class ContinuousDeliveryInfrastructureCreator {
         RunInstancesResult runInstances = ec2.runInstances(runInstancesRequest);
         List<Instance> instances = runInstances.getReservation().getInstances();
 
-        instances = awaitForEc2Instances(instances);
-
         // TAG EC2 INSTANCES
         {
             Iterator<String> identifiersIterator = identifiers.iterator();
@@ -108,95 +113,50 @@ public class ContinuousDeliveryInfrastructureCreator {
                 CreateTagsRequest createTagsRequest = new CreateTagsRequest();
                 createTagsRequest.withResources(instance.getInstanceId()) //
                         .withTags(//
-                                new Tag("Name", "jenkins-" + identifiersIterator.next()), //
-                                new Tag("Role", "jenkins,rundeck"));
+                                new Tag("Name", "continuous-delivery-workshop-jenkins-" + identifiersIterator.next()), //
+                                new Tag("Role", ROLE_JENKINS_RUNDECK));
                 ec2.createTags(createTagsRequest);
             }
             if (identifiersIterator.hasNext()) {
                 logger.warn("Remaining identifiers " + Lists.newArrayList(identifiersIterator));
             }
         }
+        instances = AmazonAwsUtils.awaitForEc2Instances(instances, ec2);
 
         logger.info("Created jenkins servers {}", instances);
 
-        // TODO CONFIGURE JENKINS: create job
-
-        Iterator<String> identifiersIterator = identifiers.iterator();
-        for (Instance instance : instances) {
-            // TODO fix URL
-            String jenkinsUrl = "http://" + instance.getPublicIpAddress() + "8081/";
-            new PetclinicJenkinsJobCreator(jenkinsUrl).create(new PetclinicProjectInstance(identifiersIterator.next()));
+        // CONFIGURE JENKINS
+        {
+            Iterator<String> identifiersIterator = identifiers.iterator();
+            for (Instance instance : instances) {
+                // TODO fix URL
+                String jenkinsUrl = "http://" + instance.getPublicDnsName() + ":8080/";
+                AmazonAwsUtils.awaitForHttpAvailability(jenkinsUrl);
+                try {
+                    new PetclinicJenkinsJobCreator(jenkinsUrl).create(new PetclinicProjectInstance(identifiersIterator.next()));
+                } catch (Exception e) {
+                    logger.warn("Silently skip " + e, e);
+                }
+            }
         }
 
         return instances;
 
     }
 
-    /**
-     * <p>
-     * Wait for the ec2 instances creation and returns a list of
-     * {@link Instance} with up to date values.
-     * </p>
-     * <p>
-     * Note: some information are missing of the {@link Instance} returned by
-     * {@link AmazonEC2#describeInstances(DescribeInstancesRequest)} as long as
-     * the instance is not "running" (e.g. {@link Instance#getPublicDnsName()}).
-     * </p>
-     * 
-     * @param instances
-     * @return up to date instances
-     */
-    @Nonnull
-    public List<Instance> awaitForEc2Instances(@Nonnull Iterable<Instance> instances) {
-
-        List<Instance> result = Lists.newArrayList();
-        for (Instance instance : instances) {
-            while (InstanceStateName.Pending.equals(instance.getState())) {
-                try {
-                    // 3s because ec2 instance creation < 10 seconds
-                    Thread.sleep(3 * 1000);
-                } catch (InterruptedException e) {
-                    throw Throwables.propagate(e);
-                }
-                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instance.getImageId());
-                DescribeInstancesResult describeInstances = ec2.describeInstances(describeInstancesRequest);
-
-                instance = Iterables.getOnlyElement(toEc2Instances(describeInstances.getReservations()));
-            }
-            result.add(instance);
-        }
-        return result;
-    }
-
-    /**
-     * Converts a collection of {@link Reservation} into a collection of their
-     * underlying
-     * 
-     * @param reservations
-     * @return
-     */
-    @Nonnull
-    public static Iterable<Instance> toEc2Instances(@Nonnull Iterable<Reservation> reservations) {
-        Iterable<List<Instance>> collectionOfListOfInstances = Iterables.transform(reservations,
-                new Function<Reservation, List<Instance>>() {
-                    @Override
-                    public List<Instance> apply(Reservation reservation) {
-                        return reservation.getInstances();
-                    }
-                });
-        return Iterables.concat(collectionOfListOfInstances);
-    }
-
-    Instance buildNexus() {
+    public Instance buildNexus() {
         logger.info("ENFORCE NEXUS SERVER");
 
+        // TERMINATE EXISTING NEXUS SERVERS IF EXIST
+        AmazonAwsUtils.terminateInstancesByRole(ROLE_NEXUS, ec2);
+
         // CREATE NEXUS INSTANCE
-        String cloudConfigFilePath = "fr/xebia/continuousdelivery/cloud-config-amzn-linux-nexus.txt";
+        String cloudConfigFilePath = "fr/xebia/workshop/continuousdelivery/cloud-config-amzn-linux-nexus.txt";
         String userData = CloudInitUserDataBuilder.start().addCloudConfigFromFilePath(cloudConfigFilePath).buildBase64UserData();
 
         RunInstancesRequest runInstancesRequest = new RunInstancesRequest() //
                 .withInstanceType(InstanceType.T1Micro.toString()) //
-                .withImageId("ami-47cefa33") //
+                .withImageId(AmazonAwsUtils.AMI_AMZN_LINUX_EU_WEST) //
                 .withMinCount(1) //
                 .withMaxCount(1) //
                 .withSecurityGroupIds("accept-all") //
@@ -213,8 +173,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         CreateTagsRequest createTagsRequest = new CreateTagsRequest();
         createTagsRequest.withResources(instance.getInstanceId()) //
                 .withTags(//
-                        new Tag("Name", "nexus"), //
-                        new Tag("Role", "nexus"));
+                        new Tag("Name", "continuous-delivery-workshop-nexus"), //
+                        new Tag("Role", ROLE_NEXUS));
         ec2.createTags(createTagsRequest);
 
         String publicIp = "46.137.168.248";
@@ -230,10 +190,13 @@ public class ContinuousDeliveryInfrastructureCreator {
             ec2.disassociateAddress(new DisassociateAddressRequest(publicIp));
         }
 
+        instance = AmazonAwsUtils.awaitForEc2Instance(instance, ec2);
         ec2.associateAddress(new AssociateAddressRequest(instance.getInstanceId(), publicIp));
 
         logger.info("Created nexus server {} associated with {}", instance, publicIp);
 
+        AmazonAwsUtils.awaitForHttpAvailability("http://" + publicIp + ":8081/nexus/");
+        AmazonAwsUtils.awaitForHttpAvailability("http://nexus.xebia-tech-event.info:8081/nexus/");
         return instance;
 
     }

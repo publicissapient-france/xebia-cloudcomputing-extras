@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package fr.xebia.demo.amazon.aws;
+package fr.xebia.workshop.infrastructureascode;
 
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
@@ -56,6 +56,8 @@ import com.amazonaws.services.rds.AmazonRDS;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
+import fr.xebia.workshop.infrastructureascode.AmazonAwsPetclinicInfrastructureEnforcer;
 
 public class AmazonAwsPetclinicInfrastructureEnforcerTest {
 

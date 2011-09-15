@@ -1,4 +1,4 @@
-package fr.xebia.demo.amazon.aws;
+package fr.xebia.workshop.continuousdelivery;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
