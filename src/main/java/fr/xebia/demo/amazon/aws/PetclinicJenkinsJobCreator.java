@@ -7,6 +7,8 @@ import static com.google.common.collect.Maps.newHashMap;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -21,7 +23,8 @@ import org.slf4j.LoggerFactory;
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 /**
- * Creates a job in a Jenkins server for a "Petclinic" project hosted at https://github.com/xebia-france-training/.
+ * Creates a job in a Jenkins server for a "Petclinic" project hosted at
+ * https://github.com/xebia-france-training/.
  * 
  * Example:
  * 
@@ -35,18 +38,18 @@ public class PetclinicJenkinsJobCreator {
 
     private final String jenkinsUrl;
 
-    public PetclinicJenkinsJobCreator(String jenkinsUrl) {
+    public PetclinicJenkinsJobCreator(@Nonnull String jenkinsUrl) {
         this.jenkinsUrl = checkNotNull(jenkinsUrl);
         checkArgument(jenkinsUrl.startsWith("http://"), "Invalid URL provided for Jenkins server: " + jenkinsUrl);
     }
 
-    public void create(PetclinicProjectInstance project) {
+    public void create(@Nonnull PetclinicProjectInstance project) {
         checkNotNull(project);
         String jobConfig = createConfig(project);
         sendConfig(jobConfig, project);
     }
 
-    private String createConfig(PetclinicProjectInstance project) {
+    private String createConfig(@Nonnull PetclinicProjectInstance project) {
         Map<String, Object> parameters = newHashMap();
         parameters.put("projectName", project.projectName);
         parameters.put("groupId", project.groupId);
@@ -54,16 +57,14 @@ public class PetclinicJenkinsJobCreator {
         return FreemarkerUtils.generate(parameters, "/petclinic-jenkins-job-config.xml.fmt");
     }
 
-    private void sendConfig(String jobConfig, PetclinicProjectInstance project) {
+    private void sendConfig(@Nonnull String jobConfig, @Nonnull PetclinicProjectInstance project) {
         HttpClient client = new DefaultHttpClient();
         HttpEntity entity = httpEntityForXml(jobConfig);
         HttpPost post = new HttpPost(jenkinsUrl + "/createItem?name=" + project.projectName);
         post.setEntity(entity);
 
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Executing request " + post.getRequestLine());
-            }
+            logger.debug("Executing request {}", post.getRequestLine());
 
             HttpResponse response;
             try {
@@ -72,17 +73,13 @@ public class PetclinicJenkinsJobCreator {
                 throw new JobCreationException("Could not execute request", e);
             }
 
-            if (logger.isDebugEnabled()) {
-                logger.debug("Response status: " + response.getStatusLine());
-            }
+            logger.debug("Response status: {}", response.getStatusLine());
 
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                if (logger.isWarnEnabled()) {
-                    try {
-                        logger.warn(EntityUtils.toString(response.getEntity()));
-                    } catch (Exception e) {
-                        logger.warn("Could not print entity");
-                    }
+                try {
+                    logger.warn(EntityUtils.toString(response.getEntity()));
+                } catch (Exception e) {
+                    logger.warn("Could not print entity");
                 }
                 throw new JobCreationException(response.getStatusLine().toString());
             }

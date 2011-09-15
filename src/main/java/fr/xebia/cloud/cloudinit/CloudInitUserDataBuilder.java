@@ -1,4 +1,5 @@
 package fr.xebia.cloud.cloudinit;
+
 /*
  * Copyright 2008-2010 Xebia and the original author or authors.
  *
@@ -15,9 +16,10 @@ package fr.xebia.cloud.cloudinit;
  * limitations under the License.
  */
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -281,6 +283,28 @@ public class CloudInitUserDataBuilder {
      *             message.
      */
     public CloudInitUserDataBuilder addCloudConfig(Readable cloudConfig) {
+        return addFile(FileType.CLOUD_CONFIG, cloudConfig);
+    }
+
+    /**
+     * Add a cloud-config file.
+     * 
+     * @see FileType#CLOUD_CONFIG
+     * @param cloudConfigFilePath
+     *            classpath relative file path (e.g.
+     *            "com/my/company/cloud-config.txt")
+     * @return the builder
+     * @throws IllegalArgumentException
+     *             a cloud-config file was already added to this cloud-init mime
+     *             message.
+     */
+    @Nonnull
+    public CloudInitUserDataBuilder addCloudConfigFromFilePath(@Nonnull String cloudConfigFilePath) {
+
+        InputStream cloudConfigAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(cloudConfigFilePath);
+        Preconditions.checkNotNull(cloudConfigAsStream, "'" + cloudConfigFilePath + "' not found in path");
+        Readable cloudConfig = new InputStreamReader(cloudConfigAsStream);
+
         return addFile(FileType.CLOUD_CONFIG, cloudConfig);
     }
 
