@@ -3,6 +3,7 @@ package fr.xebia.workshop.continuousdelivery;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.collect.Sets.newHashSet;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -23,13 +24,14 @@ import org.slf4j.LoggerFactory;
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 /**
- * Creates a job in a Jenkins server for a "Petclinic" project hosted at
- * https://github.com/xebia-france-training/.
+ * Creates a job in a Jenkins server for a "Petclinic" project hosted at https://github.com/xebia-france-training/.
  * 
  * Example:
  * 
  * <pre>
- * new PetclinicJenkinsJobCreator(&quot;http://ec2-46-137-62-232.eu-west-1.compute.amazonaws.com:8080&quot;).create(new PetclinicProjectInstance(&quot;42&quot;));
+ * new PetclinicJenkinsJobCreator(&quot;http://ec2-46-137-62-232.eu-west-1.compute.amazonaws.com:8080&quot;)
+ *         .create(new PetclinicProjectInstance(&quot;42&quot;))
+ *         .warmUp();
  * </pre>
  */
 public class PetclinicJenkinsJobCreator {
@@ -38,15 +40,32 @@ public class PetclinicJenkinsJobCreator {
 
     private final String jenkinsUrl;
 
+    public static void main(String[] args) {
+        final PetclinicJenkinsJobCreator jobCreator = new PetclinicJenkinsJobCreator("http://ec2-79-125-33-165.eu-west-1.compute.amazonaws.com:8080");
+
+        final int teamCount = 2;
+        for (int teamId = 1; teamId <= teamCount; teamId++) {
+            final Integer localTeamId = teamId;
+
+            new Thread() {
+                public void run() {
+                    jobCreator.create(new PetclinicProjectInstance(localTeamId.toString())).warmUp();
+                };
+            }.start();
+        }
+    }
+
     public PetclinicJenkinsJobCreator(@Nonnull String jenkinsUrl) {
         this.jenkinsUrl = checkNotNull(jenkinsUrl);
         checkArgument(jenkinsUrl.startsWith("http://"), "Invalid URL provided for Jenkins server: " + jenkinsUrl);
     }
 
-    public void create(@Nonnull PetclinicProjectInstance project) {
+    public PostCreationActions create(@Nonnull PetclinicProjectInstance project) {
         checkNotNull(project);
         String jobConfig = createConfig(project);
+        logger.info("Creating job " + project.projectName);
         sendConfig(jobConfig, project);
+        return new PostCreationActions(jenkinsUrl, project);
     }
 
     private String createConfig(@Nonnull PetclinicProjectInstance project) {
@@ -58,34 +77,9 @@ public class PetclinicJenkinsJobCreator {
     }
 
     private void sendConfig(@Nonnull String jobConfig, @Nonnull PetclinicProjectInstance project) {
-        HttpClient client = new DefaultHttpClient();
-        HttpEntity entity = httpEntityForXml(jobConfig);
         HttpPost post = new HttpPost(jenkinsUrl + "/createItem?name=" + project.projectName);
-        post.setEntity(entity);
-
-        try {
-            logger.debug("Executing request {}", post.getRequestLine());
-
-            HttpResponse response;
-            try {
-                response = client.execute(post);
-            } catch (Exception e) {
-                throw new JobCreationException("Could not execute request", e);
-            }
-
-            logger.debug("Response status: {}", response.getStatusLine());
-
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                try {
-                    logger.warn(EntityUtils.toString(response.getEntity()));
-                } catch (Exception e) {
-                    logger.warn("Could not print entity");
-                }
-                throw new JobCreationException(response.getStatusLine().toString());
-            }
-        } finally {
-            client.getConnectionManager().shutdown();
-        }
+        post.setEntity(httpEntityForXml(jobConfig));
+        new Client().post(post);
     }
 
     private HttpEntity httpEntityForXml(String string) {
@@ -106,6 +100,55 @@ public class PetclinicJenkinsJobCreator {
 
         public JobCreationException(String message, Throwable cause) {
             super(message, cause);
+        }
+    }
+
+    private static class Client {
+
+        void post(HttpPost post) {
+            HttpClient client = new DefaultHttpClient();
+            try {
+                logger.debug("Executing request {}", post.getRequestLine());
+
+                HttpResponse response;
+                try {
+                    response = client.execute(post);
+                } catch (Exception e) {
+                    throw new JobCreationException("Could not execute request", e);
+                }
+
+                logger.debug("Response status: {}", response.getStatusLine());
+
+                if (!newHashSet(HttpStatus.SC_OK, HttpStatus.SC_MOVED_TEMPORARILY).contains(response.getStatusLine().getStatusCode())) {
+                    try {
+                        logger.warn(EntityUtils.toString(response.getEntity()));
+                    } catch (Exception e) {
+                        logger.warn("Could not print entity");
+                    }
+                    throw new JobCreationException(response.getStatusLine().toString());
+                }
+            } finally {
+                client.getConnectionManager().shutdown();
+            }
+        }
+    }
+
+    public static class PostCreationActions {
+
+        private final String jenkinsUrl;
+        private final PetclinicProjectInstance project;
+
+        public PostCreationActions(String jenkinsUrl, PetclinicProjectInstance project) {
+            this.jenkinsUrl = jenkinsUrl;
+            this.project = project;
+        }
+
+        /**
+         * Warms up the project, i.e. triggers a build so that dependencies are loaded.
+         */
+        public void warmUp() {
+            logger.info("Warming up job " + project.projectName);
+            new Client().post(new HttpPost(String.format("%s/job/%s/build", jenkinsUrl, project.projectName)));
         }
     }
 }
