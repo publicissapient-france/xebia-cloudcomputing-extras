@@ -15,8 +15,6 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Address;
@@ -38,8 +35,6 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Tag;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -133,7 +128,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 String jenkinsUrl = "http://" + instance.getPublicDnsName() + ":8080/";
                 AmazonAwsUtils.awaitForHttpAvailability(jenkinsUrl);
                 try {
-                    new PetclinicJenkinsJobCreator(jenkinsUrl).create(new PetclinicProjectInstance(identifiersIterator.next()));
+                    new PetclinicJenkinsJobCreator(jenkinsUrl).create(new PetclinicProjectInstance(identifiersIterator.next())).warmUp();
                 } catch (Exception e) {
                     logger.warn("Silently skip " + e, e);
                 }
