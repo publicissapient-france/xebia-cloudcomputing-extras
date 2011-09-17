@@ -62,6 +62,12 @@
   <settingConfigId></settingConfigId>
   <globalSettingConfigId></globalSettingConfigId>
   <reporters/>
-  <publishers/>
+  <publishers>
+    <hudson.maven.RedeployPublisher>
+      <id></id>
+      <uniqueVersion>true</uniqueVersion>
+      <evenIfUnstable>false</evenIfUnstable>
+    </hudson.maven.RedeployPublisher>
+  </publishers>
   <buildWrappers/>
 </maven2-moduleset>

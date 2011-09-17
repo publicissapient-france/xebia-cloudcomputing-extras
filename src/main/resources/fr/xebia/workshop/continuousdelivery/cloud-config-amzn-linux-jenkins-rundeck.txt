@@ -25,9 +25,6 @@ runcmd:
  - [wget, "http://mirror.ibcp.fr/pub/apache//maven/binaries/apache-maven-2.2.1-bin.tar.gz"]  
  - [tar, xvzf, apache-maven-2.2.1-bin.tar.gz]
  - [ln, -s, /opt/apache-maven-2.2.1, /opt/maven]
-# configures it to deploy artifacts on our Nexus server 
- - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-releases<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /opt/maven/conf/settings.xml]
- - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-snapshots<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /opt/maven/conf/settings.xml]
 # installs Rundeck
  - [rpm, -U, -v, -h, "http://rundeck.org/latest.rpm"] 
  - [sh, -xc, "echo $(date) ': Rundeck is downloaded'"]
@@ -57,6 +54,12 @@ runcmd:
  - [sh, -xc, "echo '  </installations>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [sh, -xc, "echo '</hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [chown, "jenkins:jenkins", /var/lib/jenkins/hudson.tasks.Maven.xml]
+# configures Maven for Jenkins so that it can deploy artifacts on our Nexus server
+ - [mkdir, -p, /var/lib/jenkins/.m2]
+ - [cp, /opt/maven/conf/settings.xml, /var/lib/jenkins/.m2/]
+ - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.m2] 
+ - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-releases<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
+ - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-snapshots<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
 # activates Jenkins as a service
  - [chkconfig, jenkins, on]
  - [service, jenkins, start ]
