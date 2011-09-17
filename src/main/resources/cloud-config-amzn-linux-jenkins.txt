@@ -9,25 +9,42 @@ repo_additions:
    enabled: 1
 
 packages:
-- yum-utils
-- java-1.6.0-openjdk
-- jenkins
-- git
-# TODO: install Maven. I (Nicolas) tried via http://www.jpackage.org/ but did not quite understand how to manage it
+ - yum-utils
+ - java-1.6.0-openjdk
+ - java-1.6.0-openjdk-devel
+ - jenkins
+ - git
 
 runcmd:
  - [ sh, -xc, "echo $(date) ': cloudinit runcmd begin'" ]
+# installs Maven
+ - [cd, /opt]
+ - [wget, "http://mirror.ibcp.fr/pub/apache//maven/binaries/apache-maven-2.2.1-bin.tar.gz"]  
+ - [tar, xvzf, apache-maven-2.2.1-bin.tar.gz]
+ - [ln, -s, /opt/apache-maven-2.2.1, /opt/maven]
 # Jenkins might not be completely installed, so let's create its folders
  - [mkdir, -p, /var/lib/jenkins/plugins/]
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins]
-# downloads additional plugins
- - [cd, /var/lib/jenkins/plugins/]
- - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/git.hpi"]
- - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/github.hpi"]
+# downloads additional Jenkins plugins
+ - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/batch-task.hpi", -O, "/var/lib/jenkins/plugins/batch-task.hpi"]
+ - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/git.hpi", -O, "/var/lib/jenkins/plugins/git.hpi"]
+ - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/github.hpi", -O, "/var/lib/jenkins/plugins/github.hpi"]
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/plugins]
-# activates the service
+# tells Jenkins where to find Maven
+ - [sh, -xc, "echo \"<?xml version='1.0' encoding='UTF-8'?>\" >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '<hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '  <helpRedirect/>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '  <installations>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '    <hudson.tasks.Maven_-MavenInstallation>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '      <name>Maven 2</name>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '      <home>/opt/maven</home>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '      <properties/>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '    </hudson.tasks.Maven_-MavenInstallation>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '  </installations>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [sh, -xc, "echo '</hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
+ - [chown, "jenkins:jenkins", /var/lib/jenkins/hudson.tasks.Maven.xml]
+# activates Jenkins as a service
  - [chkconfig, jenkins, on]
  - [service, jenkins, start ]
  - [usermod, -a, -G, jenkins, ec2-user]
  - [ sh, -xc, "echo $(date) ': cloudinit runcmd end'" ]
- 
