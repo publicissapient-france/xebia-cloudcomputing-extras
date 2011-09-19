@@ -12,21 +12,25 @@ CURRENT_GROUP_ID='xebia.demo.petclinic-clc'
 for i in `jot - 1 $USERS`
 do
 
-   	# Replace <groupId>fr.xebia.demo.petclinic-clc</groupId> with <groupId>fr.xebia.demo.petclinic-clc-$i</groupId> 	
 	NEW_GROUP_ID="fr.xebia.demo.petclinic-clc-$i"
 	echo "USER $i : NEW_GROUP_ID= $NEW_GROUP_ID"
-	sed "s/$CURRENT_GROUP_ID/$NEW_GROUP_ID/g" ./xebia-petclinic-clc/pom.xml > /tmp/temppom.xml
-	mv /tmp/temppom.xml ./xebia-petclinic-clc/pom.xml
 	REPOSITORY_NAME="xebia-petclinic-$i"
+
 	# create repository
-	curl -u ' xebia-continuous-delivery-tech-event:1645faface' http://github.com/api/v2/json/repos/create -F name=$REPOSITORY_NAME
-	cp -rf xebia-petclinic/ $REPOSITORY_NAME
+	curl -u 'jmateo:041102xl' http://github.com/api/v2/json/repos/create -F name=$REPOSITORY_NAME
+
+   	# Replace <groupId>fr.xebia.demo.petclinic-clc</groupId> with <groupId>fr.xebia.demo.petclinic-clc-$i</groupId> 	
+	cp -rf xebia-petclinic-clc/ $REPOSITORY_NAME
 	cd $REPOSITORY_NAME
+	sed "s/$CURRENT_GROUP_ID/$NEW_GROUP_ID/g" ./pom.xml > /tmp/temppom.xml
+	mv /tmp/temppom.xml ./pom.xml
+
+	# push sources from the cloned repository to the new one that we have just created
 	git init
 	git add .
-	git commit -m "clone xebia-petclinic to $REPOSITORY_NAME"  
-	git remote add $REPOSITORY_NAME git@github.com: xebia-continuous-delivery-tech-event/$REPOSITORY_NAME.git
+	git commit -m "clone xebia-petclinic-clc to $REPOSITORY_NAME"  
+	git remote add $REPOSITORY_NAME git@github.com:jmateo/$REPOSITORY_NAME.git
 	git push -u $REPOSITORY_NAME master
-	
-done
 
+	cd ..	
+done
