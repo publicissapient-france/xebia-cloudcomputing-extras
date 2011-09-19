@@ -27,7 +27,7 @@ do
 	git init
 	git add .
 	git commit -m "clone xebia-petclinic-clc to $REPOSITORY_NAME"  
-	git remote add $REPOSITORY_NAME git@github.com:jmateo/$REPOSITORY_NAME.git
+	git remote add $REPOSITORY_NAME git@github.com:xebia-continuous-delivery-tech-event/$REPOSITORY_NAME.git
 	git push -u $REPOSITORY_NAME master
 	cd ..	
 
