@@ -3,12 +3,13 @@
 timezone: Europe/Paris
 
 packages:
-- yum-utils
-- java-1.6.0-openjdk
-- tomcat6
-- tomcat6-webapps
-- tomcat6-docs-webapp
-- tomcat6-admin-webapps
+ - yum-utils
+ - java-1.6.0-openjdk
+ - java-1.6.0-openjdk-devel
+ - tomcat6
+ - tomcat6-webapps
+ - tomcat6-docs-webapp
+ - tomcat6-admin-webapps
 
 runcmd:
  - [chkconfig, tomcat6, on]
