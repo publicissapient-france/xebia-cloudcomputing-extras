@@ -1,5 +1,7 @@
 #cloud-config
 
+timezone: Europe/Paris
+
 ssh_authorized_keys:
  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDX/P7IUU99UkfG/vHolJvk8kJRpyOqYvYmFKvBbbt7/VJ8dBdJSzVpuRAAigcqC2y14HBfvkll5TMytY3OhJLRvcbbyDuUlPNSvQzqHTGoaUrqjGMeb32/pB6kzT9y1QHEyB7AHGx5ZP1aemI1AhC5wge8X6+TYKppxMFFQmJmSifeSWCDvpMQNbRMbxWZswgfXD5lU0qQ8Vr2EP6Yb8Gld/PQUllffTQrZFia+q2TneSwbvPkfEjGivkdOBOAmQj8w8OgilINhV2RPC2C/AqiN8X5x7kM6Q/t0v3/kqrJs5A5ZX7SSJd/NiRBTqRCVAtDPiVYkWQuJa8SZs8Ol9Zv continuous-delivery-workshop
 
