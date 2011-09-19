@@ -15,12 +15,15 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * <p>Team infrastructure for the lab.</p>
@@ -40,11 +43,18 @@ public class TeamInfrastructure {
 
     private Instance nexus;
 
-    private Instance tomcatDev;
-
-    private Instance tomcatValid;
+    private Multimap<String, Instance> tomcatsPerEnvironment = HashMultimap.create();
     
     private String jenkinsUrl;
+    private String rundeckUrl;
+
+    public String getRundeckUrl() {
+        return rundeckUrl;
+    }
+
+    public void setRundeckUrl(String rundeckUrl) {
+        this.rundeckUrl = rundeckUrl;
+    }
 
     public String getJenkinsUrl() {
         return jenkinsUrl;
@@ -78,31 +88,27 @@ public class TeamInfrastructure {
         return nexus;
     }
 
-    /**
-     * The Tomcat server for the Development environment
-     * @return
-     */
-    @Nullable
-    public Instance getTomcatDev() {
-        return tomcatDev;
-    }
-
-    public Instance getTomcatValid() {
-        return tomcatValid;
-    }
     public void setJenkins(Instance jenkins) {
         this.jenkins = jenkins;
     }
+    
+    public void addTomcat(String environment, Instance tomcatInstance) {
+        tomcatsPerEnvironment.put(environment, tomcatInstance);
+    }
+    
+    @Nonnull
+    public Multimap<String, Instance> getTomcatsPerEnvironment() {
+        return tomcatsPerEnvironment;
+    }
+
+    public void setTomcatsPerEnvironment(Multimap<String, Instance> tomcatsPerEnvironment) {
+        this.tomcatsPerEnvironment = tomcatsPerEnvironment;
+    }
+
     public void setNexus(Instance nexus) {
         this.nexus = nexus;
     }
-    public void setTomcatDev(Instance tomcatDev) {
-        this.tomcatDev = tomcatDev;
-    }
 
-    public void setTomcatValid(Instance tomcatValid) {
-        this.tomcatValid = tomcatValid;
-    }
 
     @Override
     public String toString() {
@@ -110,8 +116,7 @@ public class TeamInfrastructure {
                 .add("id", identifier) //
                 .add("jenkins", jenkins) //
                 .add("jenkinsUrl", jenkinsUrl) //
-                .add("tomcatDev", tomcatDev) //
-                .add("tomcatValid", tomcatValid) //
+                .add("tomcats", tomcatsPerEnvironment) //
                 .add("nexus", nexus) //
                 .toString();
     }
