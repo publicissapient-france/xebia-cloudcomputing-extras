@@ -17,6 +17,12 @@ runcmd:
  - [cd, /opt/nexus]
  - [wget, "http://nexus.sonatype.org/downloads/nexus-oss-webapp-1.9.2.2-bundle.tar.gz"]
  - [tar, xvfz, nexus-oss-webapp-1.9.2.2-bundle.tar.gz]
+
+# installs Nexus plugins under /opt/nexus/sonatype-work/nexus/plugin-repository
+ - [mkdir, -p, /opt/nexus/sonatype-work/nexus/plugin-repository]
+ - [cd, /opt/nexus/sonatype-work/nexus/plugin-repository]
+ - [wget, --no-check-certificate, "https://github.com/downloads/vbehar/nexus-rundeck-plugin/nexus-rundeck-plugin-1.2.2.2-bundle.zip"]
+ - [unzip, nexus-rundeck-plugin-1.2.2.2-bundle.zip]
  
 # creates a dedicated user for it
  - [adduser, -M, -p, "''", nexus]
