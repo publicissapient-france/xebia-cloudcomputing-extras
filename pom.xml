@@ -41,7 +41,7 @@
       <dependency>
          <groupId>com.amazonaws</groupId>
          <artifactId>aws-java-sdk</artifactId>
-         <version>1.2.6</version>
+         <version>1.2.7</version>
       </dependency>
       <dependency>
          <groupId>org.bouncycastle</groupId>
@@ -67,27 +67,27 @@
       <dependency>
          <groupId>org.jclouds.provider</groupId>
          <artifactId>aws-ec2</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
       <dependency>
          <groupId>org.jclouds</groupId>
          <artifactId>jclouds-compute</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
       <dependency>
          <groupId>org.jclouds.driver</groupId>
          <artifactId>jclouds-slf4j</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
       <dependency>
          <groupId>org.jclouds.driver</groupId>
          <artifactId>jclouds-jsch</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
       <dependency>
          <groupId>org.jclouds.driver</groupId>
          <artifactId>jclouds-bouncycastle</artifactId>
-         <version>1.1.0</version>
+         <version>1.1.1</version>
       </dependency>
 
       <dependency>
