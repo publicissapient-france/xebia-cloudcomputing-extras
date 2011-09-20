@@ -24,12 +24,10 @@ do
 	mv /tmp/temppom.xml $REPOSITORY_NAME/pom.xml
 
 	# push sources from the cloned repository to the one just created
-	cd $REPOSITORY_NAME
-	git init
-	git add .
-	git commit -m "clone xebia-petclinic to $REPOSITORY_NAME"  
-	git remote add $REPOSITORY_NAME git@github.com:xebia-continuous-delivery-tech-event/$REPOSITORY_NAME.git
-	git push -u $REPOSITORY_NAME master
-	cd ..	
+	$REPOSITORY_NAME/git init
+	$REPOSITORY_NAME/git add .
+	$REPOSITORY_NAME/git commit -m "clone xebia-petclinic to $REPOSITORY_NAME"  
+	$REPOSITORY_NAME/git remote add $REPOSITORY_NAME git@github.com:xebia-continuous-delivery-tech-event/$REPOSITORY_NAME.git
+	$REPOSITORY_NAME/git push -u $REPOSITORY_NAME master
 
 done
