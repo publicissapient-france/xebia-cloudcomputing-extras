@@ -22,11 +22,11 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 /**
- * <p>Team infrastructure for the lab.</p>
+ * <p>
+ * Team infrastructure for the lab.
+ * </p>
  * 
  */
 public class TeamInfrastructure {
@@ -37,36 +37,48 @@ public class TeamInfrastructure {
             return new TeamInfrastructure(teamIdentifier);
         }
     };
+    private Instance devTomcat;
+
     private final String identifier;
 
     private Instance jenkins;
 
+    private String jenkinsUrl;
     private Instance nexus;
 
-    private Multimap<String, Instance> tomcatsPerEnvironment = HashMultimap.create();
-    
-    private String jenkinsUrl;
     private String rundeckUrl;
 
-    public String getRundeckUrl() {
-        return rundeckUrl;
-    }
+    private Instance validTomcat1;
 
-    public void setRundeckUrl(String rundeckUrl) {
-        this.rundeckUrl = rundeckUrl;
-    }
+    private Instance validTomcat2;
 
-    public String getJenkinsUrl() {
-        return jenkinsUrl;
-    }
-
-    public void setJenkinsUrl(String jenkinsUrl) {
-        this.jenkinsUrl = jenkinsUrl;
-    }
-
-    private TeamInfrastructure(String identifier) {
+    public TeamInfrastructure(String identifier) {
         super();
         this.identifier = Preconditions.checkNotNull(identifier);
+    }
+
+    /**
+     * 
+     * FIXME cleanup this dirty code (CLC)
+     */
+    public void addTomcat(@Nonnull String environment, @Nonnull Instance tomcatInstance) {
+        if ("dev".equals(environment)) {
+            devTomcat = tomcatInstance;
+        } else if ("valid".equals(environment)) {
+            if (validTomcat1 == null) {
+                validTomcat1 = tomcatInstance;
+            } else if (validTomcat2 == null) {
+                validTomcat2 = tomcatInstance;
+            } else {
+                throw new IllegalStateException("Valid tomcats already set");
+            }
+        } else {
+            throw new IllegalStateException("Dev tomcat already set");
+        }
+    }
+
+    public Instance getDevTomcat() {
+        return devTomcat;
     }
 
     /**
@@ -84,31 +96,61 @@ public class TeamInfrastructure {
         return jenkins;
     }
 
+    public String getJenkinsUrl() {
+        return jenkinsUrl;
+    }
+
     public Instance getNexus() {
         return nexus;
+    }
+
+    public String getProjectMavenGroupId() {
+        return "fr.xebia.demo.petclinic-" + identifier;
+    }
+
+    public Instance getRundeck() {
+        return getJenkins();
+    }
+
+    public String getRundeckUrl() {
+        return rundeckUrl;
+    }
+
+    public Instance getValidTomcat1() {
+        return validTomcat1;
+    }
+
+    public Instance getValidTomcat2() {
+        return validTomcat2;
+    }
+
+    public void setDevTomcat(Instance devTomcat) {
+        this.devTomcat = devTomcat;
     }
 
     public void setJenkins(Instance jenkins) {
         this.jenkins = jenkins;
     }
-    
-    public void addTomcat(String environment, Instance tomcatInstance) {
-        tomcatsPerEnvironment.put(environment, tomcatInstance);
-    }
-    
-    @Nonnull
-    public Multimap<String, Instance> getTomcatsPerEnvironment() {
-        return tomcatsPerEnvironment;
-    }
 
-    public void setTomcatsPerEnvironment(Multimap<String, Instance> tomcatsPerEnvironment) {
-        this.tomcatsPerEnvironment = tomcatsPerEnvironment;
+    public void setJenkinsUrl(String jenkinsUrl) {
+        this.jenkinsUrl = jenkinsUrl;
     }
 
     public void setNexus(Instance nexus) {
         this.nexus = nexus;
     }
 
+    public void setRundeckUrl(String rundeckUrl) {
+        this.rundeckUrl = rundeckUrl;
+    }
+
+    public void setValidTomcat1(Instance validTomcat1) {
+        this.validTomcat1 = validTomcat1;
+    }
+
+    public void setValidTomcat2(Instance validTomcat2) {
+        this.validTomcat2 = validTomcat2;
+    }
 
     @Override
     public String toString() {
@@ -116,7 +158,9 @@ public class TeamInfrastructure {
                 .add("id", identifier) //
                 .add("jenkins", jenkins) //
                 .add("jenkinsUrl", jenkinsUrl) //
-                .add("tomcats", tomcatsPerEnvironment) //
+                .add("devTomcat", devTomcat) //
+                .add("validTomcat1", validTomcat1) //
+                .add("validTomcat2", validTomcat2) //
                 .add("nexus", nexus) //
                 .toString();
     }

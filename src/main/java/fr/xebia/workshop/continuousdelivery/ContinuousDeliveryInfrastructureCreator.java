@@ -16,11 +16,9 @@
 package fr.xebia.workshop.continuousdelivery;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,16 +36,14 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Tag;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 import fr.xebia.cloud.cloudinit.CloudInitUserDataBuilder;
+import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 public class ContinuousDeliveryInfrastructureCreator {
 
@@ -70,15 +66,15 @@ public class ContinuousDeliveryInfrastructureCreator {
             e.printStackTrace();
         }
         try {
-            Collection<String> identifiers = Lists.newArrayList("clc");
+            Collection<String> identifiers = Lists.newArrayList("clc", "1", "2");
             // Collections.transform() returns a 'transient' collection - two
             // consecutive calls to iterator re-instantiate different
             // TeamInfrastructure
             List<TeamInfrastructure> teamsInfrastructures = Lists.newArrayList(Collections2.transform(identifiers,
                     TeamInfrastructure.FUNCTION_TEAM_IDENTIFIER_TO_TEAM_INFRASTRUCTURE));
             creator.buildJenkins(teamsInfrastructures);
-            creator.buildTomcatServers(teamsInfrastructures, "dev");
-            creator.buildTomcatServers(teamsInfrastructures, "valid");
+            creator.buildTomcatServers(teamsInfrastructures, "dev", 1);
+            creator.buildTomcatServers(teamsInfrastructures, "valid", 2);
 
             for (TeamInfrastructure teamInfrastructure : teamsInfrastructures) {
                 System.out.println("TEAM " + teamInfrastructure.getIdentifier());
@@ -87,21 +83,20 @@ public class ContinuousDeliveryInfrastructureCreator {
                 System.out.println(" * Rundeck (login=admin, password=admin): " + teamInfrastructure.getRundeckUrl());
                 System.out.println(" * Tomcat: ");
                 System.out.println(" ** login/password: tomcat/tomcat");
-                Set<Entry<String, Collection<Instance>>> tomcatsPerEnvironment = teamInfrastructure.getTomcatsPerEnvironment().asMap()
-                        .entrySet();
-                for (Entry<String, Collection<Instance>> entry : tomcatsPerEnvironment) {
-                    Collection<String> tomcatUrls = Collections2.transform(entry.getValue(), new Function<Instance, String>() {
-                        @Override
-                        public String apply(Instance instance) {
-                            return "http://" + instance.getPublicDnsName() + ":8080/";
-                        }
-                    });
-                    System.out.println(" ** " + entry.getKey() + ": " + Joiner.on(", ").join(tomcatUrls));
-                }
+                System.out.println(" ** dev: " + "http://" + teamInfrastructure.getDevTomcat().getPublicDnsName() + ":8080/");
+                System.out.println(" ** valid1: " + "http://" + teamInfrastructure.getValidTomcat1().getPublicDnsName() + ":8080/");
+                System.out.println(" ** valid2: " + "http://" + teamInfrastructure.getValidTomcat2().getPublicDnsName() + ":8080/");
 
                 System.out.println(teamInfrastructure);
                 System.out.println();
 
+            }
+
+            for (TeamInfrastructure infrastructure : teamsInfrastructures) {
+                Map<String, Object> rootMap = Maps.newHashMap();
+                rootMap.put("infrastructure", infrastructure);
+                String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
+                System.out.println(page);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -181,7 +176,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 } catch (Exception e) {
                     logger.warn("Silently skip " + e, e);
                 }
-                
+
                 String rundeckUrl = "http://" + jenkinsInstance.getPublicDnsName() + ":4440/";
                 teamInfrastructure.setRundeckUrl(rundeckUrl);
             }
@@ -248,7 +243,7 @@ public class ContinuousDeliveryInfrastructureCreator {
 
     }
 
-    public void buildTomcatServers(List<TeamInfrastructure> teamInfrastructures, String environment) {
+    public void buildTomcatServers(List<TeamInfrastructure> teamInfrastructures, String environment, int numberOfInstances) {
         logger.info("CREATE TOMCAT '{}' SERVERS", environment);
 
         String role = ROLE_TOMCAT + "-" + environment;
@@ -263,8 +258,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         RunInstancesRequest runInstancesRequest = new RunInstancesRequest() //
                 .withInstanceType(InstanceType.T1Micro.toString()) //
                 .withImageId(AmazonAwsUtils.AMI_AMZN_LINUX_EU_WEST) //
-                .withMinCount(teamInfrastructures.size()) //
-                .withMaxCount(teamInfrastructures.size()) //
+                .withMinCount(teamInfrastructures.size() * numberOfInstances) //
+                .withMaxCount(teamInfrastructures.size() * numberOfInstances) //
                 .withSecurityGroupIds("accept-all") //
                 .withKeyName("continuous-delivery-workshop") //
                 .withUserData(userData) //
@@ -276,18 +271,23 @@ public class ContinuousDeliveryInfrastructureCreator {
         // TAG EC2 INSTANCES
         {
             Iterator<TeamInfrastructure> teamInfrastructureIterator = teamInfrastructures.iterator();
-            for (Instance tomcatInstance : tomcatInstances) {
-                CreateTagsRequest createTagsRequest = new CreateTagsRequest();
+            Iterator<Instance> tomcatInstancesIterator = tomcatInstances.iterator();
+
+            while (tomcatInstancesIterator.hasNext()) {
                 TeamInfrastructure teamInfrastructure = teamInfrastructureIterator.next();
-                String identifier = teamInfrastructure.getIdentifier();
-                createTagsRequest.withResources(tomcatInstance.getInstanceId()) //
-                        .withTags(//
-                                new Tag("Name", "continuous-delivery-tomcat-" + identifier + "-" + environment), //
-                                new Tag("TeamIdentifier", identifier), //
-                                new Tag("Role", role));
-                ec2.createTags(createTagsRequest);
-                tomcatInstance = AmazonAwsUtils.awaitForEc2Instance(tomcatInstance, ec2);
-                teamInfrastructure.addTomcat(environment, tomcatInstance);
+                for (int i = 0; i < numberOfInstances; i++) {
+                    Instance tomcatInstance = tomcatInstancesIterator.next();
+                    String identifier = teamInfrastructure.getIdentifier();
+                    CreateTagsRequest createTagsRequest = new CreateTagsRequest() //
+                            .withResources(tomcatInstance.getInstanceId()) //
+                            .withTags(//
+                                    new Tag("Name", "continuous-delivery-tomcat-" + identifier + "-" + environment + "-" + (i+1)), //
+                                    new Tag("TeamIdentifier", identifier), //
+                                    new Tag("Role", role));
+                    ec2.createTags(createTagsRequest);
+                    tomcatInstance = AmazonAwsUtils.awaitForEc2Instance(tomcatInstance, ec2);
+                    teamInfrastructure.addTomcat(environment, tomcatInstance);
+                }
             }
             if (teamInfrastructureIterator.hasNext()) {
                 logger.warn("Remaining identifiers " + Lists.newArrayList(teamInfrastructureIterator));
