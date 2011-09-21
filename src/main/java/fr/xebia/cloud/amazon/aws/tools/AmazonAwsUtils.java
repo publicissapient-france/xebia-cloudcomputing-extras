@@ -116,6 +116,7 @@ public class AmazonAwsUtils {
      */
     @Nonnull
     public static Instance awaitForEc2Instance(@Nonnull Instance instance, @Nonnull AmazonEC2 ec2) {
+        int counter = 0;
         while (InstanceStateName.Pending.equals(instance.getState()) || (instance.getPublicIpAddress() == null)
                 || (instance.getPublicDnsName() == null)) {
             logger.trace("Wait for startup of {}", instance);
@@ -129,6 +130,11 @@ public class AmazonAwsUtils {
             DescribeInstancesResult describeInstances = ec2.describeInstances(describeInstancesRequest);
 
             instance = Iterables.getOnlyElement(toEc2Instances(describeInstances.getReservations()));
+            counter ++;
+            if(counter >= 20) {
+                logger.warn("Wait Timeout for {}", instance);
+                return instance;
+            }
         }
         logger.debug("Instance {} is started", instance);
         return instance;
