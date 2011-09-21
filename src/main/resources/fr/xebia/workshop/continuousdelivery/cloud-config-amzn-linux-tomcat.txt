@@ -14,6 +14,16 @@ packages:
 - tomcat6-admin-webapps
 
 runcmd:
+ #  Fix "Authentication refused: bad ownership or modes for directory /usr/share/tomcat6"
+ - [mkdir, "/usr/share/tomcat6/.ssh"]
+ - [chown, -R, "tomcat:tomcat", "/usr/share/tomcat6"]
+ - [chmod, "og-w", "/usr/share/tomcat6"]
+ - [chmod, -R, "og-rwx", "/usr/share/tomcat6/.ssh"]
+ # provision ssh authorized_keys
+ - [sh, -xc, "echo '/usr/share/tomcat6/.ssh/authorized_keys provisionned with accounts: tomcat, admin and manager'"]
+ - [cp, -r, "/home/ec2-user/.ssh/authorized_keys", "/usr/share/tomcat6/.ssh"]
+ - [chown, -R, "tomcat:tomcat", "/usr/share/tomcat6/.ssh"]
+ # provision tomcat-users for tomcat-manager 
  - [sh, -xc, "echo '<tomcat-users>' > /etc/tomcat6/tomcat-users.xml"]
  - [sh, -xc, "echo '  <role rolename=\"tomcat\"/>' >> /etc/tomcat6/tomcat-users.xml"]
  - [sh, -xc, "echo '  <role rolename=\"admin\"/>' >> /etc/tomcat6/tomcat-users.xml"]
@@ -22,6 +32,11 @@ runcmd:
  - [sh, -xc, "echo '  <user username=\"admin\" password=\"admin\" roles=\"tomcat,admin,manager\"/>' >> /etc/tomcat6/tomcat-users.xml"]
  - [sh, -xc, "echo '  <user username=\"manager\" password=\"manager\" roles=\"tomcat,admin,manager\"/>' >> /etc/tomcat6/tomcat-users.xml"]
  - [sh, -xc, "echo '</tomcat-users>' >> /etc/tomcat6/tomcat-users.xml"]
+ - [sh, -xc, "echo '/etc/tomcat6/tomcat-users.xml provisionned with accounts: tomcat, admin and manager'"]
+ # register tomcat service
  - [chkconfig, tomcat6, on]
+ # restart tomcat service
  - [service, tomcat6, restart ]
+ # add user ec2-user to group tomcat
+ - [usermod, -G, tomcat, ec2-user]
  
