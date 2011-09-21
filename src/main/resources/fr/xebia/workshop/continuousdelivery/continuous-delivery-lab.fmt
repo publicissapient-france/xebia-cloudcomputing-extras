@@ -43,8 +43,11 @@ sudo service tomcat6 start
 
 # test started webapp
 # TODO: should return error in case of wrong http response
-sleep 10
+sleep 30
 curl --connect-timeout 10 --retry 10 --silent --show-error --write-out "OK" -o ping http://localhost:8080/xebia-petclinic 
+
+# protect against unexpected "exit-status: 6"
+exit 0
 </code>
 
 = Automated Tomcat Deployment with Rundeck = 
@@ -59,7 +62,7 @@ Here is the configuration of the previous task with Rundeck.
   {{{
 ssh -i continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck.publicDnsName}
 }}}
-  # Update the project configuration files in "{{{/etc/rundeck/projects/deploy-on-tomcat-valid/etc/}}}":
+  # Update the project configuration files in "{{{/var/rundeck/projects/deploy-on-tomcat-valid/etc/}}}":
    # Modify the *{{{project.properties}}}* to add ssh private key for the workshop
    {{{
 project.ssh-keypath=(PATH_TO)/continuous-delivery-workshop.pem
@@ -91,7 +94,7 @@ project.ssh-keypath=(PATH_TO)/continuous-delivery-workshop.pem
 	username="ec2-user" 
 	privateIpAddress="${infrastructure.validTomcat2.privateIpAddress}" 	
 	privateDnsName="${infrastructure.validTomcat2.privateDnsName}"
-	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1&#s=Instances"/>
+	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1"/>
 </code>
  # Go back to Rundeck web admin console
  # Create a new job with the following parameters:
