@@ -25,29 +25,42 @@ Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Pl
  # Activation option called *Execute shell script on remote host using SSH*
  # Select the right SSH Site you’ve configured before, then in *post-build script*, copy past the following script, by replacing with your artifact groupId
 
+TODO : there are wrong exit status with shell script in Jenkins GUI:
+ ** create a shell script {{/usr/share/tomcat6/bin/redeploy-petclinic.sh}} with the following content prefixed by a shebang
+ ** just call {{/usr/share/tomcat6/bin/redeploy-petclinic.sh}} in jenkins GUI
 <code language="sh">
-# shutdown tomcat
+# shutdown tomcat 
 /usr/sbin/tomcat6 stop
+  
+# cleanup 
+if [ -f /usr/share/tomcat6/webapps/xebia-petclinic.war ]; 
+then 
+   rm -rf "/usr/share/tomcat6/webapps/xebia-petclinic.war" 
+fi 
+if [ -d /usr/share/tomcat6/webapps/xebia-petclinic ]; 
+then 
+   rm -rf "/usr/share/tomcat6/webapps/xebia-petclinic" 
+fi 
  
-# cleanup
-rm /usr/share/tomcat6/webapps/xebia-petclinic.war
-rm -rf  /usr/share/tomcat6/webapps/xebia-petclinic
+echo "petclinic removed from tomcat server" 
  
+# download new war version 
+curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=fr.xebia.demo.petclinic-clc&a=xebia-petclinic&r=snapshots&v=LATEST&e=war" --silent --show-error  --output "/usr/share/tomcat6/webapps/xebia-petclinic.war" 
 
-# download new war version
-curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=fr.xebia.demo.petclinic-clc&a=xebia-petclinic&r=snapshots&v=LATEST&e=war" --silent --show-error  --output /usr/share/tomcat6/webapps/xebia-petclinic.war
-chown root:tomcat /usr/share/tomcat6/webapps/xebia-petclinic.war
+echo "petclinic downloaded from nexus server" 
 
-# start tomcat
+# start tomcat 
 /usr/sbin/tomcat6 start
 
-# test started webapp
-# TODO: should return error in case of wrong http response
-sleep 30
-curl --connect-timeout 10 --retry 10 --silent --show-error --write-out "OK" -o ping http://localhost:8080/xebia-petclinic 
+echo "petclinic tomcat started" 
+ 
+# test started webapp 
+# TODO: should return error in case of wrong http response 
+sleep 30 
+curl --connect-timeout 10 --retry 10 --silent --show-error --write-out "OK" -o ping http://localhost:8080/xebia-petclinic  
+echo ""
 
-# FIXME protect against unexpected "exit-status: 6"
-exit 0
+echo "petclinic redeployed and available on tomcat server" 
 </code>
 
 = Automated Tomcat Deployment with Rundeck = 
@@ -57,18 +70,18 @@ exit 0
 
 Here is the configuration of the previous task with Rundeck.
  # Connect to your Rundeck server ${infrastructure.rundeckUrl} (login=admin, password=admin)
- # Create a new project "{{{deploy-on-tomcat}}}"
+ # Create a new project "{{{deploy-petclinic-on-tomcat-valid}}}"
  # Connect via SSH to the rundeck server: 
   {{{
 ssh -i continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck.publicDnsName}
 }}}
-  # Update the project configuration files in "{{{/var/rundeck/projects/deploy-on-tomcat/etc/}}}":
+  # Update the project configuration files in "{{{/var/rundeck/projects/deploy-petclinic-on-tomcat-valid/etc/}}}":
    # Modify the *{{{project.properties}}}* to add ssh private key for the workshop
    {{{
-project.ssh-keypath=(PATH_TO)/continuous-delivery-workshop.pem
+project.ssh-keypath=/var/rundeck/continuous-delivery-workshop.pem
 }}}
   # Add your Valid Tomcat servers in *{{{resources.xml}}}*:
-<code language="xml">
+  <code language="xml">
 <node 
 	name="valid-tomcat-1" 
 	description="valid-tomcat-1" 
@@ -78,7 +91,7 @@ project.ssh-keypath=(PATH_TO)/continuous-delivery-workshop.pem
 	osFamily="unix" 
 	osName="Linux" 
 	osVersion="" 
-	username="ec2-user" 
+	username="tomcat" 
 	privateIpAddress="${infrastructure.validTomcat1.privateIpAddress}" 	
 	privateDnsName="${infrastructure.validTomcat1.privateDnsName}"
 	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1"/>
@@ -91,7 +104,7 @@ project.ssh-keypath=(PATH_TO)/continuous-delivery-workshop.pem
 	osFamily="unix" 
 	osName="Linux" 
 	osVersion="" 
-	username="ec2-user" 
+	username="tomcat" 
 	privateIpAddress="${infrastructure.validTomcat2.privateIpAddress}" 	
 	privateDnsName="${infrastructure.validTomcat2.privateDnsName}"
 	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1"/>

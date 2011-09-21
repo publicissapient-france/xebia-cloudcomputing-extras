@@ -61,8 +61,14 @@ runcmd:
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.m2] 
  - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-releases<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
  - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-snapshots<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
+# provision ssh private key for rundeck
+ - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/var/rundeck/continuous-delivery-workshop.pem"]
+ - [chown, -R, "rundeck:rundeck", /var/rundeck/continuous-delivery-workshop.pem] 
 # activates Jenkins as a service
  - [chkconfig, jenkins, on]
  - [service, jenkins, start ]
- - [usermod, -a, -G, jenkins, ec2-user]
  - [ sh, -xc, "echo $(date) ': cloudinit runcmd end'" ]
+# add ec2-user to jenkins and rundeck groups
+ - [usermod, -a, -G, jenkins, ec2-user]
+ - [usermod, -a, -G, rundeck, ec2-user]
+ 
