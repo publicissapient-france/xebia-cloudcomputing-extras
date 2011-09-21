@@ -81,7 +81,7 @@ project.ssh-keypath=(PATH_TO)/continuous-delivery-workshop.pem
 	username="ec2-user" 
 	privateIpAddress="${infrastructure.validTomcat1.privateIpAddress}" 	
 	privateDnsName="${infrastructure.validTomcat1.privateDnsName}"
-	editUrl="https://console.aws.amazon.com/ec2/home#c=EC2&amp;s=Instances"/>
+	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1"/>
 <node 
 	name="valid-tomcat-2" 
 	description="valid-tomcat-2" 
