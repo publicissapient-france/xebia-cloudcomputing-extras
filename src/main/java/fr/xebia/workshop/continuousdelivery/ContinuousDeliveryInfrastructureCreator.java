@@ -295,7 +295,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 logger.warn("Remaining identifiers " + Lists.newArrayList(teamInfrastructureIterator));
             }
         }
-
+        AmazonAwsUtils.awaitForEc2Instances(tomcatInstances, ec2);
         logger.info("Created tomcat '{}' servers {}", environment, tomcatInstances);
 
     }

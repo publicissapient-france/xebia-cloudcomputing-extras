@@ -17,7 +17,7 @@ Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Pl
 ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}
 }}}
   # create a {{{/usr/share/tomcat6/bin/tomcat-deploy-petclinic}}} to download a new version of tomcat
-   * See http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic
+   * See [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]
  # Connect to your *Jenkins* server: [${infrastructure.jenkinsUrl}]
  # In the *Manage Jenkins* of Jenkins, go to the page *System Configuration*
  # In the section called : *SSH Remote hosts*, enter:
@@ -32,15 +32,20 @@ ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.public
  # Select the right SSH site you’ve configured before, 
  # In *post-build script*, enter 
   {{{
-  /usr/share/tomcat6/bin/redeploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier}
+  /usr/share/tomcat6/bin/tomcat-deploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier}
 }}}
 
 = Automated Tomcat Deployment with Rundeck = 
- * SSH:
-
- * HTTP: [${infrastructure.rundeckUrl}] (login=admin, password=admin)
 
 Here is the configuration of the previous task with Rundeck.
+ # Deploy a {{{tomcat-deploy-petclinic}}} shell script on the {{{tomcat-${infrastructure.identifier}-valid-1}}} and {{{tomcat-${infrastructure.identifier}-valid-2}}} servers
+  # ssh connect as user tomcat to {{{tomcat-${infrastructure.identifier}-valid-1}}}
+   {{{
+ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1.publicDnsName}
+}}}
+  # create a {{{/usr/share/tomcat6/bin/tomcat-deploy-petclinic}}} to download a new version of tomcat
+   * See http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic
+
  # Connect to your Rundeck server ${infrastructure.rundeckUrl} (login=admin, password=admin)
  # Create a new project "{{{deploy-petclinic-on-tomcat-valid}}}"
  # Connect via SSH to the rundeck server: 
@@ -81,13 +86,14 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
 	privateDnsName="${infrastructure.validTomcat2.privateDnsName}"
 	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1"/>
 </code>
- # Go back to Rundeck web admin console
- # Create a new job with the following parameters:
-  * Save this Job? {{{YES}}} and give it a name
-  * Enter the shell command: 
+ # Go back to [${infrastructure.rundeckUrl} Rundeck web admin console]
+ # Create a new job:
+  * Save this Job?: {{{YES}}}
+  * Name: {{{tomcat-deploy-petclinic}}}
+  * Shell command: 
      {{{
-  /usr/share/tomcat6/bin/redeploy-petclinic.sh fr.xebia.demo.petclinic-${infrastructure.identifier}
+  /usr/share/tomcat6/bin/tomcat-deploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier}
 }}}
-  * Select Dispatch to Node
-  * Click on Name and select .*
-  * Then Create and Run
+  * Dispatch to Node: {{{checked}}}
+  * Includes: {{{tags}}}, type "{{{tomcat}}}"
+  * Click on *Create and Run*
