@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+
+# shutdown tomcat
+/usr/sbin/tomcat6 stop
+ 
+# cleanup
+if [ -f /usr/share/tomcat6/webapps/xebia-petclinic.war ];
+then
+   rm -rf "/usr/share/tomcat6/webapps/xebia-petclinic.war"
+fi
+if [ -d /usr/share/tomcat6/webapps/xebia-petclinic ];
+then
+   rm -rf "/usr/share/tomcat6/webapps/xebia-petclinic"
+fi
+
+echo "petclinic removed from tomcat server"
+
+# download new war version
+curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=fr.xebia.demo.petclinic-clc&a=xebia-petclinic&r=snapshots&v=LATEST&e=war" --silent --show-error  --output "/usr/share/tomcat6/webapps/xebia-petclinic.war"
+
+echo "petclinic downloaded from nexus server"
+
+# start tomcat
+/usr/sbin/tomcat6 start
+
+echo "petclinic tomcat started"
+
+# test started webapp
+# TODO: should return error in case of wrong http response
+sleep 30
+curl --connect-timeout 10 --retry 10 --silent --show-error --write-out "OK" -o ping http://localhost:8080/xebia-petclinic 
+echo ""
+
+echo "latest version of petclinic deployed and available on tomcat server"
