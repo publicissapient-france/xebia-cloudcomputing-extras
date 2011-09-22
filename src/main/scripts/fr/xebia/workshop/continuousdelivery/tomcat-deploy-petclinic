@@ -1,5 +1,16 @@
 #!/usr/bin/env sh
 
+if [ $# != 1 ];
+then
+   echo "ERROR: illegal number of arguments ($#), expected exactly 1 parameter expected"
+   exit 1
+fi
+
+GROUP_ID=$1
+ARTIFACT_ID="xebia-petclinic"
+VERSION="LATEST"
+REPOSITORY="snapshots"
+
 # shutdown tomcat
 /usr/sbin/tomcat6 stop
  
@@ -16,7 +27,8 @@ fi
 echo "petclinic removed from tomcat server"
 
 # download new war version
-curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=fr.xebia.demo.petclinic-clc&a=xebia-petclinic&r=snapshots&v=LATEST&e=war" --silent --show-error  --output "/usr/share/tomcat6/webapps/xebia-petclinic.war"
+echo "Download '$GROUP_ID:$ARTIFACT_ID:VERSION' from '$REPOSITORY' repository"
+curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=$GROUP_ID&a=$ARTIFACT_ID&r=$REPOSITORY&v=$VERSION&e=war" --silent --show-error  --output "/usr/share/tomcat6/webapps/xebia-petclinic.war"
 
 echo "petclinic downloaded from nexus server"
 
