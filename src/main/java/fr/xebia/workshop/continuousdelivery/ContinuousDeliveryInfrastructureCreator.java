@@ -66,7 +66,7 @@ public class ContinuousDeliveryInfrastructureCreator {
             e.printStackTrace();
         }
         try {
-            Collection<String> identifiers = Lists.newArrayList("clc", "1", "2");
+            Collection<String> identifiers = Lists.newArrayList("clc");
             // Collections.transform() returns a 'transient' collection - two
             // consecutive calls to iterator re-instantiate different
             // TeamInfrastructure
@@ -147,8 +147,9 @@ public class ContinuousDeliveryInfrastructureCreator {
                 String identifier = teamInfrastructure.getIdentifier();
                 createTagsRequest.withResources(jenkinsInstance.getInstanceId()) //
                         .withTags(//
-                                new Tag("Name", "continuous-delivery-workshop-jenkins-" + identifier), //
+                                new Tag("Name", "jenkins-" + identifier), //
                                 new Tag("TeamIdentifier", identifier), //
+                                new Tag("Workshop",  "continuous-delivery-workshop"), //
                                 new Tag("Role", ROLE_JENKINS_RUNDECK));
                 ec2.createTags(createTagsRequest);
 
@@ -281,7 +282,8 @@ public class ContinuousDeliveryInfrastructureCreator {
                     CreateTagsRequest createTagsRequest = new CreateTagsRequest() //
                             .withResources(tomcatInstance.getInstanceId()) //
                             .withTags(//
-                                    new Tag("Name", "continuous-delivery-tomcat-" + identifier + "-" + environment + "-" + (i+1)), //
+                                    new Tag("Name", "tomcat-" + identifier + "-" + environment + "-" + (i+1)), //
+                                    new Tag("Workshop",  "continuous-delivery-workshop"), //
                                     new Tag("TeamIdentifier", identifier), //
                                     new Tag("Role", role));
                     ec2.createTags(createTagsRequest);
