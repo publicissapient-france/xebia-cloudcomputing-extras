@@ -11,57 +11,29 @@ ssh -i continuous-delivery-workshop.pem ec2-user@${infrastructure.jenkins.public
 = Automated Tomcat Deployment with Jenkins SSH Plugin = 
 
 Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Plugin] is already installed on your jenkins server.
-
- # Connect to your *Jenkins* server [${infrastructure.jenkinsUrl}]
+ # Deploy a {{{tomcat-deploy-petclinic}}} shell script on the tomcat-${infrastructure.identifier}-dev-1 server
+  # ssh connect as user tomcat
+   {{{
+ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}
+}}}
+  # create a {{{/usr/share/tomcat6/bin/tomcat-deploy-petclinic}}} to download a new version of tomcat
+   * See http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic
+ # Connect to your *Jenkins* server: [${infrastructure.jenkinsUrl}]
  # In the *Manage Jenkins* of Jenkins, go to the page *System Configuration*
- # In the section called : *SSH Remote hosts*, enter the following information:
-  * Host: {{{${infrastructure.devTomcat.publicDnsName}}}} (the Dev Tomcat)
-  * Port: leave it blank
+ # In the section called : *SSH Remote hosts*, enter:
+  * Host: {{{${infrastructure.devTomcat.publicDnsName}}}}
+  * Port: #blank#
   * Username: {{{tomcat}}}
-  * Password: leave it blank
-  * Keyfile /path to the file continuous-delivery-workshop.pem TODO
+  * Password: #blank#
+  * Keyfile: {{{/var/lib/jenkins/.ssh/continuous-delivery-workshop.pem}}}
  # *Save* the settings
  # Create a new *Free Style Project* for Jenkins with the following parameters
  # Activation option called *Execute shell script on remote host using SSH*
- # Select the right SSH Site you’ve configured before, then in *post-build script*, copy past the following script, by replacing with your artifact groupId
-
-TODO : there are wrong exit status with shell script in Jenkins GUI:
- ** create a shell script {{/usr/share/tomcat6/bin/redeploy-petclinic.sh}} with the following content prefixed by a shebang
- ** just call {{/usr/share/tomcat6/bin/redeploy-petclinic.sh}} in jenkins GUI
-<code language="sh">
-# shutdown tomcat 
-/usr/sbin/tomcat6 stop
-  
-# cleanup 
-if [ -f /usr/share/tomcat6/webapps/xebia-petclinic.war ]; 
-then 
-   rm -rf "/usr/share/tomcat6/webapps/xebia-petclinic.war" 
-fi 
-if [ -d /usr/share/tomcat6/webapps/xebia-petclinic ]; 
-then 
-   rm -rf "/usr/share/tomcat6/webapps/xebia-petclinic" 
-fi 
- 
-echo "petclinic removed from tomcat server" 
- 
-# download new war version 
-curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=fr.xebia.demo.petclinic-clc&a=xebia-petclinic&r=snapshots&v=LATEST&e=war" --silent --show-error  --output "/usr/share/tomcat6/webapps/xebia-petclinic.war" 
-
-echo "petclinic downloaded from nexus server" 
-
-# start tomcat 
-/usr/sbin/tomcat6 start
-
-echo "petclinic tomcat started" 
- 
-# test started webapp 
-# TODO: should return error in case of wrong http response 
-sleep 30 
-curl --connect-timeout 10 --retry 10 --silent --show-error --write-out "OK" -o ping http://localhost:8080/xebia-petclinic  
-echo ""
-
-echo "petclinic redeployed and available on tomcat server" 
-</code>
+ # Select the right SSH site you’ve configured before, 
+ # In *post-build script*, enter 
+  {{{
+  /usr/share/tomcat6/bin/redeploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier}
+}}}
 
 = Automated Tomcat Deployment with Rundeck = 
  * SSH:
@@ -78,7 +50,7 @@ ssh -i continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck.public
   # Update the project configuration files in "{{{/var/rundeck/projects/deploy-petclinic-on-tomcat-valid/etc/}}}":
    # Modify the *{{{project.properties}}}* to add ssh private key for the workshop
    {{{
-project.ssh-keypath=/var/rundeck/continuous-delivery-workshop.pem
+project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
 }}}
   # Add your Valid Tomcat servers in *{{{resources.xml}}}*:
   <code language="xml">
@@ -112,11 +84,10 @@ project.ssh-keypath=/var/rundeck/continuous-delivery-workshop.pem
  # Go back to Rundeck web admin console
  # Create a new job with the following parameters:
   * Save this Job? {{{YES}}} and give it a name
-  * Cancel the default Workflow step and add a script step
-  * Copy/Paste the same a shell script as before for Jenkins
+  * Enter the shell command: 
+     {{{
+  /usr/share/tomcat6/bin/redeploy-petclinic.sh fr.xebia.demo.petclinic-${infrastructure.identifier}
+}}}
   * Select Dispatch to Node
   * Click on Name and select .*
   * Then Create and Run
-
-_TODO : LINK WITH RUNDECK (done tonight)_
- 
