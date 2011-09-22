@@ -25,6 +25,7 @@ runcmd:
  - [wget, "http://mirror.ibcp.fr/pub/apache//maven/binaries/apache-maven-2.2.1-bin.tar.gz"]  
  - [tar, xvzf, apache-maven-2.2.1-bin.tar.gz]
  - [ln, -s, /opt/apache-maven-2.2.1, /opt/maven]
+
 # installs Rundeck
  - [rpm, -U, -v, -h, "http://rundeck.org/latest.rpm"] 
  - [sh, -xc, "echo $(date) ': Rundeck is downloaded'"]
@@ -32,16 +33,31 @@ runcmd:
  - [sh, -xc, "echo $(date) ': Rundeck is installed'"]
  - [sh, -xc, "/etc/init.d/rundeckd restart"]
  - [sh, -xc, "echo $(date) ': Rundeck is restarted'"]
-# Jenkins might not be completely installed, so let's create its folders
- - [mkdir, -p, /var/lib/jenkins/plugins/]
+# provision ssh private key for rundeck
+ - [mkdir, /var/rundeck/.ssh]
+ - [chmod, 700, /var/rundeck/.ssh]
+ - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/var/rundeck/.ssh/continuous-delivery-workshop.pem"]
+ - [chmod, 400, /var/rundeck/.ssh/continuous-delivery-workshop.pem] 
+ - [chown, -R, "rundeck:rundeck", /var/rundeck/.ssh]
+ - [ sh, -xc, "echo '/var/rundeck/.ssh/continuous-delivery-workshop.pem provisioned'" ]
+
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins]
 # downloads additional Jenkins plugins
+ - [mkdir, -p, /var/lib/jenkins/plugins/]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/batch-task.hpi", -O, "/var/lib/jenkins/plugins/batch-task.hpi"]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/git.hpi", -O, "/var/lib/jenkins/plugins/git.hpi"]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/github.hpi", -O, "/var/lib/jenkins/plugins/github.hpi"]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/rundeck.hpi", -O, "/var/lib/jenkins/plugins/rundeck.hpi"]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/ssh.hpi", -O, "/var/lib/jenkins/plugins/ssh.hpi"]
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/plugins]
+# provision ssh private key for jenkins to be used by the ssh plugin
+ - [mkdir, /var/lib/jenkins/.ssh]
+ - [chmod, 700, /var/lib/jenkins/.ssh]
+ - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/var/lib/jenkins/.ssh/continuous-delivery-workshop.pem"]
+ - [chmod, 400, /var/lib/jenkins/.ssh/continuous-delivery-workshop.pem] 
+ - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.ssh]
+ - [ sh, -xc, "echo '/var/lib/jenkins/.ssh/continuous-delivery-workshop.pem provisioned'" ]
+ 
 # tells Jenkins where to find Maven 
  - [sh, -xc, "echo \"<?xml version='1.0' encoding='UTF-8'?>\" >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [sh, -xc, "echo '<hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
@@ -61,14 +77,13 @@ runcmd:
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.m2] 
  - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-releases<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
  - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-snapshots<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
-# provision ssh private key for rundeck
- - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/var/rundeck/continuous-delivery-workshop.pem"]
- - [chown, -R, "rundeck:rundeck", /var/rundeck/continuous-delivery-workshop.pem] 
+ - [ sh, -xc, "echo '/var/lib/jenkins/.m2/settings.xml provisioned'" ]
 # activates Jenkins as a service
  - [chkconfig, jenkins, on]
  - [service, jenkins, start ]
- - [ sh, -xc, "echo $(date) ': cloudinit runcmd end'" ]
+ - [ sh, -xc, "echo 'jenkins restarted'" ]
 # add ec2-user to jenkins and rundeck groups
  - [usermod, -a, -G, jenkins, ec2-user]
  - [usermod, -a, -G, rundeck, ec2-user]
+ - [ sh, -xc, "echo $(date) ': cloudinit runcmd end'" ]
  
