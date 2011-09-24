@@ -39,18 +39,25 @@ public class TeamInfrastructure {
     };
     private Instance devTomcat;
 
+    private String devTomcatName;
+
     private final String identifier;
 
     private Instance jenkins;
 
     private String jenkinsUrl;
+    
     private Instance nexus;
 
     private String rundeckUrl;
 
     private Instance validTomcat1;
+    
+    private String validTomcat1Name;
 
     private Instance validTomcat2;
+
+    private String validTomcat2Name;
 
     public TeamInfrastructure(String identifier) {
         super();
@@ -79,6 +86,10 @@ public class TeamInfrastructure {
 
     public Instance getDevTomcat() {
         return devTomcat;
+    }
+
+    public String getDevTomcatName() {
+        return devTomcatName;
     }
 
     /**
@@ -120,12 +131,24 @@ public class TeamInfrastructure {
         return validTomcat1;
     }
 
+    public String getValidTomcat1Name() {
+        return validTomcat1Name;
+    }
+
     public Instance getValidTomcat2() {
         return validTomcat2;
     }
 
+    public String getValidTomcat2Name() {
+        return validTomcat2Name;
+    }
+
     public void setDevTomcat(Instance devTomcat) {
         this.devTomcat = devTomcat;
+    }
+
+    public void setDevTomcatName(String devTomcatName) {
+        this.devTomcatName = devTomcatName;
     }
 
     public void setJenkins(Instance jenkins) {
@@ -148,8 +171,16 @@ public class TeamInfrastructure {
         this.validTomcat1 = validTomcat1;
     }
 
+    public void setValidTomcat1Name(String validTomcat1Name) {
+        this.validTomcat1Name = validTomcat1Name;
+    }
+
     public void setValidTomcat2(Instance validTomcat2) {
         this.validTomcat2 = validTomcat2;
+    }
+
+    public void setValidTomcat2Name(String validTomcat2Name) {
+        this.validTomcat2Name = validTomcat2Name;
     }
 
     @Override
@@ -158,9 +189,9 @@ public class TeamInfrastructure {
                 .add("id", identifier) //
                 .add("jenkins", jenkins) //
                 .add("jenkinsUrl", jenkinsUrl) //
-                .add("devTomcat", devTomcat) //
-                .add("validTomcat1", validTomcat1) //
-                .add("validTomcat2", validTomcat2) //
+                .add(devTomcatName, devTomcat) //
+                .add(validTomcat1Name, validTomcat1) //
+                .add(validTomcat2Name, validTomcat2) //
                 .add("nexus", nexus) //
                 .toString();
     }
