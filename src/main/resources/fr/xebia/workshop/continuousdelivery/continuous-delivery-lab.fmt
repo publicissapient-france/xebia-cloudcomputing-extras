@@ -1,14 +1,90 @@
 
-= Jenkins Server =
+= 'Local' Scripted Tomcat Deployment =
 
- * SSH:
- {{{
-ssh -i continuous-delivery-workshop.pem ec2-user@${infrastructure.jenkins.publicDnsName}
+*Goal:* Develop a script to deploy a new version of {{{xebia-petclinic-${infrastructure.identifier}.war}}} on your tomcat server.
+
+== Script Specifications ==
+This script must:
+ # Stop running Tomcat server
+ # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic.war}}} file if exists,
+ # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic}}} folder if exists,
+ # Download latest version of {{{xebia-petclinic-${infrastructure.identifier}.war}}} and copy it to {{{$TOMCAT_HOME/webapps/}}}
+ # Start Tomcat server
+ # Go further in the lab: test the URL http://localhost:8080/xebia-petclinic
+ # Be installed under{{{$TOMCAT_HOME/bin/tomcat-deploy-petclinic}}}
+ 
+== Tips and tricks ==
+
+=== SSH connection parameters to Tomcat servers ===
+
+SSH connection parameters to Tomcat servers as tomcat user:
+ * ${infrastructure.devTomcatName}: {{{ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}}}}
+ * ${infrastructure.validTomcat1Name}: {{{ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1Name.publicDnsName}}}}
+ * ${infrastructure.validTomcat2Name}: {{{ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat2Name.publicDnsName}}}}
+
+=== What is {{{$TOMCAT_HOME}}} for Tomcat6 RPM === 
+
+On Tomcat6 RPM, {{{$TOMCAT_HOME=/usr/share/tomcat6/}}}.
+
+=== How to stop and start Tomcat with Tomcat 6 RPM ===
+
+Note Tomcat6 RPM does not expose the typical {{{catalina.sh}}}.
+
+ * Start: {{{$tomcat> /usr/sbin/tomcat6 start}}}
+ * Stop:  {{{$tomcat> /usr/sbin/tomcat6 stop}}}
+ 
+=== Nexus download artifact URL API ===
+
+TODO: add hyper link to the official doc
+{{{
+http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content? \
+   g=$GROUP_ID&
+   a=$ARTIFACT_ID&
+   r=$REPOSITORY&
+   v=$VERSION&
+   e=war"
 }}}
- * HTTP: [${infrastructure.jenkinsUrl}] (no login/password required)
 
+ * g: {{{project.groupId}}}
+ * a: {{{project.artifactId}}}
+ * v: {{{project.version}}} or special keyword "{{{LATEST}}}"
+ * r: Nexus repository like "{{{releases}}}" or "{{{snapshots}}}"
+ * e: {{{project.packaging}}} 
+ 
+=== How to specify the name of the downloaded artifact with curl and wget ===
+
+{{{
+curl http://exemple.com/test.txt --output /tmp/renamed-test.txt
+wget http://exemple.com/test.txt --output-document /tmp/renamed-test.txt
+}}}
+
+=== How to test existence of a file, of a folder ===
+
+if [ -f /tmp/test.txt ];
+then
+   echo "File '/tmp/test.txt' exists"
+fi
+if [ -d /tmp/test-folder ];
+then
+   echo "Folder '/tmp/test-folder' exists"
+fi
+
+=== How to verify a http response code  ===
+
+{{{
+curl --connect-timeout 10 --retry 10 --silent --show-error -w "%{http_code}" -o /dev/null http://example.com/
+
+}}}
+
+TODO : compare http_code to 200
 
 = Automated Tomcat Deployment with Jenkins SSH Plugin = 
+
+== Architecture ==
+
+<img width="300" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-ssh-plugin.png"/>
+
+== Lab ==
 
 Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Plugin] is already installed on your jenkins server.
  # Deploy a {{{tomcat-deploy-petclinic}}} shell script on the tomcat-${infrastructure.identifier}-dev-1 server
@@ -36,6 +112,12 @@ ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.public
 }}}
 
 = Automated Tomcat Deployment with Rundeck = 
+
+== Architecture ==
+
+<img width="300" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-rundeck.png"/>
+
+== Lab ==
 
 Here is the configuration of the previous task with Rundeck.
  # Deploy a {{{tomcat-deploy-petclinic}}} shell script on the {{{tomcat-${infrastructure.identifier}-valid-1}}} and {{{tomcat-${infrastructure.identifier}-valid-2}}} servers
