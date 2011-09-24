@@ -216,7 +216,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         CreateTagsRequest createTagsRequest = new CreateTagsRequest();
         createTagsRequest.withResources(instance.getInstanceId()) //
                 .withTags(//
-                        new Tag("Name", "continuous-delivery-workshop-nexus"), //
+                        new Tag("Name", "nexus"), //
+                        new Tag("Workshop",  "continuous-delivery-workshop"), //
                         new Tag("Role", ROLE_NEXUS));
         ec2.createTags(createTagsRequest);
 
