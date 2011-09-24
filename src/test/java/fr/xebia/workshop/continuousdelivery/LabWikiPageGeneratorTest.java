@@ -30,27 +30,35 @@ public class LabWikiPageGeneratorTest {
     public void generate_page() {
         TeamInfrastructure infrastructure = new TeamInfrastructure("3");
 
-        infrastructure.setJenkins(new Instance().withPublicDnsName("ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com"));
+        Instance jenkins = new Instance().withPublicDnsName("ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com");
+        infrastructure.setJenkins(jenkins);
         infrastructure.setJenkinsUrl("http://ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com:8080");
+        infrastructure.setJenkinsName("jenkins-clc");
+        infrastructure.setRundeck(jenkins);
         infrastructure.setRundeckUrl("http://ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com:4440");
+        infrastructure.setRundeckName("jenkins-clc");
+        
 
         Instance devTomcat = new Instance() //
                 .withPublicDnsName("ec2-79-125-53-61-devtomcat.eu-west-1.compute.amazonaws.com") //
                 .withPrivateDnsName("ip-10-234-33-147.eu-west-1.compute.internal") //
                 .withPrivateIpAddress("10.234.33.147");
         infrastructure.setDevTomcat(devTomcat);
+        infrastructure.setDevTomcatName("tomcat-clc-dev-1");
 
         Instance validTomcat1 = new Instance() //
                 .withPublicDnsName("ec2-79-011-33-55-validtomcat.eu-west-1.compute.amazonaws.com") //
                 .withPrivateDnsName("ip-10-01-03-05.eu-west-1.compute.internal") //
                 .withPrivateIpAddress("10.01.03.05");
         infrastructure.setValidTomcat1(validTomcat1);
+        infrastructure.setValidTomcat1Name("tomcat-clc-valid-1");
 
         Instance validTomcat2 = new Instance() //
                 .withPublicDnsName("ec2-80-022-44-66-validtomcat.eu-west-1.compute.amazonaws.com") //
                 .withPrivateDnsName("ip-10-02-04-04.eu-west-1.compute.internal") //
                 .withPrivateIpAddress("10.02.04.06");
         infrastructure.setValidTomcat2(validTomcat2);
+        infrastructure.setValidTomcat2Name("tomcat-clc-valid-2");
 
         Map<String, Object> rootMap = Maps.newHashMap();
         rootMap.put("infrastructure", infrastructure);

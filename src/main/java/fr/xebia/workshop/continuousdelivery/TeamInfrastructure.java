@@ -39,25 +39,35 @@ public class TeamInfrastructure {
     };
     private Instance devTomcat;
 
-    private String devTomcatName;
+    private String devTomcatName = "#devTomcat#";
 
     private final String identifier;
 
     private Instance jenkins;
 
+    private String jenkinsName = "#jenkins#";
+
     private String jenkinsUrl;
-    
+
     private Instance nexus;
+
+    private String rundeckName = "#rundeck#";
+
+    private Instance rundeck;
+
+    public void setRundeck(Instance rundeck) {
+        this.rundeck = rundeck;
+    }
 
     private String rundeckUrl;
 
     private Instance validTomcat1;
-    
-    private String validTomcat1Name;
+
+    private String validTomcat1Name = "#validTomcat1#";
 
     private Instance validTomcat2;
 
-    private String validTomcat2Name;
+    private String validTomcat2Name = "#validTomcat2#";
 
     public TeamInfrastructure(String identifier) {
         super();
@@ -68,14 +78,17 @@ public class TeamInfrastructure {
      * 
      * FIXME cleanup this dirty code (CLC)
      */
-    public void addTomcat(@Nonnull String environment, @Nonnull Instance tomcatInstance) {
+    public void addTomcat(@Nonnull String environment, @Nonnull Instance tomcatInstance, @Nonnull String tomcatServerName) {
         if ("dev".equals(environment)) {
             devTomcat = tomcatInstance;
+            devTomcatName = tomcatServerName;
         } else if ("valid".equals(environment)) {
             if (validTomcat1 == null) {
                 validTomcat1 = tomcatInstance;
+                validTomcat1Name = tomcatServerName;
             } else if (validTomcat2 == null) {
                 validTomcat2 = tomcatInstance;
+                validTomcat2Name = tomcatServerName;
             } else {
                 throw new IllegalStateException("Valid tomcats already set");
             }
@@ -107,6 +120,10 @@ public class TeamInfrastructure {
         return jenkins;
     }
 
+    public String getJenkinsName() {
+        return jenkinsName;
+    }
+
     public String getJenkinsUrl() {
         return jenkinsUrl;
     }
@@ -120,7 +137,11 @@ public class TeamInfrastructure {
     }
 
     public Instance getRundeck() {
-        return getJenkins();
+        return rundeck;
+    }
+
+    public String getRundeckName() {
+        return rundeckName;
     }
 
     public String getRundeckUrl() {
@@ -155,12 +176,20 @@ public class TeamInfrastructure {
         this.jenkins = jenkins;
     }
 
+    public void setJenkinsName(String jenkinsName) {
+        this.jenkinsName = jenkinsName;
+    }
+
     public void setJenkinsUrl(String jenkinsUrl) {
         this.jenkinsUrl = jenkinsUrl;
     }
 
     public void setNexus(Instance nexus) {
         this.nexus = nexus;
+    }
+
+    public void setRundeckName(String rundeckName) {
+        this.rundeckName = rundeckName;
     }
 
     public void setRundeckUrl(String rundeckUrl) {
@@ -187,7 +216,7 @@ public class TeamInfrastructure {
     public String toString() {
         return Objects.toStringHelper(this) //
                 .add("id", identifier) //
-                .add("jenkins", jenkins) //
+                .add(jenkinsName, jenkins) //
                 .add("jenkinsUrl", jenkinsUrl) //
                 .add(devTomcatName, devTomcat) //
                 .add(validTomcat1Name, validTomcat1) //

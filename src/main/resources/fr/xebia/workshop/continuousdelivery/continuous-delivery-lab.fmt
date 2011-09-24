@@ -13,14 +13,24 @@ This script must:
  # Go further in the lab: test the URL http://localhost:8080/xebia-petclinic
  # Be installed under{{{$TOMCAT_HOME/bin/tomcat-deploy-petclinic}}}
  
+Answer : [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]
 == Tips and tricks ==
 
 === SSH connection parameters to Tomcat servers ===
 
 SSH connection parameters to Tomcat servers as tomcat user:
- * ${infrastructure.devTomcatName}: {{{ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}}}}
- * ${infrastructure.validTomcat1Name}: {{{ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1Name.publicDnsName}}}}
- * ${infrastructure.validTomcat2Name}: {{{ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat2Name.publicDnsName}}}}
+ * ${infrastructure.devTomcatName}: 
+  {{{
+ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}
+}}}
+ * ${infrastructure.validTomcat1Name}: 
+  {{{
+ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1.publicDnsName}
+}}}
+ * ${infrastructure.validTomcat2Name}: 
+  {{{
+ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat2.publicDnsName}
+}}}
 
 === What is {{{$TOMCAT_HOME}}} for Tomcat6 RPM === 
 
@@ -30,8 +40,14 @@ On Tomcat6 RPM, {{{$TOMCAT_HOME=/usr/share/tomcat6/}}}.
 
 Note Tomcat6 RPM does not expose the typical {{{catalina.sh}}}.
 
- * Start: {{{$tomcat> /usr/sbin/tomcat6 start}}}
- * Stop:  {{{$tomcat> /usr/sbin/tomcat6 stop}}}
+ * Start: 
+  {{{
+$tomcat> /usr/sbin/tomcat6 start
+}}}
+ * Stop:
+  {{{
+$tomcat> /usr/sbin/tomcat6 stop
+}}}
  
 === Nexus download artifact URL API ===
 
@@ -59,7 +75,7 @@ wget http://exemple.com/test.txt --output-document /tmp/renamed-test.txt
 }}}
 
 === How to test existence of a file, of a folder ===
-
+{{{
 if [ -f /tmp/test.txt ];
 then
    echo "File '/tmp/test.txt' exists"
@@ -68,6 +84,7 @@ if [ -d /tmp/test-folder ];
 then
    echo "Folder '/tmp/test-folder' exists"
 fi
+}}}
 
 === How to verify a http response code  ===
 
@@ -87,13 +104,7 @@ TODO : compare http_code to 200
 == Lab ==
 
 Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Plugin] is already installed on your jenkins server.
- # Deploy a {{{tomcat-deploy-petclinic}}} shell script on the tomcat-${infrastructure.identifier}-dev-1 server
-  # ssh connect as user tomcat
-   {{{
-ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}
-}}}
-  # create a {{{/usr/share/tomcat6/bin/tomcat-deploy-petclinic}}} to download a new version of tomcat
-   * See [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]
+ # Deploy the {{{[http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]}}} shell script on the {{{tomcat-${infrastructure.identifier}-dev-1}}} servers
  # Connect to your *Jenkins* server: [${infrastructure.jenkinsUrl}]
  # In the *Manage Jenkins* of Jenkins, go to the page *System Configuration*
  # In the section called : *SSH Remote hosts*, enter:
@@ -120,14 +131,7 @@ ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.public
 == Lab ==
 
 Here is the configuration of the previous task with Rundeck.
- # Deploy a {{{tomcat-deploy-petclinic}}} shell script on the {{{tomcat-${infrastructure.identifier}-valid-1}}} and {{{tomcat-${infrastructure.identifier}-valid-2}}} servers
-  # ssh connect as user tomcat to {{{tomcat-${infrastructure.identifier}-valid-1}}}
-   {{{
-ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1.publicDnsName}
-}}}
-  # create a {{{/usr/share/tomcat6/bin/tomcat-deploy-petclinic}}} to download a new version of tomcat
-   * See http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic
-
+ # Deploy the {{{[http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]}}} shell script on the {{{tomcat-${infrastructure.identifier}-valid-1}}} and {{{tomcat-${infrastructure.identifier}-valid-2}}} servers
  # Connect to your Rundeck server ${infrastructure.rundeckUrl} (login=admin, password=admin)
  # Create a new project "{{{deploy-petclinic-on-tomcat-valid}}}"
  # Connect via SSH to the rundeck server: 
