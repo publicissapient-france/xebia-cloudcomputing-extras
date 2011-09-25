@@ -49,10 +49,11 @@ $tomcat> /usr/sbin/tomcat6 start
 $tomcat> /usr/sbin/tomcat6 stop
 }}}
  
-=== Nexus download artifact URL API ===
+=== Nexus REST API ===
 
-TODO: add hyper link to the official doc
-{{{
+ * Nexus REST API [https://repository.sonatype.org/nexus-core-documentation-plugin/core/docs/rest.artifact.maven.content.html /artifact/maven/content]:
+  ** Pseudo code:
+   {{{
 http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content? \
    g=$GROUP_ID&
    a=$ARTIFACT_ID&
@@ -60,12 +61,14 @@ http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/conte
    v=$VERSION&
    e=war"
 }}}
-
- * g: {{{project.groupId}}}
- * a: {{{project.artifactId}}}
- * v: {{{project.version}}} or special keyword "{{{LATEST}}}"
- * r: Nexus repository like "{{{releases}}}" or "{{{snapshots}}}"
- * e: {{{project.packaging}}} 
+  ** g: Group id of the artifact (Required).
+  ** a: Artifact id of the artifact (Required).
+  ** v: Version of the artifact (Required) Supports resolving of "LATEST", "RELEASE" and snapshot versions ("1.0-SNAPSHOT") too.
+  ** r: Repository that the artifact is contained in (Required).	E.g.: "{{{releases}}}" or "{{{snapshots}}}".
+  ** p: Packaging type of the artifact (Optional).
+  ** c: Classifier of the artifact (Optional).	
+  ** e: Extension of the artifact (Optional).
+ * To go further in the lab, Nexus REST API [https://repository.sonatype.org/nexus-core-documentation-plugin/core/docs/rest.artifact.maven.resolve.html /artifact/maven/resolve]
  
 === How to specify the name of the downloaded artifact with curl and wget ===
 
