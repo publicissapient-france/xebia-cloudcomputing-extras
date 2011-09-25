@@ -10,7 +10,7 @@ GROUP_ID=$1
 ARTIFACT_ID="xebia-petclinic"
 VERSION="LATEST"
 REPOSITORY="snapshots"
-HEALT_CHECK_URL="http://localhost:8080/xebia-petclinic"
+HEALT_CHECK_URL="http://localhost:8080/xebia-petclinic/"
 
 # shutdown tomcat
 /usr/sbin/tomcat6 stop
