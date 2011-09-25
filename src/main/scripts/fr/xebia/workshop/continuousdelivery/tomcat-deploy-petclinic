@@ -2,7 +2,7 @@
 
 if [ $# != 1 ];
 then
-   echo "ERROR: illegal number of arguments ($#), expected exactly 1 parameter expected"
+   echo "ERROR: illegal number of arguments ($#), expected exactly 1 parameter expected with value groupId (e.g. 'fr.xebia.demo.petclinic-team-5')"
    exit 1
 fi
 
@@ -10,6 +10,7 @@ GROUP_ID=$1
 ARTIFACT_ID="xebia-petclinic"
 VERSION="LATEST"
 REPOSITORY="snapshots"
+HEALT_CHECK_URL="http://localhost:8080/xebia-petclinic"
 
 # shutdown tomcat
 /usr/sbin/tomcat6 stop
@@ -40,7 +41,14 @@ echo "petclinic tomcat started"
 # test started webapp
 # TODO: should return error in case of wrong http response
 sleep 30
-curl --connect-timeout 10 --retry 10 --silent --show-error --write-out "OK" -o ping http://localhost:8080/xebia-petclinic 
-echo ""
 
-echo "latest version of petclinic deployed and available on tomcat server"
+HEALTH_CHECK_HTTP_CODE=$(curl --connect-timeout 10 --retry 10 --silent --show-error -w "%{http_code}" -o /dev/null $HEALT_CHECK_URL) 
+if [ $HEALTH_CHECK_HTTP_CODE -eq 200 ];
+then
+   echo "Health check url $HEALT_CHECK_URL returned expected http code '$HEALTH_CHECK_HTTP_CODE'"
+else
+   echo "FAILURE: '$GROUP_ID:$ARTIFACT_ID:$VERSION' deployed on tomcat server but health check '$HEALT_CHECK_URL' is KO (returned '$HEALTH_CHECK_HTTP_CODE')"
+   exit 1
+fi
+
+echo "SUCCESS: '$GROUP_ID:$ARTIFACT_ID:$VERSION' deployed and available on tomcat server"
