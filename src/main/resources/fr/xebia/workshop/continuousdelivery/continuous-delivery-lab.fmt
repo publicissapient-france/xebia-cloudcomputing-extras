@@ -186,9 +186,17 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
  # Create a new job:
   * Save this Job?: {{{Yes}}}
   * Name: {{{tomcat-deploy-petclinic}}}
+  * Options:
+   ** Name: {{{version}}}
+   ** Default value: {{{LATEST}}}
+   ** Remote URL: 
+     {{{
+  http://nexus.xebia-tech-event.info:8081/nexus/service/local/rundeck/options/version?a=xebia-petclinic&includeLatest=true
+}}}
+   ** Restrictions: {{{Enforced from Allowed Values}}}
   * Shell command: 
      {{{
-  /usr/share/tomcat6/bin/tomcat-deploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier}
+  /usr/share/tomcat6/bin/tomcat-deploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier} ${r"${option.version}"}
 }}}
   * Dispatch to Node: {{{checked}}}
   * Includes: {{{tags}}}, type "{{{tomcat}}}"
