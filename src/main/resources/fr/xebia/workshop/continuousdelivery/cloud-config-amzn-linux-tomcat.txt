@@ -23,6 +23,8 @@ runcmd:
  - [sh, -xc, "echo '/usr/share/tomcat6/.ssh/authorized_keys provisionned with accounts: tomcat, admin and manager'"]
  - [cp, -r, "/home/ec2-user/.ssh/authorized_keys", "/usr/share/tomcat6/.ssh"]
  - [chown, -R, "tomcat:tomcat", "/usr/share/tomcat6/.ssh"]
+ # Allow login in as "tomcat" in case shell was associated with "/sbin/login" and "This account is currently not available." was returned.
+ - [usermod, -s, "/bin/bash", tomcat]
  # provision tomcat-users for tomcat-manager 
  - [sh, -xc, "echo '<tomcat-users>' > /etc/tomcat6/tomcat-users.xml"]
  - [sh, -xc, "echo '  <role rolename=\"tomcat\"/>' >> /etc/tomcat6/tomcat-users.xml"]
