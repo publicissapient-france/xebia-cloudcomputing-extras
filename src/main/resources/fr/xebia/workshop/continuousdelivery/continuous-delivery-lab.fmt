@@ -213,6 +213,7 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
   <img height="75" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-rundeck-connection-screenshot.png" />
  * Configure a new job to invoke Rundeck job
   ** Rundeck job identifier: {{{deploy-petclinic-on-tomcat-valid:tomcat-deploy-petclinic}}}
+  ** Job options (optional): {{{version = LATEST}}}
   ** Wait for RunDeck job to finish ?: {{{checked}}}
   ** Should fail the build ?: {{{checked}}}
   <img height="140" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-job-rundeck-configuration-screenshot.png" />
