@@ -15,7 +15,7 @@ runcmd:
 # installs Nexus under /opt/nexus
  - [mkdir, /opt/nexus]
  - [cd, /opt/nexus]
- - [wget, "http://nexus.sonatype.org/downloads/nexus-oss-webapp-1.9.2.2-bundle.tar.gz"]
+ - [wget, "http://nexus.sonatype.org/downloads/older/nexus-oss-webapp-1.9.2.2-bundle.tar.gz"]
  - [tar, xvfz, nexus-oss-webapp-1.9.2.2-bundle.tar.gz]
 
 # installs Nexus plugins under /opt/nexus/sonatype-work/nexus/plugin-repository
