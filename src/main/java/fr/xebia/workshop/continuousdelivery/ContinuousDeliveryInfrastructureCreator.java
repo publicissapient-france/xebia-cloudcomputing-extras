@@ -55,8 +55,15 @@ public class ContinuousDeliveryInfrastructureCreator {
     public static void main(String[] args) {
 
         ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
+        System.out.println();
+        System.out.println("Hi, I'm an automatic continuous delivery infrastucture creator, and I'm about to begin my work.");
+        System.out.println("Why don't you sit back and relax while I do all the hard work ?");
+        System.out.println();
+
         try {
+            System.out.print("Building and starting the Nexus instance... ");
             Instance nexusServer = creator.buildNexus();
+            System.out.println("Done !");
             System.out.println("NEXUS");
             System.out.println("------");
             System.out.println("login/password: deployment/deployment123");
@@ -73,9 +80,15 @@ public class ContinuousDeliveryInfrastructureCreator {
             // TeamInfrastructure
             List<TeamInfrastructure> teamsInfrastructures = Lists.newArrayList(Collections2.transform(identifiers,
                     TeamInfrastructure.FUNCTION_TEAM_IDENTIFIER_TO_TEAM_INFRASTRUCTURE));
+            System.out.print("Building and starting the Jenkins/RunDeck instance... ");
             creator.buildJenkins(teamsInfrastructures);
+            System.out.println("Done !");
+            System.out.print("Building and starting the Tomcat dev instance... ");
             creator.buildTomcatServers(teamsInfrastructures, "dev", 1);
+            System.out.println("Done !");
+            System.out.print("Building and starting the Tomcat valid instances... ");
             creator.buildTomcatServers(teamsInfrastructures, "valid", 2);
+            System.out.println("Done !");
 
             for (TeamInfrastructure teamInfrastructure : teamsInfrastructures) {
                 System.out.println("TEAM " + teamInfrastructure.getIdentifier());
@@ -97,6 +110,8 @@ public class ContinuousDeliveryInfrastructureCreator {
                 Map<String, Object> rootMap = Maps.newHashMap();
                 rootMap.put("infrastructure", infrastructure);
                 String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
+                System.out.println();
+                System.out.println("Documentation :");
                 System.out.println(page);
             }
         } catch (Exception e) {
