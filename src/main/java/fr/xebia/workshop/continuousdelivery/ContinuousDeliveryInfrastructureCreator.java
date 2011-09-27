@@ -61,7 +61,7 @@ public class ContinuousDeliveryInfrastructureCreator {
             System.out.println("------");
             System.out.println("login/password: deployment/deployment123");
             System.out.println(" * http://nexus.xebia-tech-event.info:8081/nexus/");
-            System.out.println(" * http://" + nexusServer.getPublicDnsName() + "8081/nexus/" + " (server public dns name)");
+            System.out.println(" * http://" + nexusServer.getPublicDnsName() + ":8081/nexus/" + " (server public dns name)");
             System.out.println();
         } catch (Exception e) {
             e.printStackTrace();
