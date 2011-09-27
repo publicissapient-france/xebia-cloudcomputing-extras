@@ -1,0 +1,7 @@
+#cloud-config
+
+timezone: Europe/Paris
+
+packages:
+- yum-utils
+ 
