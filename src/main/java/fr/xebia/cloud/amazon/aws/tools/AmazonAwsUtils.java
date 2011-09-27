@@ -45,6 +45,7 @@ import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
 import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -57,6 +58,18 @@ public class AmazonAwsUtils {
     private AmazonAwsUtils() {
 
     }
+
+    public final static Predicate<Instance> PREDICATE_RUNNING_OR_PENDING_INSTANCE = new Predicate<Instance>() {
+        @Override
+        public boolean apply(Instance instance) {
+            if (InstanceStateName.Running.toString().equals(instance.getState().getName())
+                    || InstanceStateName.Pending.toString().equals(instance.getState().getName())) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    };
 
     public final static String AMI_AMZN_LINUX_EU_WEST = "ami-47cefa33";
 
@@ -130,8 +143,8 @@ public class AmazonAwsUtils {
             DescribeInstancesResult describeInstances = ec2.describeInstances(describeInstancesRequest);
 
             instance = Iterables.getOnlyElement(toEc2Instances(describeInstances.getReservations()));
-            counter ++;
-            if(counter >= 20) {
+            counter++;
+            if (counter >= 20) {
                 logger.warn("Wait Timeout for {}", instance);
                 return instance;
             }
@@ -153,10 +166,10 @@ public class AmazonAwsUtils {
     public static void awaitForHttpAvailability(@Nonnull String healthCheckUrl) throws IllegalStateException {
 
         RuntimeException cause = null;
-        for (int i = 0; i < 4 * 60; i++) {
+        for (int i = 0; i < 6 * 60; i++) {
             try {
                 HttpURLConnection healthCheckHttpURLConnection = (HttpURLConnection) new URL(healthCheckUrl).openConnection();
-                
+
                 healthCheckHttpURLConnection.setReadTimeout(1000);
 
                 int responseCode = healthCheckHttpURLConnection.getResponseCode();
