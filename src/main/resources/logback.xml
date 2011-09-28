@@ -7,9 +7,8 @@
    </appender>
 
 
-   <logger name="fr.xebia.demo.amazon.aws.AmazonAwsInfrastructureMaker" level="INFO" />
    
-   <logger name="fr.xebia.workshop.continuousdelivery.PetclinicJenkinsJobCreator" level="INFO" />
+   <logger name="fr.xebia" level="INFO" />
 
    <root level="WARN">
       <appender-ref ref="console" />

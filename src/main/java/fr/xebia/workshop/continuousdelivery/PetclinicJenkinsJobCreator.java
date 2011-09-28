@@ -1,9 +1,8 @@
 package fr.xebia.workshop.continuousdelivery;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Maps.newHashMap;
-import static com.google.common.collect.Sets.newHashSet;
+import static com.google.common.base.Preconditions.*;
+import static com.google.common.collect.Maps.*;
+import static com.google.common.collect.Sets.*;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -24,13 +23,13 @@ import org.slf4j.LoggerFactory;
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 /**
- * Creates a job in a Jenkins server for a "Petclinic" project hosted at https://github.com/xebia-france-training/.
+ * Creates a job in a Jenkins server for a "Petclinic" project hosted at
+ * https://github.com/xebia-france-training/.
  * 
  * Example:
  * 
  * <pre>
- * new PetclinicJenkinsJobCreator(&quot;http://ec2-46-137-62-232.eu-west-1.compute.amazonaws.com:8080&quot;)
- *         .create(new PetclinicProjectInstance(&quot;42&quot;))
+ * new PetclinicJenkinsJobCreator(&quot;http://ec2-46-137-62-232.eu-west-1.compute.amazonaws.com:8080&quot;).create(new PetclinicProjectInstance(&quot;42&quot;))
  *         .warmUp();
  * </pre>
  */
@@ -40,21 +39,6 @@ public class PetclinicJenkinsJobCreator {
 
     private final String jenkinsUrl;
 
-    public static void main(String[] args) {
-        final PetclinicJenkinsJobCreator jobCreator = new PetclinicJenkinsJobCreator("http://ec2-79-125-33-165.eu-west-1.compute.amazonaws.com:8080");
-
-        final int teamCount = 2;
-        for (int teamId = 1; teamId <= teamCount; teamId++) {
-            final Integer localTeamId = teamId;
-
-            new Thread() {
-                public void run() {
-                    jobCreator.create(new PetclinicProjectInstance(localTeamId.toString())).warmUp();
-                };
-            }.start();
-        }
-    }
-
     public PetclinicJenkinsJobCreator(@Nonnull String jenkinsUrl) {
         this.jenkinsUrl = checkNotNull(jenkinsUrl);
         checkArgument(jenkinsUrl.startsWith("http://"), "Invalid URL provided for Jenkins server: " + jenkinsUrl);
@@ -62,32 +46,25 @@ public class PetclinicJenkinsJobCreator {
 
     public PostCreationActions create(@Nonnull PetclinicProjectInstance project) {
         checkNotNull(project);
-        String jobConfig = createConfig(project);
-        logger.info("Creating job " + project.projectName);
-        sendConfig(jobConfig, project);
-        return new PostCreationActions(jenkinsUrl, project);
-    }
 
-    private String createConfig(@Nonnull PetclinicProjectInstance project) {
+        HttpPost post = new HttpPost(jenkinsUrl + "/createItem?name=" + project.projectName);
         Map<String, Object> parameters = newHashMap();
         parameters.put("projectName", project.projectName);
         parameters.put("groupId", project.groupId);
         parameters.put("artifactId", project.artifactId);
-        return FreemarkerUtils.generate(parameters, "/petclinic-jenkins-job-config.xml.fmt");
-    }
+        String jobConfig = FreemarkerUtils.generate(parameters, "/petclinic-jenkins-job-config.xml.fmt");
 
-    private void sendConfig(@Nonnull String jobConfig, @Nonnull PetclinicProjectInstance project) {
-        HttpPost post = new HttpPost(jenkinsUrl + "/createItem?name=" + project.projectName);
-        post.setEntity(httpEntityForXml(jobConfig));
-        new Client().post(post);
-    }
-
-    private HttpEntity httpEntityForXml(String string) {
+        HttpEntity httpEntity;
         try {
-            return new StringEntity(string, "text/xml", "UTF-8");
+            httpEntity = new StringEntity(jobConfig, "text/xml", "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new JobCreationException("UTF-8 not supported by the platform?!", e);
+            throw new IllegalStateException("Unsupported UTF-8 should never occur", e);
         }
+        post.setEntity(httpEntity);
+
+        logger.info("Creating job {}: {}", project.projectName, post.getURI());
+        new Client().post(post);
+        return new PostCreationActions(jenkinsUrl, project);
     }
 
     public static class JobCreationException extends RuntimeException {
@@ -144,10 +121,10 @@ public class PetclinicJenkinsJobCreator {
         }
 
         /**
-         * Warms up the project, i.e. triggers a build so that dependencies are loaded.
+         * Triggers a build so that dependencies are loaded.
          */
-        public void warmUp() {
-            logger.info("Warming up job " + project.projectName);
+        public void triggerBuild() {
+            logger.info("Trigger build of {}", project.projectName);
             new Client().post(new HttpPost(String.format("%s/job/%s/build", jenkinsUrl, project.projectName)));
         }
     }

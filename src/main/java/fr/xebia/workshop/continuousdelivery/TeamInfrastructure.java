@@ -15,6 +15,8 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
+import java.util.Map;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -37,6 +39,25 @@ public class TeamInfrastructure {
             return new TeamInfrastructure(teamIdentifier);
         }
     };
+
+    public static String getJenkinsUrl(Instance jenkins) {
+        Preconditions.checkState(jenkins.getPublicDnsName() != null && !jenkins.getPublicDnsName().isEmpty(),
+                "Given jenkins is not yet initialized, it publicDnsNAme is null: %s", jenkins);
+        return "http://" + jenkins.getPublicDnsName() + ":8080/";
+    }
+
+    public static String getRundeckUrl(Instance rundeck) {
+        Preconditions.checkState(rundeck.getPublicDnsName() != null, "Given rundeck is not yet initialized, it publicDnsNAme is null: %s",
+                rundeck);
+        return "http://" + rundeck.getPublicDnsName() + ":4440/";
+    }
+
+    static final String ROLE_JENKINS_RUNDECK = "jenkins,rundeck";
+
+    static final String ROLE_NEXUS = "nexus";
+
+    static final String ROLE_TOMCAT = "tomcat";
+
     private Instance devTomcat;
 
     private String devTomcatName = "#devTomcat#";
@@ -47,19 +68,11 @@ public class TeamInfrastructure {
 
     private String jenkinsName = "#jenkins#";
 
-    private String jenkinsUrl;
-
     private Instance nexus;
-
-    private String rundeckName = "#rundeck#";
 
     private Instance rundeck;
 
-    public void setRundeck(Instance rundeck) {
-        this.rundeck = rundeck;
-    }
-
-    private String rundeckUrl;
+    private String rundeckName = "#rundeck#";
 
     private Instance validTomcat1;
 
@@ -74,9 +87,44 @@ public class TeamInfrastructure {
         this.identifier = Preconditions.checkNotNull(identifier);
     }
 
+    public void addInstance(Instance instance, Map<String, String> tags) {
+        String name = tags.get("Name");
+        String role = tags.get("Role");
+
+        if (ROLE_JENKINS_RUNDECK.equals(role)) {
+            this.jenkins = instance;
+            this.rundeck = instance;
+            this.jenkinsName = name;
+            this.rundeckName = name;
+        } else if (role.startsWith((ROLE_TOMCAT + "-"))) {
+            String environment = role.substring((ROLE_TOMCAT + "-").length());
+            if ("dev".equals(environment)) {
+                devTomcat = instance;
+                devTomcatName = name;
+            } else if ("valid".equals(environment)) {
+                if (validTomcat1 == null) {
+                    validTomcat1 = instance;
+                    validTomcat1Name = name;
+                } else if (validTomcat2 == null) {
+                    validTomcat2 = instance;
+                    validTomcat2Name = name;
+                } else {
+                    throw new IllegalStateException("Valid tomcats already set");
+                }
+            } else {
+                throw new IllegalStateException("Dev tomcat already set");
+            }
+
+        }
+
+    }
+
     /**
      * 
      * FIXME cleanup this dirty code (CLC)
+     * 
+     * @param environment
+     *            like "dev" or "valid"
      */
     public void addTomcat(@Nonnull String environment, @Nonnull Instance tomcatInstance, @Nonnull String tomcatServerName) {
         if ("dev".equals(environment)) {
@@ -125,7 +173,7 @@ public class TeamInfrastructure {
     }
 
     public String getJenkinsUrl() {
-        return jenkinsUrl;
+        return TeamInfrastructure.getJenkinsUrl(jenkins);
     }
 
     public Instance getNexus() {
@@ -145,7 +193,7 @@ public class TeamInfrastructure {
     }
 
     public String getRundeckUrl() {
-        return rundeckUrl;
+        return getRundeckUrl(rundeck);
     }
 
     public Instance getValidTomcat1() {
@@ -180,20 +228,16 @@ public class TeamInfrastructure {
         this.jenkinsName = jenkinsName;
     }
 
-    public void setJenkinsUrl(String jenkinsUrl) {
-        this.jenkinsUrl = jenkinsUrl;
-    }
-
     public void setNexus(Instance nexus) {
         this.nexus = nexus;
     }
 
-    public void setRundeckName(String rundeckName) {
-        this.rundeckName = rundeckName;
+    public void setRundeck(Instance rundeck) {
+        this.rundeck = rundeck;
     }
 
-    public void setRundeckUrl(String rundeckUrl) {
-        this.rundeckUrl = rundeckUrl;
+    public void setRundeckName(String rundeckName) {
+        this.rundeckName = rundeckName;
     }
 
     public void setValidTomcat1(Instance validTomcat1) {
@@ -217,7 +261,6 @@ public class TeamInfrastructure {
         return Objects.toStringHelper(this) //
                 .add("id", identifier) //
                 .add(jenkinsName, jenkins) //
-                .add("jenkinsUrl", jenkinsUrl) //
                 .add(devTomcatName, devTomcat) //
                 .add(validTomcat1Name, validTomcat1) //
                 .add(validTomcat2Name, validTomcat2) //

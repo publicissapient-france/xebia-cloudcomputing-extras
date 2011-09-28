@@ -62,7 +62,7 @@ import com.google.common.io.Resources;
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 /**
- * Send tools links via email
+ * Send Amazon AWS tools / command lines links and install instructions by email
  * 
  * @author <a href="mailto:ebriand@xebia.fr">Eric Briand</a>
  */

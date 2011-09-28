@@ -32,10 +32,8 @@ public class LabWikiPageGeneratorTest {
 
         Instance jenkins = new Instance().withPublicDnsName("ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com");
         infrastructure.setJenkins(jenkins);
-        infrastructure.setJenkinsUrl("http://ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com:8080");
         infrastructure.setJenkinsName("jenkins-clc");
         infrastructure.setRundeck(jenkins);
-        infrastructure.setRundeckUrl("http://ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com:4440");
         infrastructure.setRundeckName("jenkins-clc");
         
 
