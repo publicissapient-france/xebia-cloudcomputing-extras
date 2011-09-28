@@ -37,6 +37,7 @@ import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.model.DBInstance;
@@ -44,9 +45,11 @@ import com.amazonaws.services.rds.model.DBInstanceNotFoundException;
 import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
 import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
@@ -57,6 +60,62 @@ public class AmazonAwsUtils {
      */
     private AmazonAwsUtils() {
 
+    }
+
+    /**
+     * <p>
+     * Create EC2 instances and ensure these instances are successfully started.
+     * </p>
+     * <p>
+     * Successfully started means they reached the
+     * {@link InstanceStateName#Running} state.
+     * </p>
+     * <p>
+     * If the startup of an instance failed (e.g.
+     * "Server.InternalError: Internal error on launch"), the instance is
+     * terminated and another one is launched.
+     * </p>
+     * <p>
+     * Max retry count: 3.
+     * </p>
+     * 
+     * @param runInstancesRequest
+     * @param ec2
+     * @return list of "Running" created instances. List size is greater or
+     *         equals to given {@link RunInstancesRequest#getMinCount()}
+     */
+    @Nonnull
+    public static List<Instance> reliableEc2RunInstances(@Nonnull RunInstancesRequest runInstancesRequest, @Nonnull AmazonEC2 ec2) {
+        int initialInstanceMinCount = runInstancesRequest.getMinCount();
+        int initialInstanceMaxCount = runInstancesRequest.getMaxCount();
+
+        try {
+            int tryCount = 1;
+            List<Instance> result = ec2.runInstances(runInstancesRequest).getReservation().getInstances();
+            result = AmazonAwsUtils.awaitForEc2Instances(result, ec2);
+            
+            while (result.size() < initialInstanceMinCount && tryCount < 3) {
+                runInstancesRequest.setMinCount(initialInstanceMinCount - result.size());
+                runInstancesRequest.setMaxCount(initialInstanceMinCount - result.size());
+
+                List<Instance> instances = ec2.runInstances(runInstancesRequest).getReservation().getInstances();
+                instances = AmazonAwsUtils.awaitForEc2Instances(instances, ec2);
+                result.addAll(instances);
+                tryCount++;
+            }
+
+            if (result.size() < initialInstanceMinCount) {
+                throw new IllegalStateException("Failure to create " + initialInstanceMinCount + " instances, only " + result.size()
+                        + " instances ("
+                        + Joiner.on(",").join(Collections2.transform(result, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID))
+                        + ") were started on request " + runInstancesRequest);
+            }
+            return result;
+        } finally {
+            // restore runInstancesRequest state
+            runInstancesRequest.setMinCount(initialInstanceMinCount);
+            runInstancesRequest.setMaxCount(initialInstanceMaxCount);
+        }
     }
 
     public final static Predicate<Instance> PREDICATE_RUNNING_OR_PENDING_INSTANCE = new Predicate<Instance>() {
@@ -109,7 +168,9 @@ public class AmazonAwsUtils {
         List<Instance> result = Lists.newArrayList();
         for (Instance instance : instances) {
             instance = awaitForEc2Instance(instance, ec2);
-            result.add(instance);
+            if (instance != null) {
+                result.add(instance);
+            }
         }
         return result;
     }
@@ -125,14 +186,15 @@ public class AmazonAwsUtils {
      * </p>
      * 
      * @param instance
-     * @return up to date instances
+     * @return up to date instances or <code>null</code> if the instance crashed
+     *         at startup.
      */
-    @Nonnull
+    @Nullable
     public static Instance awaitForEc2Instance(@Nonnull Instance instance, @Nonnull AmazonEC2 ec2) {
         int counter = 0;
         while (InstanceStateName.Pending.equals(instance.getState()) || (instance.getPublicIpAddress() == null)
                 || (instance.getPublicDnsName() == null)) {
-            logger.trace("Wait for startup of {}", instance);
+            logger.trace("Wait for startup of {}: {}", instance.getInstanceId(), instance);
             try {
                 // 3s because ec2 instance creation < 10 seconds
                 Thread.sleep(3 * 1000);
@@ -145,11 +207,26 @@ public class AmazonAwsUtils {
             instance = Iterables.getOnlyElement(toEc2Instances(describeInstances.getReservations()));
             counter++;
             if (counter >= 20) {
-                logger.warn("Wait Timeout for {}", instance);
+                logger.warn("Timeout waiting for startup of {}: {}", instance);
                 return instance;
             }
         }
-        logger.debug("Instance {} is started", instance);
+
+        if (InstanceStateName.ShuttingDown.equals(instance.getState()) || InstanceStateName.Terminated.equals(instance.getState())) {
+            // typically a "Server.InternalError: Internal error on launch"
+            logger.warn("Terminate and skip dying instance {} (stateReason={}, stateTransitionReason={}): {}",
+                    new Object[] { instance.getInstanceId(), instance.getStateReason(), instance.getStateTransitionReason(), instance });
+            try {
+                ec2.terminateInstances(new TerminateInstancesRequest(Lists.newArrayList(instance.getInstanceId())));
+            } catch (Exception e) {
+                logger.warn("Silently ignore exception terminating dying instance {}: {}", new Object[] { instance.getInstanceId(),
+                        instance, e });
+            }
+
+            return null;
+        }
+
+        logger.debug("Instance {} is started: {}", instance.getInstanceId(), instance);
         return instance;
     }
 

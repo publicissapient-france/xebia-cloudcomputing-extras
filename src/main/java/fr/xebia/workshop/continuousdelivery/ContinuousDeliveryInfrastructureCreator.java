@@ -15,10 +15,18 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,98 +39,165 @@ import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.AssociateAddressRequest;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeAddressesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeTagsRequest;
 import com.amazonaws.services.ec2.model.DisassociateAddressRequest;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceType;
+import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Tag;
+import com.amazonaws.services.ec2.model.TagDescription;
+import com.google.common.base.Charsets;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
+import fr.xebia.cloud.amazon.aws.tools.AmazonAwsFunctions;
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 import fr.xebia.cloud.cloudinit.CloudInitUserDataBuilder;
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 public class ContinuousDeliveryInfrastructureCreator {
 
-    private static final String ROLE_JENKINS_RUNDECK = "jenkins,rundeck";
-    private static final String ROLE_TOMCAT = "tomcat";
-    private static final String ROLE_NEXUS = "nexus";
-
     public static void main(String[] args) {
 
-        ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
-        System.out.println();
-        System.out.println("Hi, I'm an automatic continuous delivery infrastucture creator, and I'm about to begin my work.");
-        System.out.println("Why don't you sit back and relax while I do all the hard work ?");
-        System.out.println();
+        boolean createNexus = true;
+        boolean createJenkins = true;
+        boolean createTomcatDev = true;
+        boolean createTomcatValid = true;
+        final ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        final Collection<String> teamIdentifiers = Lists.newArrayList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
 
-        try {
-            System.out.print("Building and starting the Nexus instance... ");
-            Instance nexusServer = creator.buildNexus();
-            System.out.println("Done !");
-            System.out.println("NEXUS");
-            System.out.println("------");
-            System.out.println("login/password: deployment/deployment123");
-            System.out.println(" * http://nexus.xebia-tech-event.info:8081/nexus/");
-            System.out.println(" * http://" + nexusServer.getPublicDnsName() + ":8081/nexus/" + " (server public dns name)");
-            System.out.println();
-        } catch (Exception e) {
-            e.printStackTrace();
+        Callable<Instance> createNexusTask = new Callable<Instance>() {
+
+            @Override
+            public Instance call() throws Exception {
+                try {
+                    return creator.buildNexus();
+                } catch (Exception e) {
+                    logger.error("Exception creating nexus", e);
+                    throw e;
+                }
+            }
+        };
+        if (createNexus) {
+            executorService.submit(createNexusTask);
         }
+
+        Callable<Map<String, Instance>> createJenkinsTask = new Callable<Map<String, Instance>>() {
+
+            @Override
+            public Map<String, Instance> call() throws Exception {
+                try {
+                    return creator.buildJenkins(teamIdentifiers);
+                } catch (Exception e) {
+                    logger.error("Exception creating jenkins", e);
+                    throw e;
+                }
+            }
+        };
+        if (createJenkins) {
+            executorService.submit(createJenkinsTask);
+        }
+
+        Callable<List<Instance>> createTomcatDevTask = new Callable<List<Instance>>() {
+
+            @Override
+            public List<Instance> call() throws Exception {
+                try {
+                    return creator.buildTomcatServers(teamIdentifiers, "dev", 1);
+                } catch (Exception e) {
+                    logger.error("Exception creating tomcat 'dev'", e);
+                    throw e;
+                }
+            }
+        };
+        if (createTomcatDev) {
+            executorService.submit(createTomcatDevTask);
+        }
+        Callable<List<Instance>> createTomcatValidTask = new Callable<List<Instance>>() {
+
+            @Override
+            public List<Instance> call() throws Exception {
+                try {
+                    return creator.buildTomcatServers(teamIdentifiers, "valid", 2);
+                } catch (Exception e) {
+                    logger.error("Exception creating valid", e);
+                    throw e;
+                }
+            }
+        };
+        if (createTomcatValid) {
+            executorService.submit(createTomcatValidTask);
+        }
+        executorService.shutdown();
+
         try {
-            Collection<String> identifiers = Lists.newArrayList("clc");
-            // Collections.transform() returns a 'transient' collection - two
-            // consecutive calls to iterator re-instantiate different
-            // TeamInfrastructure
-            List<TeamInfrastructure> teamsInfrastructures = Lists.newArrayList(Collections2.transform(identifiers,
-                    TeamInfrastructure.FUNCTION_TEAM_IDENTIFIER_TO_TEAM_INFRASTRUCTURE));
-            System.out.print("Building and starting the Jenkins/RunDeck instance... ");
-            creator.buildJenkins(teamsInfrastructures);
-            System.out.println("Done !");
-            System.out.print("Building and starting the Tomcat dev instance... ");
-            creator.buildTomcatServers(teamsInfrastructures, "dev", 1);
-            System.out.println("Done !");
-            System.out.print("Building and starting the Tomcat valid instances... ");
-            creator.buildTomcatServers(teamsInfrastructures, "valid", 2);
-            System.out.println("Done !");
+            executorService.awaitTermination(10, TimeUnit.MINUTES);
 
-            for (TeamInfrastructure teamInfrastructure : teamsInfrastructures) {
-                System.out.println("TEAM " + teamInfrastructure.getIdentifier());
-                System.out.println("--------------------------");
-                System.out.println(" * Jenkins: " + teamInfrastructure.getJenkinsUrl());
-                System.out.println(" * Rundeck (login=admin, password=admin): " + teamInfrastructure.getRundeckUrl());
-                System.out.println(" * Tomcat: ");
-                System.out.println(" ** login/password: tomcat/tomcat");
-                System.out.println(" ** dev: " + "http://" + teamInfrastructure.getDevTomcat().getPublicDnsName() + ":8080/");
-                System.out.println(" ** valid1: " + "http://" + teamInfrastructure.getValidTomcat1().getPublicDnsName() + ":8080/");
-                System.out.println(" ** valid2: " + "http://" + teamInfrastructure.getValidTomcat2().getPublicDnsName() + ":8080/");
+            Collection<TeamInfrastructure> teamsInfrastructures = creator.discoverInfrasturctureTopology();
 
-                System.out.println(teamInfrastructure);
-                System.out.println();
-
-            }
-
-            for (TeamInfrastructure infrastructure : teamsInfrastructures) {
-                Map<String, Object> rootMap = Maps.newHashMap();
-                rootMap.put("infrastructure", infrastructure);
-                String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
-                System.out.println();
-                System.out.println("Documentation :");
-                System.out.println(page);
-            }
+            creator.generateDocs(teamsInfrastructures, "/tmp/continuous-delivery/");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
+    public void generateDocs(Collection<TeamInfrastructure> teamsInfrastructures, String baseWikiFolder) throws IOException {
+        File wikiBaseFolder = new File(baseWikiFolder);
+        if (wikiBaseFolder.exists()) {
+            logger.debug("Delete wiki folder {}", wikiBaseFolder);
+            wikiBaseFolder.delete();
+        }
+        wikiBaseFolder.mkdirs();
+
+        List<String> generatedWikiPageNames = Lists.newArrayList();
+
+        for (TeamInfrastructure infrastructure : teamsInfrastructures) {
+            try {
+                Map<String, Object> rootMap = Maps.newHashMap();
+                rootMap.put("infrastructure", infrastructure);
+                String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
+                String wikiPageName = "ContinuousDeliveryWorkshopLab-" + infrastructure.getIdentifier();
+                generatedWikiPageNames.add(wikiPageName);
+                File wikiPageFile = new File(wikiBaseFolder, wikiPageName + ".wiki");
+                Files.write(page, wikiPageFile, Charsets.UTF_8);
+                logger.debug("Generated file {}", wikiPageFile);
+            } catch (Exception e) {
+                logger.error("Exception generating doc for {}", infrastructure, e);
+            }
+
+        }
+        StringWriter indexPageStringWriter = new StringWriter();
+        PrintWriter indexPageWriter = new PrintWriter(indexPageStringWriter);
+
+        indexPageWriter.println("= Labs Per Team =");
+        for (String wikiPage : generatedWikiPageNames) {
+            indexPageWriter.println(" * [" + wikiPage + "]");
+        }
+        String indexPageName = "ContinuousDeliveryWorkshopLab";
+        Files.write(indexPageStringWriter.toString(), new File(baseWikiFolder, indexPageName + ".wiki"), Charsets.UTF_8);
+
+        System.out.println("WIKI PAGES GENERATED");
+        System.out.println("====================");
+        System.out.println();
+        System.out.println("Base folder: " + baseWikiFolder);
+        System.out.println("Index: " + indexPageName);
+        System.out.println("Per team pages: \n\t" + Joiner.on("\n\t").join(generatedWikiPageNames));
+    }
+
     protected AmazonEC2 ec2;
 
-    private Logger logger = LoggerFactory.getLogger(getClass());
+    private static final Logger logger = LoggerFactory.getLogger(ContinuousDeliveryInfrastructureCreator.class);
 
     public ContinuousDeliveryInfrastructureCreator() {
         AWSCredentials credentials = AmazonAwsUtils.loadAwsCredentials();
@@ -130,10 +205,67 @@ public class ContinuousDeliveryInfrastructureCreator {
         ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
     }
 
-    public void buildJenkins(List<TeamInfrastructure> teamsInfrastructures) {
+    public Collection<TeamInfrastructure> discoverInfrasturctureTopology() {
+        Filter filter = new Filter("tag:Workshop", Lists.newArrayList("continuous-delivery-workshop"));
+        List<Reservation> reservations = ec2.describeInstances(new DescribeInstancesRequest().withFilters(filter)).getReservations();
+
+        Iterable<Instance> instances = AmazonAwsUtils.toEc2Instances(reservations);
+
+        Iterable<Instance> runningInstances = Iterables.filter(instances, AmazonAwsUtils.PREDICATE_RUNNING_OR_PENDING_INSTANCE);
+        runningInstances = AmazonAwsUtils.awaitForEc2Instances(runningInstances, ec2);
+
+        Map<String, Instance> runningInstancesByInstanceId = Maps.uniqueIndex(runningInstances,
+                AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID);
+
+        List<String> runningInstanceIds = Lists.newArrayList(Iterables.transform(runningInstances,
+                AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID));
+
+        List<TagDescription> tags = ec2.describeTags(new DescribeTagsRequest().withFilters(new Filter("resource-id", runningInstanceIds)))
+                .getTags();
+        Map<String, Map<String, String>> tagsByInstanceId = new MapMaker().makeComputingMap(new Function<String, Map<String, String>>() {
+            @Override
+            public Map<String, String> apply(String instanceId) {
+                return Maps.newHashMap();
+            }
+        });
+
+        for (TagDescription tag : tags) {
+            tagsByInstanceId.get(tag.getResourceId()).put(tag.getKey(), tag.getValue());
+        }
+
+        Map<String, TeamInfrastructure> teamInfrastructureByTeamIdentifier = new MapMaker()
+                .makeComputingMap(new Function<String, TeamInfrastructure>() {
+                    @Override
+                    public TeamInfrastructure apply(String teamIdentifier) {
+                        return new TeamInfrastructure(teamIdentifier);
+                    }
+                });
+
+        for (Map.Entry<String, Map<String, String>> entry : tagsByInstanceId.entrySet()) {
+            Map<String, String> instanceTags = entry.getValue();
+            String instanceId = entry.getKey();
+            String teamIdentifier = instanceTags.get("TeamIdentifier");
+            if (teamIdentifier == null) {
+                // not a per team server (e.g. Nexus server)
+            } else {
+                Instance instance = runningInstancesByInstanceId.get(instanceId);
+
+                TeamInfrastructure teamInfrastructure = teamInfrastructureByTeamIdentifier.get(teamIdentifier);
+                teamInfrastructure.addInstance(instance, instanceTags);
+            }
+        }
+        return teamInfrastructureByTeamIdentifier.values();
+    }
+
+    /**
+     * 
+     * @param teamsIdentifiers
+     * @return jenkins instances by teamIdentifier
+     */
+    public Map<String, Instance> buildJenkins(Collection<String> teamsIdentifiers) {
         logger.info("CREATE JENKINS/RUNDECK SERVERS");
 
-        AmazonAwsUtils.terminateInstancesByRole(ROLE_JENKINS_RUNDECK, ec2);
+        AmazonAwsUtils.terminateInstancesByRole(TeamInfrastructure.ROLE_JENKINS_RUNDECK, ec2);
 
         // CLOUD CONFIG
         String cloudConfigFilePath = "fr/xebia/workshop/continuousdelivery/cloud-config-amzn-linux-jenkins-rundeck.txt";
@@ -144,56 +276,62 @@ public class ContinuousDeliveryInfrastructureCreator {
         RunInstancesRequest runInstancesRequest = new RunInstancesRequest() //
                 .withInstanceType(InstanceType.M1Small.toString()) //
                 .withImageId(AmazonAwsUtils.AMI_AMZN_LINUX_EU_WEST) //
-                .withMinCount(teamsInfrastructures.size()) //
-                .withMaxCount(teamsInfrastructures.size()) //
+                .withMinCount(teamsIdentifiers.size()) //
+                .withMaxCount(teamsIdentifiers.size()) //
                 .withSecurityGroupIds("accept-all") //
                 .withKeyName("continuous-delivery-workshop") //
                 .withUserData(userData) //
 
         ;
-        RunInstancesResult runInstances = ec2.runInstances(runInstancesRequest);
-        List<Instance> jenkinsInstances = runInstances.getReservation().getInstances();
+        List<Instance> jenkinsInstances = AmazonAwsUtils.reliableEc2RunInstances(runInstancesRequest, ec2);
 
+        Map<String, Instance> jenkinsInstancesByTeamIdentifier = Maps.newHashMap();
         // TAG EC2 INSTANCES
         {
-            Iterator<TeamInfrastructure> teamsInfrastructuresIterator = teamsInfrastructures.iterator();
+            Iterator<String> teamsIdentifiersIterator = teamsIdentifiers.iterator();
             for (Instance jenkinsInstance : jenkinsInstances) {
                 CreateTagsRequest createTagsRequest = new CreateTagsRequest();
-                TeamInfrastructure teamInfrastructure = teamsInfrastructuresIterator.next();
-                String identifier = teamInfrastructure.getIdentifier();
+                String identifier = teamsIdentifiersIterator.next();
                 String serverName = "jenkins-" + identifier;
+                logger.info("Tag {} - {}", serverName, jenkinsInstance.getInstanceId());
                 createTagsRequest.withResources(jenkinsInstance.getInstanceId()) //
                         .withTags(//
                                 new Tag("Name", serverName), //
                                 new Tag("TeamIdentifier", identifier), //
                                 new Tag("Workshop", "continuous-delivery-workshop"), //
-                                new Tag("Role", ROLE_JENKINS_RUNDECK));
-                ec2.createTags(createTagsRequest);
+                                new Tag("Role", TeamInfrastructure.ROLE_JENKINS_RUNDECK));
+                try {
+                    ec2.createTags(createTagsRequest);
+                } catch (AmazonServiceException e) {
+                    try {
+                        Thread.sleep(5 * 1000);
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
+                    ec2.createTags(createTagsRequest);
+                }
 
                 // wait for jenkins instance initialization
-                jenkinsInstance = AmazonAwsUtils.awaitForEc2Instance(jenkinsInstance, ec2);
-
-                teamInfrastructure.setJenkins(jenkinsInstance);
-                teamInfrastructure.setJenkinsName(serverName);
-                teamInfrastructure.setJenkinsUrl("http://" + jenkinsInstance.getPublicDnsName() + ":8080/");
-
-                teamInfrastructure.setRundeck(jenkinsInstance);
-                teamInfrastructure.setRundeckName(serverName);
-                teamInfrastructure.setRundeckUrl("http://" + jenkinsInstance.getPublicDnsName() + ":4440/");
+                jenkinsInstancesByTeamIdentifier.put(identifier, jenkinsInstance);
 
             }
-            if (teamsInfrastructuresIterator.hasNext()) {
-                logger.warn("Unexpected remaining identifiers " + Lists.newArrayList(teamsInfrastructuresIterator));
+            if (teamsIdentifiersIterator.hasNext()) {
+                logger.warn("Unexpected remaining identifiers " + Lists.newArrayList(teamsIdentifiersIterator));
             }
         }
 
-        // CONFIGURE JENKINS
+        // CONFIGURE JENKINS (CREATE JOBS, ETC)
         {
-            for (TeamInfrastructure teamInfrastructure : teamsInfrastructures) {
-                AmazonAwsUtils.awaitForHttpAvailability(teamInfrastructure.getJenkinsUrl());
+            for (Map.Entry<String, Instance> entry : jenkinsInstancesByTeamIdentifier.entrySet()) {
+                Instance jenkins = entry.getValue();
+                String teamIdentifier = entry.getKey();
+                String jenkinsUrl = TeamInfrastructure.getJenkinsUrl(jenkins);
+                logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, jenkins.getInstanceId());
+
+                AmazonAwsUtils.awaitForHttpAvailability(jenkinsUrl);
                 try {
-                    PetclinicProjectInstance petClinicProjectInstance = new PetclinicProjectInstance(teamInfrastructure.getIdentifier());
-                    new PetclinicJenkinsJobCreator(teamInfrastructure.getJenkinsUrl()).create(petClinicProjectInstance).warmUp();
+                    PetclinicProjectInstance petClinicProjectInstance = new PetclinicProjectInstance(teamIdentifier);
+                    new PetclinicJenkinsJobCreator(jenkinsUrl).create(petClinicProjectInstance).triggerBuild();
                 } catch (Exception e) {
                     logger.warn("Silently skip " + e, e);
                 }
@@ -201,15 +339,19 @@ public class ContinuousDeliveryInfrastructureCreator {
             }
         }
 
-        logger.info("Created jenkins servers {}", teamsInfrastructures);
+        logger.info(
+                "{} JENKINS SERVERS SUCCESSFULLY CREATED: {}",
+                new Object[] { jenkinsInstances.size(),
+                        Collections2.transform(jenkinsInstances, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID) });
 
+        return jenkinsInstancesByTeamIdentifier;
     }
 
     public Instance buildNexus() {
-        logger.info("CREATE NEXUS SERVER");
+        logger.info("START CREATE NEXUS SERVER");
 
         // TERMINATE EXISTING NEXUS SERVERS IF EXIST
-        AmazonAwsUtils.terminateInstancesByRole(ROLE_NEXUS, ec2);
+        AmazonAwsUtils.terminateInstancesByRole(TeamInfrastructure.ROLE_NEXUS, ec2);
 
         // CREATE NEXUS INSTANCE
         String cloudConfigFilePath = "fr/xebia/workshop/continuousdelivery/cloud-config-amzn-linux-nexus.txt";
@@ -227,16 +369,16 @@ public class ContinuousDeliveryInfrastructureCreator {
         ;
 
         // START NEXUS INSTANCE
-        RunInstancesResult runInstances = ec2.runInstances(runInstancesRequest);
-        Instance instance = Iterables.getOnlyElement(runInstances.getReservation().getInstances());
+        List<Instance> nexusInstances = AmazonAwsUtils.reliableEc2RunInstances(runInstancesRequest, ec2);
+        Instance nexusInstance = Iterables.getOnlyElement(nexusInstances);
 
         // TAG NEXUS INSTANCES
         CreateTagsRequest createTagsRequest = new CreateTagsRequest();
-        createTagsRequest.withResources(instance.getInstanceId()) //
+        createTagsRequest.withResources(nexusInstance.getInstanceId()) //
                 .withTags(//
                         new Tag("Name", "nexus"), //
                         new Tag("Workshop", "continuous-delivery-workshop"), //
-                        new Tag("Role", ROLE_NEXUS));
+                        new Tag("Role", TeamInfrastructure.ROLE_NEXUS));
         ec2.createTags(createTagsRequest);
 
         String publicIp = "46.137.168.248";
@@ -252,21 +394,22 @@ public class ContinuousDeliveryInfrastructureCreator {
             ec2.disassociateAddress(new DisassociateAddressRequest(publicIp));
         }
 
-        instance = AmazonAwsUtils.awaitForEc2Instance(instance, ec2);
-        ec2.associateAddress(new AssociateAddressRequest(instance.getInstanceId(), publicIp));
-
-        logger.info("Created nexus server {} associated with {}", instance, publicIp);
+        ec2.associateAddress(new AssociateAddressRequest(nexusInstance.getInstanceId(), publicIp));
 
         AmazonAwsUtils.awaitForHttpAvailability("http://" + publicIp + ":8081/nexus/");
         AmazonAwsUtils.awaitForHttpAvailability("http://nexus.xebia-tech-event.info:8081/nexus/");
-        return instance;
+
+        logger.info("1 NEXUS SERVER {} SUCCESSFULLY CREATED AND ASSOCIATED WITH {}: {}", new Object[] { nexusInstance.getInstanceId(),
+                publicIp, nexusInstance });
+
+        return nexusInstance;
 
     }
 
-    public void buildTomcatServers(List<TeamInfrastructure> teamInfrastructures, String environment, int numberOfInstances) {
+    public List<Instance> buildTomcatServers(Collection<String> teamIdentifiers, String environment, int numberOfInstances) {
         logger.info("CREATE TOMCAT '{}' SERVERS", environment);
 
-        String role = ROLE_TOMCAT + "-" + environment;
+        String role = TeamInfrastructure.ROLE_TOMCAT + "-" + environment;
         AmazonAwsUtils.terminateInstancesByRole(role, ec2);
 
         // CLOUD CONFIG
@@ -278,26 +421,26 @@ public class ContinuousDeliveryInfrastructureCreator {
         RunInstancesRequest runInstancesRequest = new RunInstancesRequest() //
                 .withInstanceType(InstanceType.T1Micro.toString()) //
                 .withImageId(AmazonAwsUtils.AMI_AMZN_LINUX_EU_WEST) //
-                .withMinCount(teamInfrastructures.size() * numberOfInstances) //
-                .withMaxCount(teamInfrastructures.size() * numberOfInstances) //
+                .withMinCount(teamIdentifiers.size() * numberOfInstances) //
+                .withMaxCount(teamIdentifiers.size() * numberOfInstances) //
                 .withSecurityGroupIds("accept-all") //
                 .withKeyName("continuous-delivery-workshop") //
                 .withUserData(userData) //
 
         ;
-        RunInstancesResult runInstances = ec2.runInstances(runInstancesRequest);
-        List<Instance> tomcatInstances = runInstances.getReservation().getInstances();
+        List<Instance> tomcatInstances = AmazonAwsUtils.reliableEc2RunInstances(runInstancesRequest, ec2);
 
         // TAG EC2 INSTANCES
         {
-            Iterator<TeamInfrastructure> teamInfrastructureIterator = teamInfrastructures.iterator();
+            Iterator<String> teamInfrastructureIterator = teamIdentifiers.iterator();
             Iterator<Instance> tomcatInstancesIterator = tomcatInstances.iterator();
 
             while (tomcatInstancesIterator.hasNext()) {
-                TeamInfrastructure teamInfrastructure = teamInfrastructureIterator.next();
+                String identifier = teamInfrastructureIterator.next();
                 for (int i = 0; i < numberOfInstances; i++) {
                     Instance tomcatInstance = tomcatInstancesIterator.next();
-                    String identifier = teamInfrastructure.getIdentifier();
+                    // "AWS Error Code: InvalidInstanceID.NotFound, AWS Error Message: The instance ID 'i-d1638198' does not exist"
+                    AmazonAwsUtils.awaitForEc2Instance(tomcatInstance, ec2);
                     String serverName = "tomcat-" + identifier + "-" + environment + "-" + (i + 1);
                     CreateTagsRequest createTagsRequest = new CreateTagsRequest() //
                             .withResources(tomcatInstance.getInstanceId()) //
@@ -307,30 +450,19 @@ public class ContinuousDeliveryInfrastructureCreator {
                                     new Tag("TeamIdentifier", identifier), //
                                     new Tag("Role", role));
 
-                    // FIXME : better handling
-                    try {
-                        ec2.createTags(createTagsRequest);
-                    } catch (AmazonServiceException e) {
-                        // Handle
-                        // "AWS Error Code: InvalidInstanceID.NotFound, AWS Error Message: The instance ID 'i-d1638198' does not exist"
-                        try {
-                            Thread.sleep(10 * 1000);
-                        } catch (Exception e2) {
-                            e2.printStackTrace();
-                        }
-                        ec2.createTags(createTagsRequest);
+                    ec2.createTags(createTagsRequest);
 
-                    }
-                    tomcatInstance = AmazonAwsUtils.awaitForEc2Instance(tomcatInstance, ec2);
-                    teamInfrastructure.addTomcat(environment, tomcatInstance, serverName);
                 }
             }
             if (teamInfrastructureIterator.hasNext()) {
                 logger.warn("Unexpected remaining identifiers " + Lists.newArrayList(teamInfrastructureIterator));
             }
         }
-        AmazonAwsUtils.awaitForEc2Instances(tomcatInstances, ec2);
-        logger.info("Created tomcat '{}' servers {}", environment, tomcatInstances);
+        logger.info(
+                "{} TOMCAT '{}' SERVERS SUCCESSFULLY CREATED: {}",
+                new Object[] { tomcatInstances.size(), environment,
+                        Collections2.transform(tomcatInstances, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID) });
+        return tomcatInstances;
 
     }
 }
