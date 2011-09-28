@@ -30,7 +30,7 @@ import fr.xebia.cloud.cloudinit.FreemarkerUtils;
  * 
  * <pre>
  * new PetclinicJenkinsJobCreator(&quot;http://ec2-46-137-62-232.eu-west-1.compute.amazonaws.com:8080&quot;).create(new PetclinicProjectInstance(&quot;42&quot;))
- *         .warmUp();
+ *         .triggerBuild();
  * </pre>
  */
 public class PetclinicJenkinsJobCreator {
@@ -52,7 +52,7 @@ public class PetclinicJenkinsJobCreator {
         parameters.put("projectName", project.projectName);
         parameters.put("groupId", project.groupId);
         parameters.put("artifactId", project.artifactId);
-        String jobConfig = FreemarkerUtils.generate(parameters, "/petclinic-jenkins-job-config.xml.fmt");
+        String jobConfig = FreemarkerUtils.generate(parameters, "/fr/xebia/workshop/continuousdelivery/petclinic-jenkins-job-config.xml.fmt");
 
         HttpEntity httpEntity;
         try {
