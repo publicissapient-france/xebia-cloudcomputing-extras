@@ -24,6 +24,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 
 /**
  * <p>
@@ -40,12 +41,51 @@ public class TeamInfrastructure {
         }
     };
 
-    public static String getJenkinsUrl(Instance jenkins) {
+    /**
+     * The Jenkins server url (e.g. http://my-ec2-server:8080/) or
+     * <code>null</code> if the given ec2 instance is <code>null</code>.
+     * 
+     * @throws IllegalStateException
+     *             if the given jenkins instance is not initialized and has a
+     *             <code>null</code> 'publicDnsName'.
+     */
+    @Nullable
+    public static String getJenkinsUrl(@Nullable Instance jenkins) throws IllegalStateException {
+        if (jenkins == null) {
+            return null;
+        }
         Preconditions.checkState(jenkins.getPublicDnsName() != null && !jenkins.getPublicDnsName().isEmpty(),
-                "Given jenkins is not yet initialized, it publicDnsNAme is null: %s", jenkins);
+                "Given jenkins is not yet initialized, it publicDnsName is null: %s", jenkins);
         return "http://" + jenkins.getPublicDnsName() + ":8080/";
     }
 
+    /**
+     * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
+     * <code>null</code> if the given ec2 instance is <code>null</code>.
+     * 
+     * @throws IllegalStateException
+     *             if the given tomcat instance is not initialized and has a
+     *             <code>null</code> 'publicDnsName'.
+     */
+    @Nullable
+    public static String getTomcatUrl(@Nullable Instance tomcat) throws IllegalStateException {
+        if (tomcat == null) {
+            return null;
+        }
+        Preconditions.checkState(tomcat.getPublicDnsName() != null && !tomcat.getPublicDnsName().isEmpty(),
+                "Given tomcat is not yet initialized, it publicDnsName is null: %s", tomcat);
+        return "http://" + tomcat.getPublicDnsName() + ":8080/";
+    }
+
+    /**
+     * The Rundeck server url (e.g. http://my-ec2-server:4440/) or
+     * <code>null</code> if the given ec2 instance is <code>null</code>.
+     * 
+     * @throws IllegalStateException
+     *             if the given rundeck instance is not initialized and has a
+     *             <code>null</code> 'publicDnsName'.
+     */
+    @Nullable
     public static String getRundeckUrl(Instance rundeck) {
         Preconditions.checkState(rundeck.getPublicDnsName() != null, "Given rundeck is not yet initialized, it publicDnsNAme is null: %s",
                 rundeck);
@@ -114,9 +154,7 @@ public class TeamInfrastructure {
             } else {
                 throw new IllegalStateException("Dev tomcat already set");
             }
-
         }
-
     }
 
     /**
@@ -145,69 +183,194 @@ public class TeamInfrastructure {
         }
     }
 
+    /**
+     * Constant: "http://nexus.xebia-tech-event.info:8081/nexus/"
+     */
+    public String getNexusUrl() {
+        return "http://nexus.xebia-tech-event.info:8081/nexus/";
+    }
+
+    /**
+     * The Amazon EC2 instance of the Tomcat dev server
+     */
     public Instance getDevTomcat() {
         return devTomcat;
     }
 
+    /**
+     * The Amazon EC2 Name of the Tomcat dev server
+     */
     public String getDevTomcatName() {
         return devTomcatName;
     }
 
     /**
-     * Team identifier like a trigram or a number.
+     * Team identifier like a trigram or a number ("clc", "team-1", etc).
      */
     public String getIdentifier() {
         return identifier;
     }
 
     /**
-     * The Jenkins server
+     * The Amazon EC2 instance of the Jenkins server
      */
-    @Nullable
     public Instance getJenkins() {
         return jenkins;
     }
 
+    /**
+     * Amazon EC2 Name of the Jenkins server
+     */
     public String getJenkinsName() {
         return jenkinsName;
     }
 
-    public String getJenkinsUrl() {
+    /**
+     * <p>
+     * The GitHub repository url of the team. If the identifier is blank, the
+     * default xebia-petclinic project repository url is returned.
+     * </p>
+     * <p>
+     * e.g. "https://github.com/xebia-france-training/xebia-petclinic-" +
+     * identifier
+     * </p>
+     */
+    @Nonnull
+    public String getGithubRepositoryUrl() {
+        String xebiaPetclinicRepositoryUrl = "https://github.com/xebia-france-training/xebia-petclinic";
+        if (!Strings.isNullOrEmpty(identifier)) {
+            xebiaPetclinicRepositoryUrl += "-" + identifier;
+        }
+        return xebiaPetclinicRepositoryUrl;
+    }
+
+    /**
+     * URL of the jenkins server like "http://my-server:8080/" or
+     * <code>null</code> if the underlying jenkins instance is <code>null</code>
+     * .
+     * 
+     * @throws IllegalStateException
+     * 
+     */
+    public String getJenkinsUrl() throws IllegalStateException {
         return TeamInfrastructure.getJenkinsUrl(jenkins);
     }
 
+    /**
+     * Amazon EC2 instance of the Nexus server
+     */
     public Instance getNexus() {
         return nexus;
     }
 
+    /**
+     * <p>
+     * The Maven project groupId. If the identifier is blank, the default
+     * project groupId "fr.xebia.demo.petclinic" is returned.
+     * </p>
+     * <p>
+     * e.g. "fr.xebia.demo.petclinic-" + identifier
+     * </p>
+     */
+    @Nonnull
     public String getProjectMavenGroupId() {
-        return "fr.xebia.demo.petclinic-" + identifier;
+        String projectMavenGroupId = "fr.xebia.demo.petclinic";
+        if (!Strings.isNullOrEmpty(identifier)) {
+            projectMavenGroupId += "-" + identifier;
+        }
+
+        return projectMavenGroupId;
     }
 
+    /**
+     * Amazon EC2 instance of the Nexus server
+     */
     public Instance getRundeck() {
         return rundeck;
     }
 
+    /**
+     * Amazon EC2 name of the Nexus server
+     */
     public String getRundeckName() {
         return rundeckName;
     }
 
-    public String getRundeckUrl() {
+    /**
+     * URL of the rundeck server like "http://my-server:4440/" or
+     * <code>null</code> if underlying rundeck is <code>null</code>.
+     * 
+     * @throws IllegalStateException
+     *             the underlying jenkins instance is <code>null</code>.
+     */
+    @Nullable
+    public String getRundeckUrl() throws IllegalStateException {
         return getRundeckUrl(rundeck);
     }
 
+    /**
+     * Amazon EC2 instance of the Valid Tomcat 1 server
+     */
     public Instance getValidTomcat1() {
         return validTomcat1;
     }
 
+    /**
+     * Amazon EC2 name of the Valid Tomcat 1 server
+     */
     public String getValidTomcat1Name() {
         return validTomcat1Name;
     }
 
+    /**
+     * Amazon EC2 instance of the Valid Tomcat 2 server
+     */
     public Instance getValidTomcat2() {
         return validTomcat2;
     }
 
+    /**
+     * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
+     * <code>null</code> if the underlying ec2 instance is <code>null</code>.
+     * 
+     * @throws IllegalStateException
+     *             if the underlying tomcat instance is not initialized and has a
+     *             <code>null</code> 'publicDnsName'.
+     */
+    @Nullable
+    public String getValidTomcat2Url() throws IllegalStateException {
+        return TeamInfrastructure.getTomcatUrl(validTomcat2);
+    }
+    
+    /**
+     * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
+     * <code>null</code> if the underlying ec2 instance is <code>null</code>.
+     * 
+     * @throws IllegalStateException
+     *             if the underlying tomcat instance is not initialized and has a
+     *             <code>null</code> 'publicDnsName'.
+     */
+    @Nullable
+    public String getValidTomcat1Url() throws IllegalStateException {
+        return TeamInfrastructure.getTomcatUrl(validTomcat1);
+    }
+    
+    /**
+     * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
+     * <code>null</code> if the underlying ec2 instance is <code>null</code>.
+     * 
+     * @throws IllegalStateException
+     *             if the underlying tomcat instance is not initialized and has a
+     *             <code>null</code> 'publicDnsName'.
+     */
+    @Nullable
+    public String getDevTomcatUrl() throws IllegalStateException {
+        return TeamInfrastructure.getTomcatUrl(devTomcat);
+    }
+
+    /**
+     * Amazon EC2 name of the Valid Tomcat 2 server
+     */
     public String getValidTomcat2Name() {
         return validTomcat2Name;
     }
