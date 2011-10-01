@@ -74,7 +74,7 @@ public class ContinuousDeliveryInfrastructureCreator {
         boolean createTomcatValid = true;
         final ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
         ExecutorService executorService = Executors.newFixedThreadPool(4);
-        final Collection<String> teamIdentifiers = Lists.newArrayList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+        final Collection<String> teamIdentifiers = Lists.newArrayList("clc", "1");
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
@@ -193,6 +193,7 @@ public class ContinuousDeliveryInfrastructureCreator {
         System.out.println("Base folder: " + baseWikiFolder);
         System.out.println("Index: " + indexPageName);
         System.out.println("Per team pages: \n\t" + Joiner.on("\n\t").join(generatedWikiPageNames));
+        System.out.println("https://xebia-france.googlecode.com/svn/wiki");
     }
 
     protected AmazonEC2 ec2;
@@ -241,20 +242,31 @@ public class ContinuousDeliveryInfrastructureCreator {
                     }
                 });
 
+        Instance nexusServer = null;
+
         for (Map.Entry<String, Map<String, String>> entry : tagsByInstanceId.entrySet()) {
             Map<String, String> instanceTags = entry.getValue();
             String instanceId = entry.getKey();
+            Instance instance = runningInstancesByInstanceId.get(instanceId);
             String teamIdentifier = instanceTags.get("TeamIdentifier");
+
             if (teamIdentifier == null) {
-                // not a per team server (e.g. Nexus server)
+                if (TeamInfrastructure.ROLE_NEXUS.equals(instanceTags.get("Role"))) {
+                    nexusServer = instance;
+                } else {
+                    // not a per team server (e.g. Nexus server)
+                }
             } else {
-                Instance instance = runningInstancesByInstanceId.get(instanceId);
 
                 TeamInfrastructure teamInfrastructure = teamInfrastructureByTeamIdentifier.get(teamIdentifier);
                 teamInfrastructure.addInstance(instance, instanceTags);
             }
         }
-        return teamInfrastructureByTeamIdentifier.values();
+        Collection<TeamInfrastructure> teamInfrastructures = teamInfrastructureByTeamIdentifier.values();
+        for (TeamInfrastructure teamInfrastructure : teamInfrastructures) {
+            teamInfrastructure.setNexus(nexusServer);
+        }
+        return teamInfrastructures;
     }
 
     /**

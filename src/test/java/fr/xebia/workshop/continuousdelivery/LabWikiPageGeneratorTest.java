@@ -45,14 +45,14 @@ public class LabWikiPageGeneratorTest {
         infrastructure.setDevTomcatName("tomcat-clc-dev-1");
 
         Instance validTomcat1 = new Instance() //
-                .withPublicDnsName("ec2-79-011-33-55-validtomcat.eu-west-1.compute.amazonaws.com") //
+                .withPublicDnsName("ec2-79-011-33-55-validtomcat1.eu-west-1.compute.amazonaws.com") //
                 .withPrivateDnsName("ip-10-01-03-05.eu-west-1.compute.internal") //
                 .withPrivateIpAddress("10.01.03.05");
         infrastructure.setValidTomcat1(validTomcat1);
         infrastructure.setValidTomcat1Name("tomcat-clc-valid-1");
 
         Instance validTomcat2 = new Instance() //
-                .withPublicDnsName("ec2-80-022-44-66-validtomcat.eu-west-1.compute.amazonaws.com") //
+                .withPublicDnsName("ec2-80-022-44-66-validtomcat2.eu-west-1.compute.amazonaws.com") //
                 .withPrivateDnsName("ip-10-02-04-04.eu-west-1.compute.internal") //
                 .withPrivateIpAddress("10.02.04.06");
         infrastructure.setValidTomcat2(validTomcat2);
