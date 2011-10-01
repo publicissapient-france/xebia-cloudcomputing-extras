@@ -94,6 +94,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
@@ -372,7 +373,7 @@ public class AmazonAwsIamAccountCreator {
         Preconditions.checkNotNull(emailsToVerifyURL, "File 'accounts-to-create.txt' NOT found in the classpath");
         Collection<String> userNames;
         try {
-            userNames = Resources.readLines(emailsToVerifyURL, Charsets.ISO_8859_1);
+            userNames = Sets.newTreeSet(Resources.readLines(emailsToVerifyURL, Charsets.ISO_8859_1));
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
