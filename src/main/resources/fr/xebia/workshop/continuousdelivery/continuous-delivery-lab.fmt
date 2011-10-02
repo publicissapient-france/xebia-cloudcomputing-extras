@@ -252,7 +252,7 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
    ** Default value: {{{LATEST}}}
    ** Remote URL: 
      {{{
-  http://nexus.xebia-tech-event.info:8081/nexus/service/local/rundeck/options/version?a=xebia-petclinic&includeLatest=true
+  http://nexus.xebia-tech-event.info:8081/nexus/service/local/rundeck/options/version?g=${infrastructure.projectMavenGroupId}&a=xebia-petclinic&includeLatest=true
 }}}
    ** Restrictions: {{{Enforced from Allowed Values}}}
   * Shell command: 
