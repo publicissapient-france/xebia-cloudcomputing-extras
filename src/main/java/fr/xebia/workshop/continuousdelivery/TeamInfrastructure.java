@@ -227,21 +227,63 @@ public class TeamInfrastructure {
 
     /**
      * <p>
-     * The GitHub repository url of the team. If the identifier is blank, the
-     * default xebia-petclinic project repository url is returned.
+     * The GitHub repository home page url of the team. If the identifier is
+     * blank, the default xebia-petclinic project repository url is returned.
      * </p>
      * <p>
-     * e.g. "https://github.com/xebia-france-training/xebia-petclinic-" +
-     * identifier
+     * e.g. "https://github.com/xebia-france-training/xebia-petclinic-team-1"
      * </p>
      */
     @Nonnull
-    public String getGithubRepositoryUrl() {
-        String xebiaPetclinicRepositoryUrl = "https://github.com/xebia-france-training/xebia-petclinic";
+    public String getGithubRepositoryHomePageUrl() {
+        return "https://github.com/xebia-france-training/" + getGithubRepositoryName();
+    }
+
+    @Nonnull
+    public String getGithubRepositoryName() {
+        String repositoryName = "xebia-petclinic";
         if (!Strings.isNullOrEmpty(identifier)) {
-            xebiaPetclinicRepositoryUrl += "-" + identifier;
+            repositoryName += "-" + identifier;
         }
-        return xebiaPetclinicRepositoryUrl;
+        return repositoryName;
+    }
+
+    /**
+     * <p>
+     * The GitHub repository clone url of the team. If the identifier is blank,
+     * the default xebia-petclinic project repository url is returned.
+     * </p>
+     * <p>
+     * e.g. "https://github.com/xebia-france-training/xebia-petclinic-team-1"
+     * </p>
+     */
+    @Nonnull
+    public String getGithubRepositoryCloneUrl() {
+        String url = "https://";
+
+        String gitHubUsername = getGitHubAccountUsername();
+        if (!Strings.isNullOrEmpty(gitHubUsername)) {
+            url += gitHubUsername + "@";
+        }
+        url += "github.com/xebia-france-training/" + getGithubRepositoryName();
+        url += ".git";
+        return url;
+    }
+
+    /**
+     * Username of the GitHub account.
+     */
+    @Nullable
+    public String getGitHubAccountUsername() {
+        return "xebia-continuous-delivery-tech-event";
+    }
+
+    /**
+     * Password of the GitHub account.
+     */
+    @Nullable
+    public String getGitHubAccountPassword() {
+        return "1645faface";
     }
 
     /**
@@ -334,34 +376,34 @@ public class TeamInfrastructure {
      * <code>null</code> if the underlying ec2 instance is <code>null</code>.
      * 
      * @throws IllegalStateException
-     *             if the underlying tomcat instance is not initialized and has a
-     *             <code>null</code> 'publicDnsName'.
+     *             if the underlying tomcat instance is not initialized and has
+     *             a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getValidTomcat2Url() throws IllegalStateException {
         return TeamInfrastructure.getTomcatUrl(validTomcat2);
     }
-    
+
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
      * <code>null</code> if the underlying ec2 instance is <code>null</code>.
      * 
      * @throws IllegalStateException
-     *             if the underlying tomcat instance is not initialized and has a
-     *             <code>null</code> 'publicDnsName'.
+     *             if the underlying tomcat instance is not initialized and has
+     *             a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getValidTomcat1Url() throws IllegalStateException {
         return TeamInfrastructure.getTomcatUrl(validTomcat1);
     }
-    
+
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
      * <code>null</code> if the underlying ec2 instance is <code>null</code>.
      * 
      * @throws IllegalStateException
-     *             if the underlying tomcat instance is not initialized and has a
-     *             <code>null</code> 'publicDnsName'.
+     *             if the underlying tomcat instance is not initialized and has
+     *             a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getDevTomcatUrl() throws IllegalStateException {
