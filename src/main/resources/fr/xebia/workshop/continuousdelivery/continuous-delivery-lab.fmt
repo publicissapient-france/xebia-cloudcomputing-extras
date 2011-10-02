@@ -1,37 +1,73 @@
+<wiki:toc max_depth="1" />
+
 = Your architecture =
 
 <img width="400" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/per-team-infrastructure.png" />
 
 <table>
-<tr><td> *GitHub project repository url* </td><td> [${infrastructure.githubRepositoryUrl}] </td></tr>
+<tr><td> *SSH Private key* </td><td> [https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem continuous-delivery-workshop.pem] to store under {{{~/.aws/}}}</td></tr>
+<tr><td> *GitHub project repository url* </td><td> [${infrastructure.githubRepositoryHomePageUrl}] </td></tr>
 <tr><td> *Jenkins URL* </td><td> [${infrastructure.jenkinsUrl}] </td></tr>
 <tr><td> *Rundeck URL* </td><td> [${infrastructure.rundeckUrl}] </td></tr>
 <tr><td> *Nexus URL* </td><td> [${infrastructure.nexusUrl}] </td></tr>
 <tr><td> *Tomcat Dev URL* </td><td> [${infrastructure.devTomcatUrl}] </td></tr>
 <tr><td> *Tomcat Dev SSH* </td><td> 
 {{{
-ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}
+ssh -i ~/.aws/continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName}
 }}}
  </td></tr>
 <tr><td> *Tomcat Valid 1 URL* </td><td> [${infrastructure.validTomcat1Url}] </td></tr>
 <tr><td> *Tomcat Valid 1 SSH* </td><td> 
 {{{
-ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1.publicDnsName}
+ssh -i ~/.aws/continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1.publicDnsName}
 }}}
  </td></tr>
 <tr><td> *Tomcat Valid 2 URL* </td><td> [${infrastructure.validTomcat2Url}] </td></tr>
 <tr><td> *Tomcat Valid 2 SSH* </td><td> 
 {{{
-ssh -i continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat2.publicDnsName}
+ssh -i ~/.aws/continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat2.publicDnsName}
 }}}
  </td></tr>
 </table>
 
 ----
 
-= 'Local' Scripted Tomcat Deployment =
+= Environment setup =
 
-*Goal:* Develop a script to deploy a new version of '{{{xebia-petclinic.war}}}' on your tomcat server.
+ # Get the SSH private key [https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem continuous-delivery-workshop.pem] to connect to the servers
+ {{{
+mkdir ~/.aws/
+curl https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem --output ~/.aws/continuous-delivery-workshop.pem
+chmod 400 ~/.aws/continuous-delivery-workshop.pem
+}}}
+ # Clone Github repository ${infrastructure.githubRepositoryName}
+  {{{
+mkdir ~/continuous-delivery-workshop
+cd ~/continuous-delivery-workshop
+git clone ${infrastructure.githubRepositoryCloneUrl}
+}}}
+  Note: password of the "${infrastructure.gitHubAccountUsername}" user will be sent before the workshop.
+ # build project
+ {{{
+cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
+mvn package
+}}}
+
+----
+
+= Lab : Tomcat Maven Plugin =
+
+TODO : on their laptop
+
+{{{
+mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomcat.url=${infrastructure.devTomcatUrl}manager
+}}}
+
+----
+
+= Lab: 'Local' Scripted Tomcat Deployment =
+
+*Goal:* Develop a script to deploy a new version of '{{{xebia-petclinic.war}}}' on a tomcat server.
 
 == Script Specifications ==
 This script must:
@@ -44,6 +80,11 @@ This script must:
  # Go further in the lab: test that the URL http://localhost:8080/xebia-petclinic/ returns "200 OK"
  
 Answer : [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]
+
+== Lab ==
+
+ Elaborate 
+ * Connect t
 
 == Tomcat scripting tips and tricks ==
 
@@ -155,7 +196,9 @@ scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${
 
 ----
 
-= Automated Tomcat Deployment with Jenkins SSH Plugin = 
+= Lab. Automated Tomcat Deployment with Jenkins SSH Plugin = 
+
+*Goal:* Deploy a new version of '{{{xebia-petclinic.war}}}' on the "Tomcat Dev server" at the end of your build with the "Jenkins SSH Plugin".
 
 == Architecture ==
 
@@ -178,18 +221,18 @@ Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Pl
  # *Save* the settings
  # Create a new Jenkins *Free Style Project* named "{{{deploy-petclinic-on-tomcat-dev}}}" with the following parameters:
    <img height="75" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-create-free-style-project.png" />
- # Activation option called *Execute shell script on remote host using SSH*
- # Select the right SSH site you’ve configured before, 
+ # Activate option called *Execute shell script on remote host using SSH*
+ # Select the right SSH site "{{{${infrastructure.devTomcat.publicDnsName}}}}"
  # In *post-build script*, enter 
   {{{
   /usr/share/tomcat6/bin/tomcat-deploy-petclinic ${infrastructure.projectMavenGroupId}
 }}}
-   Note: the _answer_ needs the maven group id as input parameter ; you may have hardcoded the project maven group id "${infrastructure.projectMavenGroupId}" in the script you developped.
    <img height="80" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-configure-job-ssh-post-build-script-screenshot.png" />
+   Note: the _answer_ needs the maven group id as input parameter ; you may have hardcoded the project maven group id "${infrastructure.projectMavenGroupId}" in the script you developped.
 
 ----
 
-= Automated Tomcat Deployment with Rundeck = 
+= Lab. Automated Tomcat Deployment with Rundeck = 
 
 == Architecture ==
 
@@ -207,14 +250,13 @@ Here is the configuration of the previous task with Rundeck.
   {{{
 ssh -i continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck.publicDnsName}
 }}}
-  # Update the project configuration files in "{{{/var/rundeck/projects/deploy-petclinic-on-tomcat-valid/etc/}}}":
-   # Modify the *{{{project.properties}}}* to add ssh private key for the workshop
+  # Update the project configuration files in folder "{{{/var/rundeck/projects/deploy-petclinic-on-tomcat-valid/etc/}}}":
+  # Modify the *{{{project.properties}}}* to declare the ssh private key of the workshop
    {{{
 project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
 }}}
   # Add your Valid Tomcat servers in *{{{resources.xml}}}*:
-  <code language="xml">
-<node 
+    <code language="xml"><node 
 	name="valid-tomcat-1" 
 	description="valid-tomcat-1" 
 	tags="tomcat,valid" 
@@ -250,7 +292,7 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
   * Options:
    ** Name: {{{version}}}
    ** Default value: {{{LATEST}}}
-   ** Remote URL: 
+   ** Remote URL: TODO: check that the nexus url is not missing the "g"/groupId parameter
      {{{
   http://nexus.xebia-tech-event.info:8081/nexus/service/local/rundeck/options/version?g=${infrastructure.projectMavenGroupId}&a=xebia-petclinic&includeLatest=true
 }}}
