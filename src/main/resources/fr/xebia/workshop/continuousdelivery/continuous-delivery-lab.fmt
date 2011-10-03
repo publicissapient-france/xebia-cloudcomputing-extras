@@ -5,7 +5,7 @@
 <img width="400" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/per-team-infrastructure.png" />
 
 <table>
-<tr><td> *SSH Private key* </td><td> [https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem continuous-delivery-workshop.pem] to store under {{{~/.aws/}}}</td></tr>
+<tr><td> *SSH Private key* </td><td> [https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem continuous-delivery-workshop.pem]</td></tr>
 <tr><td> *GitHub project repository url* </td><td> [${infrastructure.githubRepositoryHomePageUrl}] </td></tr>
 <tr><td> *Jenkins URL* </td><td> [${infrastructure.jenkinsUrl}] </td></tr>
 <tr><td> *Rundeck URL* </td><td> [${infrastructure.rundeckUrl}] </td></tr>
@@ -52,7 +52,14 @@ git clone ${infrastructure.githubRepositoryCloneUrl}
 cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
 mvn package
 }}}
-
+ # Modify the welcome page and push the change
+  ## Modify {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/WEB-INF/jsp/welcome.jsp}}}
+  ## Push the change
+   {{{
+${infrastructure.githubRepositoryName} > git commit -m "test" src/main/webapp/WEB-INF/jsp/welcome.jsp
+${infrastructure.githubRepositoryName} > git push
+}}}
+ # Verify that Jenkins detects the Git change and triggers a build : [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/]
 ----
 
 = Lab : Tomcat Maven Plugin =
@@ -99,23 +106,23 @@ Answer : [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcompu
 #!/usr/bin/env python -c
 }}}
 
-=== What is {{{$TOMCAT_HOME}}} for Tomcat6 RPM === 
+=== What is {{{$TOMCAT_HOME}}} for this workshop installation === 
 
-On Tomcat6 RPM, {{{$TOMCAT_HOME=/usr/share/tomcat6/}}}.
+{{{
+$TOMCAT_HOME=/opt/tomcat/apache-tomcat-6/
+}}}
 
-=== How to stop and start Tomcat with Tomcat 6 RPM ===
-
-Note Tomcat6 RPM does not expose the typical {{{catalina.sh}}}.
+=== How to stop and start Tomcat 6  ===
 
 <table>
 <tr><td> *Start* </td><td>
 {{{
-$tomcat> /usr/sbin/tomcat6 start
+$tomcat> /opt/tomcat/apache-tomcat-6/bin/catalina.sh start
 }}}
 </td></tr>
 <tr><td> *Stop* </td><td>
 {{{
-$tomcat> /usr/sbin/tomcat6 stop
+$tomcat> /opt/tomcat/apache-tomcat-6/bin/catalina.sh stop
 }}}
 </td></tr>
 </table>
@@ -130,7 +137,7 @@ http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/conte
    a=$ARTIFACT_ID&
    r=$REPOSITORY&
    v=$VERSION&
-   e=war"
+   e=war
 }}}
   ** g: Group id of the artifact (Required).
   ** a: Artifact id of the artifact (Required).
@@ -179,17 +186,17 @@ SCP command lines to copy a local "{{{tomcat-deploy-petclinic}}} to the remote t
 <table>
 <tr><td> *Tomcat Dev SSH* </td><td> 
 {{{
-scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.devTomcat.publicDnsName}:/usr/share/tomcat6/bin/
+scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.devTomcat.publicDnsName}:/opt/tomcat/apache-tomcat-6/bin/
 }}}
  </td></tr>
 <tr><td> *Tomcat Valid 1 SSH* </td><td> 
 {{{
-scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.validTomcat1.publicDnsName}:/usr/share/tomcat6/bin/
+scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.validTomcat1.publicDnsName}:/opt/tomcat/apache-tomcat-6/bin/
 }}}
  </td></tr>
 <tr><td> *Tomcat Valid 2 SSH* </td><td> 
 {{{
-scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.validTomcat2.publicDnsName}:/usr/share/tomcat6/bin/
+scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.validTomcat2.publicDnsName}:/opt/tomcat/apache-tomcat-6/bin/
 }}}
 </td></tr>
 <table>
@@ -225,7 +232,7 @@ Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Pl
  # Select the right SSH site "{{{${infrastructure.devTomcat.publicDnsName}}}}"
  # In *post-build script*, enter 
   {{{
-  /usr/share/tomcat6/bin/tomcat-deploy-petclinic ${infrastructure.projectMavenGroupId}
+  /opt/tomcat/apache-tomcat-6/bin/tomcat-deploy-petclinic ${infrastructure.projectMavenGroupId}
 }}}
    <img height="80" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-configure-job-ssh-post-build-script-screenshot.png" />
    Note: the _answer_ needs the maven group id as input parameter ; you may have hardcoded the project maven group id "${infrastructure.projectMavenGroupId}" in the script you developped.
@@ -299,7 +306,7 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
    ** Restrictions: {{{Enforced from Allowed Values}}}
   * Shell command: 
      {{{
-  /usr/share/tomcat6/bin/tomcat-deploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier} ${r"${option.version}"}
+  /opt/tomcat/apache-tomcat-6/bin/tomcat-deploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier} ${r"${option.version}"}
 }}}
   * Dispatch to Node: {{{checked}}}
   * Includes: {{{tags}}}, type "{{{tomcat}}}"
