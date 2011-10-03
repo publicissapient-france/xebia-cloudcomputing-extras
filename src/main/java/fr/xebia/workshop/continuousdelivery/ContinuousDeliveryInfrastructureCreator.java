@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,7 +167,9 @@ public class ContinuousDeliveryInfrastructureCreator {
             try {
                 Map<String, Object> rootMap = Maps.newHashMap();
                 rootMap.put("infrastructure", infrastructure);
-                String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
+                String templatePath = "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt";
+                rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}' with template '{{{" +  templatePath + "}}}' on the " + new DateTime());
+                String page = FreemarkerUtils.generate(rootMap, templatePath);
                 String wikiPageName = "ContinuousDeliveryWorkshopLab_" + infrastructure.getIdentifier();
                 wikiPageName = wikiPageName.replace('-', '_');
                 generatedWikiPageNames.add(wikiPageName);
@@ -188,13 +191,13 @@ public class ContinuousDeliveryInfrastructureCreator {
         String indexPageName = "ContinuousDeliveryWorkshopLab";
         Files.write(indexPageStringWriter.toString(), new File(baseWikiFolder, indexPageName + ".wiki"), Charsets.UTF_8);
 
-        System.out.println("WIKI PAGES GENERATED");
-        System.out.println("====================");
+        System.out.println("GENERATED WIKI PAGES TO BE COMMITTED IN XEBIA-FRANCE GOOGLE CODE");
+        System.out.println("=================================================================");
         System.out.println();
         System.out.println("Base folder: " + baseWikiFolder);
-        System.out.println("Index: " + indexPageName);
+        System.out.println("All the files in " + baseWikiFolder + " must be committed in https://xebia-france.googlecode.com/svn/wiki");
+        System.out.println("Index page: " + indexPageName);
         System.out.println("Per team pages: \n\t" + Joiner.on("\n\t").join(generatedWikiPageNames));
-        System.out.println("https://xebia-france.googlecode.com/svn/wiki");
     }
 
     protected AmazonEC2 ec2;
@@ -341,8 +344,8 @@ public class ContinuousDeliveryInfrastructureCreator {
                 String jenkinsUrl = TeamInfrastructure.getJenkinsUrl(jenkins);
                 logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, jenkins.getInstanceId());
 
-                AmazonAwsUtils.awaitForHttpAvailability(jenkinsUrl);
                 try {
+                    AmazonAwsUtils.awaitForHttpAvailability(jenkinsUrl);
                     PetclinicProjectInstance petClinicProjectInstance = new PetclinicProjectInstance(teamIdentifier);
                     new PetclinicJenkinsJobCreator(jenkinsUrl).create(petClinicProjectInstance).triggerBuild();
                 } catch (Exception e) {

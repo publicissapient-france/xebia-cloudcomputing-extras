@@ -323,6 +323,10 @@ public class TeamInfrastructure {
 
         return projectMavenGroupId;
     }
+    
+    public String getProjectMavenArtifactId() {
+        return "xebia-petclinic";
+    }
 
     /**
      * Amazon EC2 instance of the Nexus server
