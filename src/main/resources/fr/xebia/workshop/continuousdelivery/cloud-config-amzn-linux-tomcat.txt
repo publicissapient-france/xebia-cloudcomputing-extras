@@ -40,12 +40,12 @@ runcmd:
  - [sh, -xc, "echo 'CATALINA_HOME=/opt/tomcat/apache-tomcat-6' >> /etc/init.d/tomcat6"]
  - [sh, -xc, "echo 'export CATALINA_HOME' >> /etc/init.d/tomcat6"]
  - [sh, -xc, "echo '' >> /etc/init.d/tomcat6"]
- # dollar is escaped by backslash for the shell echo command, backslash is escaped by backslash for yaml
+ # in yaml, dollar does not need to be escaped by backslash as in shell
  - [sh, -xc, "echo '/bin/su tomcat $CATALINA_HOME/bin/catalina.sh $*' >> /etc/init.d/tomcat6"]
  - ["chmod", "a+x", "/etc/init.d/tomcat6"]
  - ["chkconfig", "--add", "tomcat6"]
  
- # provision tomcat-users for tomcat-manager 
+ # provision tomcat-users.xml for tomcat-manager 
  - [sh, -xc, "echo '<tomcat-users>' > /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
  - [sh, -xc, "echo '  <role rolename=\"tomcat\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
  - [sh, -xc, "echo '  <role rolename=\"admin\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
@@ -56,7 +56,7 @@ runcmd:
  - [sh, -xc, "echo '</tomcat-users>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
  - [sh, -xc, "echo '/opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml provisionned with accounts: tomcat, admin and manager'"]
 
- # restart tomcat service
+ # start tomcat service
  - [service, tomcat6, start ]
  
  # add user ec2-user to group tomcat
