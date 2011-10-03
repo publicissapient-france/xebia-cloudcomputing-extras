@@ -6,39 +6,63 @@ ssh_authorized_keys:
  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDX/P7IUU99UkfG/vHolJvk8kJRpyOqYvYmFKvBbbt7/VJ8dBdJSzVpuRAAigcqC2y14HBfvkll5TMytY3OhJLRvcbbyDuUlPNSvQzqHTGoaUrqjGMeb32/pB6kzT9y1QHEyB7AHGx5ZP1aemI1AhC5wge8X6+TYKppxMFFQmJmSifeSWCDvpMQNbRMbxWZswgfXD5lU0qQ8Vr2EP6Yb8Gld/PQUllffTQrZFia+q2TneSwbvPkfEjGivkdOBOAmQj8w8OgilINhV2RPC2C/AqiN8X5x7kM6Q/t0v3/kqrJs5A5ZX7SSJd/NiRBTqRCVAtDPiVYkWQuJa8SZs8Ol9Zv continuous-delivery-workshop
 
 packages:
-- yum-utils
-- java-1.6.0-openjdk
-- tomcat6
-- tomcat6-webapps
-- tomcat6-docs-webapp
-- tomcat6-admin-webapps
+ - yum-utils
+ - java-1.6.0-openjdk
+ - java-1.6.0-openjdk-devel
 
 runcmd:
- #  Fix "Authentication refused: bad ownership or modes for directory /usr/share/tomcat6"
- - [mkdir, "/usr/share/tomcat6/.ssh"]
- - [chown, -R, "tomcat:tomcat", "/usr/share/tomcat6"]
- - [chmod, "og-w", "/usr/share/tomcat6"]
- - [chmod, -R, "og-rwx", "/usr/share/tomcat6/.ssh"]
+
+ - [useradd, --create-home, --home, "/opt/tomcat", --user-group, -G, users, tomcat]
+ #  Fix "Authentication refused: bad ownership or modes for directory /opt/tomcat"
+ - [mkdir, "/opt/tomcat/.ssh"]
+ - [chown, -R, "tomcat:tomcat", "/opt/tomcat"]
+ - [chmod, -R, "og-rwx", "/opt/tomcat/.ssh"]
+ 
  # provision ssh authorized_keys
- - [sh, -xc, "echo '/usr/share/tomcat6/.ssh/authorized_keys provisionned with accounts: tomcat, admin and manager'"]
- - [cp, -r, "/home/ec2-user/.ssh/authorized_keys", "/usr/share/tomcat6/.ssh"]
- - [chown, -R, "tomcat:tomcat", "/usr/share/tomcat6/.ssh"]
- # Allow login in as "tomcat" in case shell was associated with "/sbin/login" and "This account is currently not available." was returned.
- - [usermod, -s, "/bin/bash", tomcat]
+ - [sh, -xc, "echo '/opt/tomcat/.ssh/authorized_keys provisionned with accounts: tomcat, admin and manager'"]
+ - [cp, -r, "/home/ec2-user/.ssh/authorized_keys", "/opt/tomcat/.ssh"]
+ - [chown, -R, "tomcat:tomcat", "/opt/tomcat/.ssh"]
+ 
+ # install tomcat
+ - ["wget", "http://mirror.ibcp.fr/pub/apache/tomcat/tomcat-6/v6.0.33/bin/apache-tomcat-6.0.33.tar.gz", "--output-document", "/tmp/apache-tomcat-6.0.33.tar.gz"]
+ - ["tar", "-zxvf", "/tmp/apache-tomcat-6.0.33.tar.gz"]
+ - ["mv", "apache-tomcat-6.0.33/", "/opt/tomcat/"]
+ - ["chown", "-R", "tomcat:tomcat", "/opt/tomcat/apache-tomcat-6.0.33"]
+ - ["ln", "-s", "/opt/tomcat/apache-tomcat-6.0.33", "/opt/tomcat/apache-tomcat-6"]
+ 
+ # register tomcat as a linux service
+ - [sh, -xc, "echo '#!/bin/sh' > /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo '# Tomcat init script for Linux.' >> /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo '#' >> /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo '# chkconfig: 2345 20 80' >> /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo '# description: The Apache Tomcat servlet/JSP container.' >> /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo '' >> /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo 'CATALINA_HOME=/opt/tomcat/apache-tomcat-6' >> /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo 'export CATALINA_HOME' >> /etc/init.d/tomcat6"]
+ - [sh, -xc, "echo '' >> /etc/init.d/tomcat6"]
+ # dollar is escaped by backslash for the shell echo command, backslash is escaped by backslash for yaml
+ - [sh, -xc, "echo '/bin/su tomcat $CATALINA_HOME/bin/catalina.sh $*' >> /etc/init.d/tomcat6"]
+ - ["chmod", "a+x", "/etc/init.d/tomcat6"]
+ - ["chkconfig", "--add", "tomcat6"]
+ 
  # provision tomcat-users for tomcat-manager 
- - [sh, -xc, "echo '<tomcat-users>' > /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '  <role rolename=\"tomcat\"/>' >> /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '  <role rolename=\"admin\"/>' >> /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '  <role rolename=\"manager\"/>' >> /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '  <user username=\"tomcat\" password=\"tomcat\" roles=\"tomcat,admin,manager\"/>' >> /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '  <user username=\"admin\" password=\"admin\" roles=\"tomcat,admin,manager\"/>' >> /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '  <user username=\"manager\" password=\"manager\" roles=\"tomcat,admin,manager\"/>' >> /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '</tomcat-users>' >> /etc/tomcat6/tomcat-users.xml"]
- - [sh, -xc, "echo '/etc/tomcat6/tomcat-users.xml provisionned with accounts: tomcat, admin and manager'"]
- # register tomcat service
- - [chkconfig, tomcat6, on]
+ - [sh, -xc, "echo '<tomcat-users>' > /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '  <role rolename=\"tomcat\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '  <role rolename=\"admin\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '  <role rolename=\"manager\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '  <user username=\"tomcat\" password=\"tomcat\" roles=\"tomcat,admin,manager\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '  <user username=\"admin\" password=\"admin\" roles=\"tomcat,admin,manager\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '  <user username=\"manager\" password=\"manager\" roles=\"tomcat,admin,manager\"/>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '</tomcat-users>' >> /opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml"]
+ - [sh, -xc, "echo '/opt/tomcat/apache-tomcat-6/conf/tomcat-users.xml provisionned with accounts: tomcat, admin and manager'"]
+
  # restart tomcat service
- - [service, tomcat6, restart ]
+ - [service, tomcat6, start ]
+ 
  # add user ec2-user to group tomcat
  - [usermod, -G, tomcat, ec2-user]
+ 
+ 
+ 
+ 
  
