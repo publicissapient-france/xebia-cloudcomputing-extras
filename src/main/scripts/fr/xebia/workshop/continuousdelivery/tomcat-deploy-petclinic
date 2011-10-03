@@ -13,7 +13,7 @@ REPOSITORY="snapshots"
 HEALT_CHECK_URL="http://localhost:8080/xebia-petclinic/"
 
 # shutdown tomcat
-/usr/sbin/tomcat6 stop
+/opt/tomcat/apache-tomcat-6/bin/catalina.sh stop
  
 # cleanup
 if [ -f /opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic.war ];
@@ -34,7 +34,7 @@ curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven
 echo "petclinic downloaded from nexus server"
 
 # start tomcat
-/usr/sbin/tomcat6 start
+/opt/tomcat/apache-tomcat-6/bin/catalina.sh start
 
 echo "petclinic tomcat started"
 
