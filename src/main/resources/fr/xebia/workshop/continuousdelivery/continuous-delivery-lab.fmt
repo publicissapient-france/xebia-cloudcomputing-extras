@@ -64,11 +64,19 @@ ${infrastructure.githubRepositoryName} > git push
 
 = Lab : Tomcat Maven Plugin =
 
-TODO : on their laptop
+*Goal:* Deploy the application to the development instance of Tomcat from the developer laptop with *Tomcat6 Maven Plugin*
+# Go to your application folder : 
+{{{cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName} }}}
 
-{{{
-mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomcat.url=${infrastructure.devTomcatUrl}manager
-}}}
+# Deploy the application to Tomcat Dev server. The Maven goal is *tomcat6:deploy*, the parameters needed for this Maven plugin are:
+* *tomcat.password*: a Tomcat user granted to use Tomcat Manager
+* *tomcat.username*: password of the user
+* *maven.tomcat.url*: URL to the Tomcat Manager where the application will be deployed
+
+#Note: as you can see in the {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/pom.xml}}}, the Tomcat6 Maven Plugin is configured with the parameter *update* that allows the application to be update if it's already deployed on the server.  
+For further information, please go to [http://tomcat.apache.org/maven-plugin-2.0-SNAPSHOT/tomcat6-maven-plugin/deploy-mojo.html]
+
+Answer : {{{mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomcat.url=${infrastructure.devTomcatUrl}manager}}}
 
 ----
 
