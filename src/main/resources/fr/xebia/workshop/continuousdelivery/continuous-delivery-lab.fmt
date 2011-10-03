@@ -1,3 +1,7 @@
+#summary Continuous Delivery with Jenkins and rundeck Lab for team '${infrastructure.identifier}'
+
+*<font size="5">Continuous Delivery with Jenkins and rundeck Lab for Team '${infrastructure.identifier}'</font>*
+
 <wiki:toc max_depth="1" />
 
 = Your architecture =
@@ -64,19 +68,22 @@ ${infrastructure.githubRepositoryName} > git push
 
 = Lab : Tomcat Maven Plugin =
 
-*Goal:* Deploy the application to the development instance of Tomcat from the developer laptop with *Tomcat6 Maven Plugin*
-# Go to your application folder : 
-{{{cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName} }}}
+*Goal:* Deploy the "xebia-petclinic" application to the Dev Tomcat Server from your laptop with *[http://tomcat.apache.org/maven-plugin.html Tomcat6 Maven Plugin]*
+ # Go to your application folder : 
+  {{{
+cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
+}}}
+ # Deploy the application to Tomcat Dev server. The Maven goal is *{{{tomcat6:deploy}}}*, the parameters needed for this Maven plugin are:
+  ** *maven.tomcat.url*: URL to the Tomcat Manager where the application will be deployed
+  ** *tomcat.username*: password of the user ("admin" on our servers)
+  ** *tomcat.password*: a Tomcat user granted to use Tomcat Manager ("admin" on our servers)
+ # Note: as you can see in the {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/pom.xml}}}, the Tomcat6 Maven Plugin is configured with the parameter *update* that allows the application to be update if it's already deployed on the server.  
+  For further information, please go to [http://tomcat.apache.org/maven-plugin-2.0-SNAPSHOT/tomcat6-maven-plugin/deploy-mojo.html]
 
-# Deploy the application to Tomcat Dev server. The Maven goal is *tomcat6:deploy*, the parameters needed for this Maven plugin are:
-* *tomcat.password*: a Tomcat user granted to use Tomcat Manager
-* *tomcat.username*: password of the user
-* *maven.tomcat.url*: URL to the Tomcat Manager where the application will be deployed
-
-#Note: as you can see in the {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/pom.xml}}}, the Tomcat6 Maven Plugin is configured with the parameter *update* that allows the application to be update if it's already deployed on the server.  
-For further information, please go to [http://tomcat.apache.org/maven-plugin-2.0-SNAPSHOT/tomcat6-maven-plugin/deploy-mojo.html]
-
-Answer : {{{mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomcat.url=${infrastructure.devTomcatUrl}manager}}}
+Answer : 
+{{{
+mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomcat.url=${infrastructure.devTomcatUrl}manager
+}}}
 
 ----
 
@@ -90,16 +97,12 @@ This script must:
  # Stop the Tomcat server if it is running
  # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic.war}}} file if exists,
  # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic}}} folder if exists,
- # Download latest version of {{{xebia-petclinic.war}}} and copy it to {{{$TOMCAT_HOME/webapps/}}}
+ # Download latest version of {{{xebia-petclinic.war}}} (groupId=${infrastructure.projectMavenGroupId}, artifactId=${infrastructure.projectMavenArtifactId}) and copy it to {{{$TOMCAT_HOME/webapps/}}}
+  ** {{{xebia-petclinic.war}}} is deployed on [${infrastructure.nexusUrl}/content/groups/public/] but it is more elegant to use Nexus REST API (see below)
  # Start Tomcat server
  # Go further in the lab: test that the URL http://localhost:8080/xebia-petclinic/ returns "200 OK"
  
 Answer : [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]
-
-== Lab ==
-
- Elaborate 
- * Connect t
 
 == Tomcat scripting tips and tricks ==
 
@@ -243,7 +246,7 @@ Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Pl
   /opt/tomcat/apache-tomcat-6/bin/tomcat-deploy-petclinic ${infrastructure.projectMavenGroupId}
 }}}
    <img height="80" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-configure-job-ssh-post-build-script-screenshot.png" />
-   Note: the _answer_ needs the maven group id as input parameter ; you may have hardcoded the project maven group id "${infrastructure.projectMavenGroupId}" in the script you developped.
+   Note: the provided _answer_ [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic] needs the maven group id as input parameter ; you may have hardcoded the project maven group id "${infrastructure.projectMavenGroupId}" in the script you developped.
 
 ----
 
@@ -336,4 +339,9 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
   ** Should fail the build ?: {{{checked}}}
   <img height="140" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-job-rundeck-configuration-screenshot.png" />
  * Trigger the build and verify it works
- 
+
+*END OF THE LAB THANK YOU!*
+
+----
+
+_${generator}_

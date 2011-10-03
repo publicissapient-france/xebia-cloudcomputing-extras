@@ -248,6 +248,7 @@ public class AmazonAwsUtils {
                 HttpURLConnection healthCheckHttpURLConnection = (HttpURLConnection) new URL(healthCheckUrl).openConnection();
 
                 healthCheckHttpURLConnection.setReadTimeout(1000);
+                healthCheckHttpURLConnection.setConnectTimeout(1000);
 
                 int responseCode = healthCheckHttpURLConnection.getResponseCode();
                 if (HttpURLConnection.HTTP_OK == responseCode) {
