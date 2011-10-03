@@ -167,7 +167,8 @@ public class ContinuousDeliveryInfrastructureCreator {
                 Map<String, Object> rootMap = Maps.newHashMap();
                 rootMap.put("infrastructure", infrastructure);
                 String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
-                String wikiPageName = "ContinuousDeliveryWorkshopLab-" + infrastructure.getIdentifier();
+                String wikiPageName = "ContinuousDeliveryWorkshopLab_" + infrastructure.getIdentifier();
+                wikiPageName = wikiPageName.replace('-', '_');
                 generatedWikiPageNames.add(wikiPageName);
                 File wikiPageFile = new File(wikiBaseFolder, wikiPageName + ".wiki");
                 Files.write(page, wikiPageFile, Charsets.UTF_8);
