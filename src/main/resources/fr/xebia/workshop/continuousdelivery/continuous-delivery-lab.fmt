@@ -73,24 +73,50 @@ ${infrastructure.githubRepositoryName} > git push
 <img width="400" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/tomcat-maven-plugin.png"/>
 
 == Lab ==
-
-*Goal:* Deploy the "xebia-petclinic" application to the Dev Tomcat Server from your laptop with *[http://tomcat.apache.org/maven-plugin.html Tomcat6 Maven Plugin]*
- # Go to your application folder : 
-  {{{
-cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
-}}}
- # Deploy the application to Tomcat Dev server. The Maven goal is *{{{tomcat6:deploy}}}*, the parameters needed for this Maven plugin are:
-  ** *maven.tomcat.url*: URL to the Tomcat Manager where the application will be deployed
-  ** *tomcat.username*: password of the user ("admin" on our servers)
-  ** *tomcat.password*: a Tomcat user granted to use Tomcat Manager ("admin" on our servers)
- # Note: as you can see in the {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/pom.xml}}}, the Tomcat6 Maven Plugin is configured with the parameter *update* that allows the application to be update if it's already deployed on the server.  
-  For further information, please go to [http://tomcat.apache.org/maven-plugin-2.0-SNAPSHOT/tomcat6-maven-plugin/deploy-mojo.html]
-
-Answer : 
+*Goal:* Run the current version of the application on the laptop of the team, then deploy it on the Tomcat Development instance
+=== Run the application in developement mode ===
+ * Run Tomcat on the application
+  ## Go to your application folder : 
 {{{
-mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomcat.url=${infrastructure.devTomcatUrl}manager
+cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName} 
+}}}
+  ## Modify one more time the welcome.jsp. It's not needed to commit or push the modification on git.
+{{{
+~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/WEB-INF/jsp/welcome.jsp
+}}}
+  ## Launch the application thanks to the Tomcat6 Maven Plugin. 
+{{{
+   mvn tomcat6:run
+}}}
+  ## Connect to the application and check your modification
+{{{
+http://localhost:8080
 }}}
 
+=== Deploy the application to the remote Dev Instance of Tomcat ===
+ * Deploy the application on the dev instance of Tomcat
+  ## As previously, go to the root directory of the project
+{{{
+~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/WEB-INF/jsp/welcome.jsp
+}}}   
+
+  ## Deploy the application to Tomcat Dev server. The Maven goal is *tomcat6:deploy*, the parameters needed for this Maven plugin are:
+ * *tomcat.password*: a Tomcat user granted to use Tomcat Manager
+ * *tomcat.username*: password of the user
+ * *maven.tomcat.url*: URL to the Tomcat Manager where the application will be deployed
+
+*Note*: as you can see in the {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/pom.xml}}}, the Tomcat6 Maven Plugin is configured with the parameter *update* that allows the application to be update if it's already deployed on the server.  
+For further information, please go to [http://tomcat.apache.org/maven-plugin-2.0-SNAPSHOT/tomcat6-maven-plugin/deploy-mojo.html] 
+  
+ * Answer : 
+ {{{
+ mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomcat.url=${infrastructure.devTomcatUrl}manager
+ }}}
+
+  ## Connect to the application and check your modification
+{{{
+${infrastructure.devTomcatUrl}xebia-petclinic
+}}}
 ----
 
 = Lab: 'Local' Scripted Tomcat Deployment =
@@ -99,7 +125,7 @@ mvn tomcat6:deploy -Dtomcat.password=admin -Dtomcat.username=admin -Dmaven.tomca
 
 == Script Specifications ==
 This script must:
- # Be installed under{{{$TOMCAT_HOME/bin/tomcat-deploy-petclinic}}} (use a [http://en.wikipedia.org/wiki/Shebang_(Unix) Unix Shebang] instead of suffixing your script by ".sh", ".py", etc)
+ # Be installed under{{{$TOMCAT_HOME/bin/tomcat-deploy-petclinic}}} (use a [http://en.wikipedia.org/wiki/Shebang_(Unix) Unix Shebang] instead of suffixing your script by ".sh", ".py", etc)
  # Stop the Tomcat server if it is running
  # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic.war}}} file if exists,
  # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic}}} folder if exists,
