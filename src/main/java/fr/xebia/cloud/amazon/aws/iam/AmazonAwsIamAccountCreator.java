@@ -195,7 +195,7 @@ public class AmazonAwsIamAccountCreator {
      */
     public void createUser(@Nonnull final String userName, GetGroupResult groupDescriptor) throws Exception {
         Preconditions.checkNotNull(userName, "Given userName can NOT be null");
-        logger.debug("Process user {}", userName);
+        logger.info("Process user {}", userName);
 
         List<String> userAccountChanges = Lists.newArrayList();
 
@@ -253,7 +253,7 @@ public class AmazonAwsIamAccountCreator {
         for (AccessKeyMetadata accessKeyMetadata : listAccessKeysResult.getAccessKeyMetadata()) {
             statusType status = statusType.fromValue(accessKeyMetadata.getStatus());
             if (statusType.Active.equals(status)) {
-                logger.info("Key {} ({}) is already active, don't create another one", accessKeyMetadata.getAccessKeyId(),
+                logger.info("Access key {} ({}) is already active, don't create another one.", accessKeyMetadata.getAccessKeyId(),
                         accessKeyMetadata.getCreateDate());
                 activeAccessKeyExists = true;
                 templatesParams.put("accessKeyId", accessKeyMetadata.getAccessKeyId());
@@ -293,6 +293,7 @@ public class AmazonAwsIamAccountCreator {
         try {
             List<KeyPairInfo> keyPairInfos = ec2.describeKeyPairs(new DescribeKeyPairsRequest().withKeyNames(keyPairName)).getKeyPairs();
             KeyPairInfo keyPairInfo = Iterables.getOnlyElement(keyPairInfos);
+            logger.info("SSH key {} already exists. Don't overwrite it.", keyPairInfo.getKeyName());
             templatesParams.put("sshKeyName", keyPairInfo.getKeyName());
             templatesParams.put("sshKeyFingerprint", keyPairInfo.getKeyFingerprint());
         } catch (AmazonServiceException e) {
@@ -301,7 +302,7 @@ public class AmazonAwsIamAccountCreator {
                 KeyPair keyPair = ec2.createKeyPair(new CreateKeyPairRequest(keyPairName)).getKeyPair();
                 userAccountChanges.add("Create ssh key");
 
-                logger.debug("Created ssh key {}", keyPair);
+                logger.info("Created ssh key {}", keyPair);
                 templatesParams.put("sshKeyName", keyPair.getKeyName());
                 templatesParams.put("sshKeyFingerprint", keyPair.getKeyFingerprint());
 
@@ -337,7 +338,7 @@ public class AmazonAwsIamAccountCreator {
             templatesParams.put("x509CertificateId", signingCertificate.getCertificateId());
             userAccountChanges.add("Create x509 certificate");
 
-            logger.debug("Created x509 certificate {}", signingCertificate);
+            logger.info("Created x509 certificate {}", signingCertificate);
 
             // email attachment: x509 private key
             {
@@ -359,6 +360,7 @@ public class AmazonAwsIamAccountCreator {
 
         } else {
             SigningCertificate signingCertificate = Iterables.getFirst(certificates, null);
+            logger.info("X509 certificate {} already exists", signingCertificate.getCertificateId());
             templatesParams.put("x509CertificateId", signingCertificate.getCertificateId());
         }
 
