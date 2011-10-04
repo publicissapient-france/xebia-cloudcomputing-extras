@@ -52,6 +52,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.jcraft.jsch.JSch;
 
 public class AmazonAwsUtils {
 
@@ -93,7 +94,7 @@ public class AmazonAwsUtils {
             int tryCount = 1;
             List<Instance> result = ec2.runInstances(runInstancesRequest).getReservation().getInstances();
             result = AmazonAwsUtils.awaitForEc2Instances(result, ec2);
-            
+
             while (result.size() < initialInstanceMinCount && tryCount < 3) {
                 runInstancesRequest.setMinCount(initialInstanceMinCount - result.size());
                 runInstancesRequest.setMaxCount(initialInstanceMinCount - result.size());
@@ -381,5 +382,26 @@ public class AmazonAwsUtils {
 
         }
         return dbInstance;
+    }
+
+    /**
+     * <p>
+     * See <a href=
+     * "http://sthen.blogspot.com/2008/03/sftp-i-java-with-jsch-using-private-key.html"
+     * >SFTP in Java with JSch Using Private Key Authentication </a>
+     * </p>
+     * <p>
+     * See {@link JSch#addIdentity(String, byte[], byte[], byte[])} with the
+     * priv key as bytes.
+     * </p>
+     * 
+     * @param host
+     *            host to connect to (e.g.
+     * @param username
+     * @param sshPrivateKeyFilePath
+     * @see JSch#addIdentity(String, byte[], byte[], byte[])
+     */
+    public void testSshConnection(String host, String username, String sshPrivateKeyFilePath) {
+        // TODO : to implement
     }
 }
