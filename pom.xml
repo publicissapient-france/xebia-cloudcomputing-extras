@@ -91,6 +91,11 @@
       </dependency>
 
       <dependency>
+         <groupId>com.jcraft</groupId>
+         <artifactId>jsch</artifactId>
+         <version>0.1.44-1</version>
+      </dependency>
+      <dependency>
          <groupId>commons-codec</groupId>
          <artifactId>commons-codec</artifactId>
          <version>1.5</version>
@@ -251,7 +256,7 @@
                   </configuration>
                </execution>
             </executions>
-        </plugin>
+         </plugin>
       </plugins>
       <resources>
          <resource>
