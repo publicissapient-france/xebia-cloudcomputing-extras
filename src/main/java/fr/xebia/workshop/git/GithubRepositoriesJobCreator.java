@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package fr.xebia.workshop.continuousdelivery.git;
+package fr.xebia.workshop.git;
 
 import com.github.api.v2.schema.Repository;
 import com.github.api.v2.services.GitHubServiceFactory;
