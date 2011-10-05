@@ -93,6 +93,7 @@ public class GithubRepositoriesJobCreator {
             final GithubRepositoriesJobCreator jobCreator = new GithubRepositoriesJobCreator()
                     .fromGithubRepository("git@github.com:xebia-france-training/xebia-petclinic.git")
                     .onAccountName("xebia-guest")
+                    .atHost("github-xebia-guest")
                     .withGithubOAuthToken(token);
 
             for (String team : teams) {
@@ -221,7 +222,7 @@ public class GithubRepositoriesJobCreator {
 
         repositoryService.setAuthentication(createRepositoryRequest.getAuthentication());
         logger.info("Repository {} is creating on github account {}", createRepositoryRequest.getRepositoryName(), createRepositoryRequest.getAccountName());
-        return repositoryService.createRepository(createRepositoryRequest.getRepositoryName(), "", "", Repository.Visibility.PUBLIC);
+        return repositoryService.createRepository(createRepositoryRequest.getRepositoryName(), createRepositoryRequest.getDescription(), createRepositoryRequest.getHomepage(), Repository.Visibility.PUBLIC);
     }
 
     private File getTmpLocalRepositoryDir() {
