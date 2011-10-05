@@ -17,6 +17,7 @@ package fr.xebia.workshop.continuousdelivery.git;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Scm;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
@@ -29,22 +30,24 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class AddTeamIdInPomGroupID implements GitRepositoryHandler {
+public class UpdatePomFileAndCommit implements GitRepositoryHandler {
 
     public static final String POM_XML = "pom.xml";
     public static final String COMMIT_MESSAGE = "update groupid with team id in pom.xml";
 
+    private String account;
+    private String repository;
     private String teamId;
 
-    public AddTeamIdInPomGroupID(String teamId) {
+    public UpdatePomFileAndCommit(String teamId) {
         this.teamId = teamId;
     }
 
     @Override
-    public void updateGitRepository(Git git) throws GitAPIException {
+    public void updateGitRepository(Git git, GithubCreateRepositoryRequest createRequest) throws GitAPIException {
         File pomFile = getPomFile(git);
 
-        updatePomGroupId(pomFile);
+        updatePomGroupId(pomFile, createRequest);
 
         git.add().addFilepattern(POM_XML).call();
         try {
@@ -58,7 +61,7 @@ public class AddTeamIdInPomGroupID implements GitRepositoryHandler {
         return new File(git.getRepository().getWorkTree(), POM_XML);
     }
 
-    private void updatePomGroupId(File pomFile) {
+    private void updatePomGroupId(File pomFile, GithubCreateRepositoryRequest createRequest) {
         FileReader reader = null;
         FileWriter writer = null;
         MavenXpp3Reader mavenXpp3Reader = new MavenXpp3Reader();
@@ -69,7 +72,7 @@ public class AddTeamIdInPomGroupID implements GitRepositoryHandler {
 
             reader = new FileReader(pomFile);
             model = mavenXpp3Reader.read(reader);
-            model.setGroupId(model.getGroupId() + "." + teamId);
+            updateMavenModel(model, createRequest);
             writer = new FileWriter(pomFile);
             mavenXpp3Writer.write(writer, model);
         } catch (IOException e) {
@@ -80,5 +83,22 @@ public class AddTeamIdInPomGroupID implements GitRepositoryHandler {
             IOUtils.closeQuietly(reader);
             IOUtils.closeQuietly(writer);
         }
+    }
+
+    private void updateMavenModel(Model model, GithubCreateRepositoryRequest createRequest) {
+        model.setGroupId(model.getGroupId() + "." + teamId);
+        String scmConnectionUrl = getScmConnectionUrl(createRequest);
+        Scm scm = new Scm();
+        scm.setConnection(scmConnectionUrl);
+        scm.setDeveloperConnection(scmConnectionUrl);
+        model.setScm(scm);
+    }
+
+    private String getScmConnectionUrl(GithubCreateRepositoryRequest createRequest) {
+        return  new StringBuilder()
+                .append("scm:git:git://github.com/")
+                .append(createRequest.getAccountName())
+                .append("/")
+                .append(createRequest.getRepositoryName()).toString();
     }
 }
