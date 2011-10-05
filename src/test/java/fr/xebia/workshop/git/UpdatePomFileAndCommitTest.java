@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package fr.xebia.workshop.continuousdelivery.git;
+package fr.xebia.workshop.git;
 
 import junit.framework.Assert;
 import org.custommonkey.xmlunit.Diff;
@@ -49,9 +49,9 @@ public class UpdatePomFileAndCommitTest {
         //given
         UpdatePomFileAndCommit addTeamIdInPomGroupID = new UpdatePomFileAndCommit("team.test");
 
-        Repository repository = Mockito.mock(Repository.class);
-        Git git = Mockito.mock(Git.class);
-        AddCommand addCommand = Mockito.mock(AddCommand.class);
+        Repository repository = mock(Repository.class);
+        Git git = mock(Git.class);
+        AddCommand addCommand = mock(AddCommand.class);
         CommitCommand commitCommand = mock(CommitCommand.class);
 
         when(git.getRepository()).thenReturn(repository);
@@ -83,9 +83,9 @@ public class UpdatePomFileAndCommitTest {
         //given
         UpdatePomFileAndCommit addTeamIdInPomGroupID = new UpdatePomFileAndCommit("team.test");
 
-        Repository repository = Mockito.mock(Repository.class);
-        Git git = Mockito.mock(Git.class);
-        AddCommand addCommand = Mockito.mock(AddCommand.class);
+        Repository repository = mock(Repository.class);
+        Git git = mock(Git.class);
+        AddCommand addCommand = mock(AddCommand.class);
         CommitCommand commitCommand = mock(CommitCommand.class);
 
         when(git.getRepository()).thenReturn(repository);
