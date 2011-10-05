@@ -82,7 +82,7 @@ public class GithubRepositoriesJobCreator {
             for (String team : teams) {
                 jobCreator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
                         .toRepositoryName("xebia-petclinic-" + team)
-                        .withGitRepositoryHandler(new AddTeamIdInPomGroupID(team)));
+                        .withGitRepositoryHandler(new UpdatePomFileAndCommit(team)));
             }
             jobCreator.createRepositories();
         }
@@ -98,7 +98,7 @@ public class GithubRepositoriesJobCreator {
             for (String team : teams) {
                 jobCreator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
                         .toRepositoryName("xebia-petclinic-" + team)
-                        .withGitRepositoryHandler(new AddTeamIdInPomGroupID(team)));
+                        .withGitRepositoryHandler(new UpdatePomFileAndCommit(team)));
             }
             jobCreator.createRepositories();
         }
@@ -182,7 +182,7 @@ public class GithubRepositoriesJobCreator {
             RevCommit revCommit = git.log().call().iterator().next();
 
             //call delegate
-            createRequest.getGitRepositoryHandler().updateGitRepository(git);
+            createRequest.getGitRepositoryHandler().updateGitRepository(git, createRequest);
             logger.info("Local repository is pushing on remote {}", createRequest.getGithubRepositoryUrl());
             git.push()
                     .setCredentialsProvider(createRequest.getCredentialsProvider())

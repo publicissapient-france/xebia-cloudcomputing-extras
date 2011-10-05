@@ -40,14 +40,14 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 
-public class AddTeamIdInPomGroupIDTest {
+public class UpdatePomFileAndCommitTest {
 
     private static final Logger logger = LoggerFactory.getLogger(GithubRepositoriesJobCreator.class);
 
     @Test
     public void should_replace_group_id_in_pom_xml() throws IOException, GitAPIException, SAXException {
         //given
-        AddTeamIdInPomGroupID addTeamIdInPomGroupID = new AddTeamIdInPomGroupID("team.test");
+        UpdatePomFileAndCommit addTeamIdInPomGroupID = new UpdatePomFileAndCommit("team.test");
 
         Repository repository = Mockito.mock(Repository.class);
         Git git = Mockito.mock(Git.class);
@@ -61,9 +61,12 @@ public class AddTeamIdInPomGroupIDTest {
         when(git.commit()).thenReturn(commitCommand);
         when(commitCommand.setMessage(anyString())).thenReturn(commitCommand);
 
+        GithubCreateRepositoryRequest createRepositoryRequest = new GithubCreateRepositoryRequest()
+                .toRepositoryName("xebia-petclinic-team-test")
+                .onAccountName("account");
 
         //when
-        addTeamIdInPomGroupID.updateGitRepository(git);
+        addTeamIdInPomGroupID.updateGitRepository(git, createRepositoryRequest);
 
         //then
         FileInputStream updatedPom = new FileInputStream("target/test-classes/git/project/pom.xml");
@@ -78,7 +81,7 @@ public class AddTeamIdInPomGroupIDTest {
     @Test
     public void should_add_and_commit_pom_xml() throws IOException, GitAPIException, SAXException {
         //given
-        AddTeamIdInPomGroupID addTeamIdInPomGroupID = new AddTeamIdInPomGroupID("team.test");
+        UpdatePomFileAndCommit addTeamIdInPomGroupID = new UpdatePomFileAndCommit("team.test");
 
         Repository repository = Mockito.mock(Repository.class);
         Git git = Mockito.mock(Git.class);
@@ -94,7 +97,7 @@ public class AddTeamIdInPomGroupIDTest {
 
 
         //when
-        addTeamIdInPomGroupID.updateGitRepository(git);
+        addTeamIdInPomGroupID.updateGitRepository(git, new GithubCreateRepositoryRequest());
 
         //then
         verify(addCommand, times(1)).addFilepattern(eq("pom.xml"));

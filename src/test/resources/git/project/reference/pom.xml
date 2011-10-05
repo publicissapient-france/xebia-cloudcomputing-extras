@@ -22,8 +22,8 @@
     <packaging>war</packaging>
     <name>xebia-petclinic</name>
     <scm>
-        <connection>scm:git:git://github.com/xebia-france-training/xebia-petclinic</connection>
-        <developerConnection>scm:git:git://github.com/xebia-france-training/xebia-petclinic</developerConnection>
+        <connection>scm:git:git://github.com/account/xebia-petclinic-team-test</connection>
+        <developerConnection>scm:git:git://github.com/account/xebia-petclinic-team-test</developerConnection>
     </scm>
     <distributionManagement>
         <repository>
