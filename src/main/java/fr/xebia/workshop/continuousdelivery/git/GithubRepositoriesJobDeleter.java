@@ -15,6 +15,7 @@
  */
 package fr.xebia.workshop.continuousdelivery.git;
 
+import com.github.api.v2.services.GitHubException;
 import com.github.api.v2.services.GitHubServiceFactory;
 import com.github.api.v2.services.RepositoryService;
 import com.github.api.v2.services.auth.Authentication;
@@ -79,7 +80,11 @@ public class GithubRepositoriesJobDeleter {
         repositoryService.setAuthentication(authentication);
         for (String githubRepositoryName : githubRepositoryNames) {
             logger.info("Github repository {} is deleting", githubRepositoryName);
-            repositoryService.deleteRepository(githubRepositoryName);
+            try {
+                repositoryService.deleteRepository(githubRepositoryName);
+            } catch (GitHubException e) {
+                logger.error("Cannot delete github repository", e);
+            }
         }
         githubRepositoryNames.clear();
     }
