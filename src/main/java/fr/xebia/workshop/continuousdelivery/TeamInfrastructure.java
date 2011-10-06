@@ -309,6 +309,17 @@ public class TeamInfrastructure {
     }
 
     /**
+     * URL of the jenkins server like "http://my-server:8080/" or
+     * <code>null</code> if the underlying jenkins instance is <code>null</code>
+     * .
+     *
+     * @throws IllegalStateException
+     */
+    public String getDeployitUrl() throws IllegalStateException {
+        return TeamInfrastructure.getDeployitUrl(jenkins);
+    }
+
+    /**
      * Amazon EC2 instance of the Nexus server
      */
     public Instance getNexus() {
