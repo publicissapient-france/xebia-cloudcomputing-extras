@@ -36,7 +36,7 @@ runcmd:
  - [sh, -xc, "echo 'PLATFORM=linux-x86-32' >> /etc/init.d/nexus"]
  - [sh, -xc, "cat /opt/nexus/nexus-oss-webapp-1.9.2.2/bin/jsw/linux-x86-32/nexus >> /etc/init.d/nexus"]
  - [sed, -i, 's/PIDDIR=.*/PIDDIR=\/var\/run\/nexus/', /etc/init.d/nexus]
- - [sed, -i, 's/WRAPPER_CMD=.*/WRAPPER_CMD=$\{NEXUS_HOME\}\/bin\/jsw\/$\{PLATFORM\}\/wrapper/', /etc/init.d/nexus]
+ c
  - [sed, -i, 's/WRAPPER_CONF=.*/WRAPPER_CONF=$\{NEXUS_HOME\}\/bin\/jsw\/conf\/wrapper\.conf/', /etc/init.d/nexus]
  - [sed, -i, 's/#RUN_AS_USER=.*/RUN_AS_USER=nexus/', /etc/init.d/nexus]
  
