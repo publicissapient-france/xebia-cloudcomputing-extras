@@ -389,18 +389,18 @@ sudo su - deployit
 }}}
  # Create a file (*setup.py*) to define your target environment
     <code language="python">
-    host_valid_1 = repository.create("Infrastructure/host-valid-1",factory.configurationItem("Host", {'operatingSystemFamily':'UNIX', 'accessMethod':'SSH_SFTP', 'address':'${infrastructure.validTomcat1.privateDnsName}', 'username':'tomcat'}))
-    tomcat_valid_1 = repository.create(host_valid_1.id+"/tomcat6",factory.configurationItem("TomcatUnmanagedServer",{'host':host_valid_1, 'tomcatHome':'/opt/tomcat/apache-tomcat-6', 'baseUrl':'http://'+host_valid_1.values['address']+':8080', 'startCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh start', 'stopCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh stop'}))
-    deployit.print(repository.read(tomcat_valid_1.id))
-    host_valid_2 = repository.create("Infrastructure/host-valid-2",factory.configurationItem("Host", {'operatingSystemFamily':'UNIX', 'accessMethod':'SSH_SFTP', 'address':'${infrastructure.validTomcat2.privateDnsName}', 'username':'tomcat'}))
-    tomcat_valid_2 = repository.create(host_valid_2.id+"/tomcat6",factory.configurationItem("TomcatUnmanagedServer",{'host':host_valid_2, 'tomcatHome':'/opt/tomcat/apache-tomcat-6', 'baseUrl':'http://'+host_valid_2.values['address']+':8080', 'startCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh start', 'stopCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh stop'}))
-    deployit.print(repository.read(tomcat_valid_2.id))
-    env = repository.create("Environments/Continuous-Valid", factory.configurationItem("Environment", {"members":[host_valid_1.id,tomcat_valid_1.id,host_valid_2.id,tomcat_valid_2.id]}))
-    deployit.print(repository.read(env.id))
+host_valid_1 = repository.create("Infrastructure/host-valid-1",factory.configurationItem("Host", {'operatingSystemFamily':'UNIX', 'accessMethod':'SSH_SFTP', 'address':'${infrastructure.validTomcat1.privateDnsName}', 'username':'tomcat'}))
+tomcat_valid_1 = repository.create(host_valid_1.id+"/tomcat6",factory.configurationItem("TomcatUnmanagedServer",{'host':host_valid_1, 'tomcatHome':'/opt/tomcat/apache-tomcat-6', 'baseUrl':'http://'+host_valid_1.values['address']+':8080', 'startCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh start', 'stopCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh stop'}))
+deployit.print(repository.read(tomcat_valid_1.id))
+host_valid_2 = repository.create("Infrastructure/host-valid-2",factory.configurationItem("Host", {'operatingSystemFamily':'UNIX', 'accessMethod':'SSH_SFTP', 'address':'${infrastructure.validTomcat2.privateDnsName}', 'username':'tomcat'}))
+tomcat_valid_2 = repository.create(host_valid_2.id+"/tomcat6",factory.configurationItem("TomcatUnmanagedServer",{'host':host_valid_2, 'tomcatHome':'/opt/tomcat/apache-tomcat-6', 'baseUrl':'http://'+host_valid_2.values['address']+':8080', 'startCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh start', 'stopCommand':'/opt/tomcat/apache-tomcat-6/bin/catalina.sh stop'}))
+deployit.print(repository.read(tomcat_valid_2.id))
+env = repository.create("Environments/Continuous-Valid", factory.configurationItem("Environment", {"members":[host_valid_1.id,tomcat_valid_1.id,host_valid_2.id,tomcat_valid_2.id]}))
+deployit.print(repository.read(env.id))
     </code>
  # Execute the CLI script
   {{{
-  deployit-cli/bin/cli.sh -username admin -password admin -f ~/setup.py
+deployit-cli/bin/cli.sh -username admin -password admin -f ~/setup.py
   }}}
  # Connect to your Deployit server ${infrastructure.deployitUrl} (login=admin, password=admin)
  # Verify your environment has been created.
@@ -411,9 +411,9 @@ sudo su - deployit
  <img height=90" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/deployit-update-project-screenshot.png" />
  # Update the deployit-settings.xml file by replacing the password 'XXXXXX' with the correct value.
  {{{
-    vi deployit-settings.xml
-    git ci -a -m "set the right password"
-    git push
+vi deployit-settings.xml
+git ci -a -m "set the right password"
+git push
  }}}
  The last line will trigger a new build by Jenking and at then will deploy the application.
  # Connect to your Deployit server ${infrastructure.deployitUrl} (login=admin, password=admin)
