@@ -130,14 +130,14 @@ runcmd:
  - [sh, -xc, "echo 'jcr.repository.path=repository' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
 
  - ["mkdir","/opt/deployit/deployit-3.0.6-server/repository"]
- - ["chown", "-R", "deployit:deployit", "/opt/deployit/deployit-3.0.6-server"]
  - ["ln", "-s", "/opt/deployit/deployit-3.0.6-server", "/opt/deployit/deployit-server"]
-
  - [sed, -i, 's/^SYSPROPS=\"/SYSPROPS=\"-Dssh.privatekey.filename=\/opt\/deployit\/.ssh\/continuous-delivery-workshop.pem /g', '/opt/deployit/deployit-3.0.6-server/bin/server.sh']
 
  # install plugin tomcat
  - ["wget","http://dl.dropbox.com/u/1123628/deployit-3.0.6/tomcat-plugin-3.0.1-SNAPSHOT.jar","--output-document","/opt/deployit/deployit-server/plugins/tomcat-plugin-3.0.1-SNAPSHOT.jar"]
  - ["wget","http://dl.dropbox.com/u/1123628/deployit-3.0.6/jaxen-1.1.1.jar","--output-document","/opt/deployit/deployit-server/lib/jaxen-1.1.1.jar"]
+
+ - ["chown", "-R", "deployit:deployit", "/opt/deployit/deployit-3.0.6-server"]
 
  # configure deployit
  - ["/bin/su","-c","/opt/deployit/deployit-server/bin/server.sh -setup -reinitialize","deployit"]
