@@ -1,0 +1,85 @@
+#cloud-config
+
+timezone: Europe/Paris
+
+ssh_authorized_keys:
+ - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDX/P7IUU99UkfG/vHolJvk8kJRpyOqYvYmFKvBbbt7/VJ8dBdJSzVpuRAAigcqC2y14HBfvkll5TMytY3OhJLRvcbbyDuUlPNSvQzqHTGoaUrqjGMeb32/pB6kzT9y1QHEyB7AHGx5ZP1aemI1AhC5wge8X6+TYKppxMFFQmJmSifeSWCDvpMQNbRMbxWZswgfXD5lU0qQ8Vr2EP6Yb8Gld/PQUllffTQrZFia+q2TneSwbvPkfEjGivkdOBOAmQj8w8OgilINhV2RPC2C/AqiN8X5x7kM6Q/t0v3/kqrJs5A5ZX7SSJd/NiRBTqRCVAtDPiVYkWQuJa8SZs8Ol9Zv continuous-delivery-workshop
+
+packages:
+ - yum-utils
+ - java-1.6.0-openjdk
+ - java-1.6.0-openjdk-devel
+
+runcmd:
+  # Deployit
+  - [useradd, --create-home, --home, "/opt/deployit", --user-group, -G, users, deployit]
+  #  Fix "Authentication refused: bad ownership or modes for directory /opt/deployit"
+  - [mkdir, "/opt/deployit/.ssh"]
+  - [chown, -R, "deployit:deployit", "/opt/deployit"]
+  - [chmod, -R, "og-rwx", "/opt/deployit/.ssh"]
+
+  # provision ssh authorized_keys
+  - [sh, -xc, "echo '/opt/deployit/.ssh/authorized_keys provisionned with accounts: deployit, admin and manager'"]
+  - [cp, -r, "/home/ec2-user/.ssh/authorized_keys", "/opt/deployit/.ssh"]
+  - [chown, -R, "deployit:deployit", "/opt/deployit/.ssh"]
+
+  # provision ssh private key for deployit
+  # [mkdir, /opt/deployit/.ssh]
+  - [chmod, 700, /opt/deployit/.ssh]
+  - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/opt/deployit/.ssh/continuous-delivery-workshop.pem"]
+  - [chmod, 400, /opt/deployit/.ssh/continuous-delivery-workshop.pem]
+  - [chown, -R, "deployit:deployit", /opt/deployit/.ssh]
+  - [ sh, -xc, "echo '/opt/deployit/.ssh/continuous-delivery-workshop.pem provisioned'" ]
+
+  # install deployit server
+  - ["wget", "http://dl.dropbox.com/u/1123628/deployit-3.0.6/deployit-3.0.6-server.zip", "--output-document", "/tmp/deployit-3.0.6-server.zip"]
+  - ["unzip", "/tmp/deployit-3.0.6-server.zip"]
+  - ["mv", "deployit-3.0.6-server/", "/opt/deployit/"]
+
+  # configure deployit
+  - [sh, -xc, "echo '#Deployit configuration file.' > /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+  - [sh, -xc, "echo 'ssl=false' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+  - [sh, -xc, "echo 'threads.max=24' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+  - [sh, -xc, "echo 'apache.http.vhost.template=' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+  - [sh, -xc, "echo 'importable.packages.path=importablePackages' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+  - [sh, -xc, "echo 'threads.min=3' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+  - [sh, -xc, "echo 'http.port=4516' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+  - [sh, -xc, "echo 'jcr.repository.path=repository' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+
+  - ["mkdir","/opt/deployit/deployit-3.0.6-server/repository"]
+  - ["chown", "-R", "deployit:deployit", "/opt/deployit/deployit-3.0.6-server"]
+  - ["ln", "-s", "/opt/deployit/deployit-3.0.6-server", "/opt/deployit/deployit-server"]
+
+  # install plugin tomcat
+  - ["wget","http://dl.dropbox.com/u/1123628/deployit-3.0.6/tomcat-plugin-3.0.1-SNAPSHOT.jar","--output-document","/opt/deployit/deployit-server/plugins/tomcat-plugin-3.0.1-SNAPSHOT.jar"]
+  - ["wget","http://dl.dropbox.com/u/1123628/deployit-3.0.6/jaxen-1.1.1.jar","--output-document","/opt/deployit/deployit-server/lib/jaxen-1.1.1.jar"]
+
+
+  # install deployit cli
+  - ["wget", "http://dl.dropbox.com/u/1123628/deployit-3.0.6/deployit-3.0.6-cli.zip", "--output-document", "/tmp/deployit-3.0.6-cli.zip"]
+  - ["unzip", "/tmp/deployit-3.0.6-cli.zip"]
+  - ["mv", "deployit-3.0.6-cli/", "/opt/deployit/"]
+  - ["chown", "-R", "deployit:deployit", "/opt/deployit/deployit-3.0.6-cli"]
+  - ["ln", "-s", "/opt/deployit/deployit-3.0.6-cli", "/opt/deployit/deployit-cli"]
+
+
+  # register deployit as a linux service
+  - [sh, -xc, "echo '#!/bin/sh' > /etc/init.d/deployit"]
+  - [sh, -xc, "echo '# Deployit init script for Linux.' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo '#' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo '# chkconfig: 2345 20 80' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo '# description: The Deployit .' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo '' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo 'DEPLOYIT_HOME=/opt/deployit/deployit-server' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo 'export DEPLOYIT_HOME' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo '' >> /etc/init.d/deployit"]
+  - [sh, -xc, "echo 'nohup /bin/su deployit /opt/deployit/deployit-server/bin/server.sh  &' >> /etc/init.d/deployit"]
+  - ["chmod", "a+x", "/etc/init.d/deployit"]
+  - ["chkconfig", "--add", "deployit"]
+
+  # add user ec2-user to group deployit
+  - [usermod, -G, deployit, ec2-user]
+
+  # start deployit service
+  - [service, deployit, start ]
+

@@ -15,6 +15,24 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.*;
+import com.google.common.base.Charsets;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.*;
+import com.google.common.io.Files;
+import fr.xebia.cloud.amazon.aws.tools.AmazonAwsFunctions;
+import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
+import fr.xebia.cloud.cloudinit.CloudInitUserDataBuilder;
+import fr.xebia.cloud.cloudinit.FreemarkerUtils;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,43 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.AssociateAddressRequest;
-import com.amazonaws.services.ec2.model.CreateTagsRequest;
-import com.amazonaws.services.ec2.model.DescribeAddressesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeTagsRequest;
-import com.amazonaws.services.ec2.model.DisassociateAddressRequest;
-import com.amazonaws.services.ec2.model.Filter;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.InstanceType;
-import com.amazonaws.services.ec2.model.Reservation;
-import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.TagDescription;
-import com.google.common.base.Charsets;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.MapMaker;
-import com.google.common.collect.Maps;
-import com.google.common.io.Files;
-
-import fr.xebia.cloud.amazon.aws.tools.AmazonAwsFunctions;
-import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
-import fr.xebia.cloud.cloudinit.CloudInitUserDataBuilder;
-import fr.xebia.cloud.cloudinit.FreemarkerUtils;
-
 public class ContinuousDeliveryInfrastructureCreator {
 
     public static void main(String[] args) {
@@ -75,7 +56,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         boolean createTomcatValid = true;
         final ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
         ExecutorService executorService = Executors.newFixedThreadPool(4);
-        final Collection<String> teamIdentifiers = Lists.newArrayList("clc", "1");
+        //final Collection<String> teamIdentifiers = Lists.newArrayList("clc", "1");
+        final Collection<String> teamIdentifiers = Lists.newArrayList("bmo");
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
@@ -168,7 +150,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 Map<String, Object> rootMap = Maps.newHashMap();
                 rootMap.put("infrastructure", infrastructure);
                 String templatePath = "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt";
-                rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}' with template '{{{" +  templatePath + "}}}' on the " + new DateTime());
+                rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}' with template '{{{" + templatePath + "}}}' on the " + new DateTime());
                 String page = FreemarkerUtils.generate(rootMap, templatePath);
                 String wikiPageName = "ContinuousDeliveryWorkshopLab_" + infrastructure.getIdentifier();
                 wikiPageName = wikiPageName.replace('-', '_');
@@ -274,7 +256,6 @@ public class ContinuousDeliveryInfrastructureCreator {
     }
 
     /**
-     * 
      * @param teamsIdentifiers
      * @return jenkins instances by teamIdentifier
      */
@@ -298,7 +279,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withKeyName("continuous-delivery-workshop") //
                 .withUserData(userData) //
 
-        ;
+                ;
         List<Instance> jenkinsInstances = AmazonAwsUtils.reliableEc2RunInstances(runInstancesRequest, ec2);
 
         Map<String, Instance> jenkinsInstancesByTeamIdentifier = Maps.newHashMap();
@@ -355,10 +336,28 @@ public class ContinuousDeliveryInfrastructureCreator {
             }
         }
 
+        //Test Availabily of Deployit
+        {
+            for (Map.Entry<String, Instance> entry : jenkinsInstancesByTeamIdentifier.entrySet()) {
+                Instance deployit = entry.getValue();
+                String teamIdentifier = entry.getKey();
+                String deployitUrl = TeamInfrastructure.getDeployitUrl(deployit);
+                logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, deployit.getInstanceId());
+
+                try {
+                    AmazonAwsUtils.awaitForHttpAvailability(deployitUrl);
+                } catch (Exception e) {
+                    logger.warn("Silently skip " + e, e);
+                }
+
+            }
+        }
+
+
         logger.info(
                 "{} JENKINS SERVERS SUCCESSFULLY CREATED: {}",
-                new Object[] { jenkinsInstances.size(),
-                        Collections2.transform(jenkinsInstances, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID) });
+                new Object[]{jenkinsInstances.size(),
+                        Collections2.transform(jenkinsInstances, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID)});
 
         return jenkinsInstancesByTeamIdentifier;
     }
@@ -382,7 +381,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withKeyName("continuous-delivery-workshop") //
                 .withUserData(userData) //
 
-        ;
+                ;
 
         // START NEXUS INSTANCE
         List<Instance> nexusInstances = AmazonAwsUtils.reliableEc2RunInstances(runInstancesRequest, ec2);
@@ -415,8 +414,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         AmazonAwsUtils.awaitForHttpAvailability("http://" + publicIp + ":8081/nexus/");
         AmazonAwsUtils.awaitForHttpAvailability("http://nexus.xebia-tech-event.info:8081/nexus/");
 
-        logger.info("1 NEXUS SERVER {} SUCCESSFULLY CREATED AND ASSOCIATED WITH {}: {}", new Object[] { nexusInstance.getInstanceId(),
-                publicIp, nexusInstance });
+        logger.info("1 NEXUS SERVER {} SUCCESSFULLY CREATED AND ASSOCIATED WITH {}: {}", new Object[]{nexusInstance.getInstanceId(),
+                publicIp, nexusInstance});
 
         return nexusInstance;
 
@@ -443,7 +442,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withKeyName("continuous-delivery-workshop") //
                 .withUserData(userData) //
 
-        ;
+                ;
         List<Instance> tomcatInstances = AmazonAwsUtils.reliableEc2RunInstances(runInstancesRequest, ec2);
 
         // TAG EC2 INSTANCES
@@ -476,8 +475,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         }
         logger.info(
                 "{} TOMCAT '{}' SERVERS SUCCESSFULLY CREATED: {}",
-                new Object[] { tomcatInstances.size(), environment,
-                        Collections2.transform(tomcatInstances, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID) });
+                new Object[]{tomcatInstances.size(), environment,
+                        Collections2.transform(tomcatInstances, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID)});
         return tomcatInstances;
 
     }

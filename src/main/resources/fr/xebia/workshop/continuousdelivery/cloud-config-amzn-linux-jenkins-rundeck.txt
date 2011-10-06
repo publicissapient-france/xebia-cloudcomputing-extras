@@ -19,21 +19,23 @@ packages:
  - git
 
 runcmd:
+
  - [ sh, -xc, "echo $(date) ': cloudinit runcmd begin'" ]
-# installs Maven
+ # installs Maven
  - [cd, /opt]
  - [wget, "http://mirror.ibcp.fr/pub/apache//maven/binaries/apache-maven-2.2.1-bin.tar.gz"]  
  - [tar, xvzf, apache-maven-2.2.1-bin.tar.gz]
  - [ln, -s, /opt/apache-maven-2.2.1, /opt/maven]
 
-# installs Rundeck
+ # installs Rundeck
  - [rpm, -U, -v, -h, "http://rundeck.org/latest.rpm"] 
  - [sh, -xc, "echo $(date) ': Rundeck is downloaded'"]
  - [yum, -y, install, rundeck]
  - [sh, -xc, "echo $(date) ': Rundeck is installed'"]
  - [sh, -xc, "/etc/init.d/rundeckd restart"]
  - [sh, -xc, "echo $(date) ': Rundeck is restarted'"]
-# provision ssh private key for rundeck
+
+ # provision ssh private key for rundeck
  - [mkdir, /var/rundeck/.ssh]
  - [chmod, 700, /var/rundeck/.ssh]
  - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/var/rundeck/.ssh/continuous-delivery-workshop.pem"]
@@ -42,7 +44,8 @@ runcmd:
  - [ sh, -xc, "echo '/var/rundeck/.ssh/continuous-delivery-workshop.pem provisioned'" ]
 
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins]
-# downloads additional Jenkins plugins
+
+ # downloads additional Jenkins plugins
  - [mkdir, -p, /var/lib/jenkins/plugins/]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/batch-task.hpi", -O, "/var/lib/jenkins/plugins/batch-task.hpi"]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/git.hpi", -O, "/var/lib/jenkins/plugins/git.hpi"]
@@ -50,7 +53,8 @@ runcmd:
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/rundeck.hpi", -O, "/var/lib/jenkins/plugins/rundeck.hpi"]
  - [wget, --no-check-certificate, "http://updates.jenkins-ci.org/latest/ssh.hpi", -O, "/var/lib/jenkins/plugins/ssh.hpi"]
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/plugins]
-# provision ssh private key for jenkins to be used by the ssh plugin
+
+ # provision ssh private key for jenkins to be used by the ssh plugin
  - [mkdir, /var/lib/jenkins/.ssh]
  - [chmod, 700, /var/lib/jenkins/.ssh]
  - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/var/lib/jenkins/.ssh/continuous-delivery-workshop.pem"]
@@ -58,7 +62,7 @@ runcmd:
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.ssh]
  - [ sh, -xc, "echo '/var/lib/jenkins/.ssh/continuous-delivery-workshop.pem provisioned'" ]
  
-# tells Jenkins where to find Maven 
+ # tells Jenkins where to find Maven
  - [sh, -xc, "echo \"<?xml version='1.0' encoding='UTF-8'?>\" >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [sh, -xc, "echo '<hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [sh, -xc, "echo '  <helpRedirect/>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
@@ -71,19 +75,103 @@ runcmd:
  - [sh, -xc, "echo '  </installations>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [sh, -xc, "echo '</hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [chown, "jenkins:jenkins", /var/lib/jenkins/hudson.tasks.Maven.xml]
-# configures Maven for Jenkins so that it can deploy artifacts on our Nexus server
+
+ # configures Maven for Jenkins so that it can deploy artifacts on our Nexus server
  - [mkdir, -p, /var/lib/jenkins/.m2]
  - [cp, /opt/maven/conf/settings.xml, /var/lib/jenkins/.m2/]
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.m2] 
  - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-releases<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
  - [sed, -i, 's/<servers>/<servers><server><id>xebia-tech-event-nexus-snapshots<\/id><username>deployment<\/username><password>deployment123<\/password><\/server>/', /var/lib/jenkins/.m2/settings.xml]
  - [ sh, -xc, "echo '/var/lib/jenkins/.m2/settings.xml provisioned'" ]
-# activates Jenkins as a service
+
+ # activates Jenkins as a service
  - [chkconfig, jenkins, on]
  - [service, jenkins, start ]
  - [ sh, -xc, "echo 'jenkins restarted'" ]
-# add ec2-user to jenkins and rundeck groups
+
+ # add ec2-user to jenkins and rundeck groups
  - [usermod, -a, -G, jenkins, ec2-user]
  - [usermod, -a, -G, rundeck, ec2-user]
  - [ sh, -xc, "echo $(date) ': cloudinit runcmd end'" ]
- 
+
+ # Deployit
+
+ - [useradd, --create-home, --home, "/opt/deployit", --user-group, -G, users, deployit]
+ #  Fix "Authentication refused: bad ownership or modes for directory /opt/deployit"
+ - [mkdir, "/opt/deployit/.ssh"]
+ - [chown, -R, "deployit:deployit", "/opt/deployit"]
+ - [chmod, -R, "og-rwx", "/opt/deployit/.ssh"]
+
+ # provision ssh authorized_keys
+ - [sh, -xc, "echo '/opt/deployit/.ssh/authorized_keys provisionned with accounts: deployit, admin and manager'"]
+ - [cp, -r, "/home/ec2-user/.ssh/authorized_keys", "/opt/deployit/.ssh"]
+ - [chown, -R, "deployit:deployit", "/opt/deployit/.ssh"]
+
+ # provision ssh private key for deployit
+ - [chmod, 700, /opt/deployit/.ssh]
+ - [wget, --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem", -O, "/opt/deployit/.ssh/continuous-delivery-workshop.pem"]
+ - [chmod, 400, /opt/deployit/.ssh/continuous-delivery-workshop.pem]
+ - [chown, -R, "deployit:deployit", /opt/deployit/.ssh]
+ - [ sh, -xc, "echo '/opt/deployit/.ssh/continuous-delivery-workshop.pem provisioned'" ]
+
+ # install deployit server
+ - ["wget", "http://dl.dropbox.com/u/1123628/deployit-3.0.6/deployit-3.0.6-server.zip", "--output-document", "/tmp/deployit-3.0.6-server.zip"]
+ - ["unzip", "/tmp/deployit-3.0.6-server.zip"]
+ - ["mv", "deployit-3.0.6-server/", "/opt/deployit/"]
+
+ # configure deployit
+ - [sh, -xc, "echo '#Deployit configuration file.' > /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+ - [sh, -xc, "echo 'ssl=false' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+ - [sh, -xc, "echo 'threads.max=24' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+ - [sh, -xc, "echo 'apache.http.vhost.template=' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+ - [sh, -xc, "echo 'importable.packages.path=importablePackages' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+ - [sh, -xc, "echo 'threads.min=3' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+ - [sh, -xc, "echo 'http.port=4516' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+ - [sh, -xc, "echo 'jcr.repository.path=repository' >> /opt/deployit/deployit-3.0.6-server/conf/deployit.conf"]
+
+ - ["mkdir","/opt/deployit/deployit-3.0.6-server/repository"]
+ - ["chown", "-R", "deployit:deployit", "/opt/deployit/deployit-3.0.6-server"]
+ - ["ln", "-s", "/opt/deployit/deployit-3.0.6-server", "/opt/deployit/deployit-server"]
+
+ - [sed, -i, 's/^SYSPROPS=\"/SYSPROPS=\"-Dssh.privatekey.filename=\/opt\/deployit\/.ssh\/continuous-delivery-workshop.pem /g', '/opt/deployit/deployit-3.0.6-server/bin/server.sh']
+
+ # install plugin tomcat
+ - ["wget","http://dl.dropbox.com/u/1123628/deployit-3.0.6/tomcat-plugin-3.0.1-SNAPSHOT.jar","--output-document","/opt/deployit/deployit-server/plugins/tomcat-plugin-3.0.1-SNAPSHOT.jar"]
+ - ["wget","http://dl.dropbox.com/u/1123628/deployit-3.0.6/jaxen-1.1.1.jar","--output-document","/opt/deployit/deployit-server/lib/jaxen-1.1.1.jar"]
+
+ # configure deployit
+ - ["/bin/su","-c","/opt/deployit/deployit-server/bin/server.sh -setup -reinitialize","deployit"]
+
+ # install deployit cli
+ - ["wget", "http://dl.dropbox.com/u/1123628/deployit-3.0.6/deployit-3.0.6-cli.zip", "--output-document", "/tmp/deployit-3.0.6-cli.zip"]
+ - ["unzip", "/tmp/deployit-3.0.6-cli.zip"]
+ - ["mv", "deployit-3.0.6-cli/", "/opt/deployit/"]
+ - ["chown", "-R", "deployit:deployit", "/opt/deployit/deployit-3.0.6-cli"]
+ - ["ln", "-s", "/opt/deployit/deployit-3.0.6-cli", "/opt/deployit/deployit-cli"]
+ - ["wget","http://support.xebialabs.com/attachments/token/tezz4tatasoggnu/?name=taskinfo.cli.py","--output-document","/opt/deployit/deployit-cli/ext/taskinfo.cli.py"]
+
+ # register deployit as a linux service
+ - [sh, -xc, "echo '#!/bin/sh' > /etc/init.d/deployit"]
+ - [sh, -xc, "echo '# Deployit init script for Linux.' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo '#' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo '# chkconfig: 2345 20 80' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo '# description: The Deployit .' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo '' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo 'DEPLOYIT_HOME=/opt/deployit/deployit-server' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo 'export DEPLOYIT_HOME' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo '' >> /etc/init.d/deployit"]
+ - [sh, -xc, "echo 'nohup /bin/su deployit /opt/deployit/deployit-server/bin/server.sh  &' >> /etc/init.d/deployit"]
+ - ["chmod", "a+x", "/etc/init.d/deployit"]
+ - ["chkconfig", "--add", "deployit"]
+
+ # add user ec2-user to group deployit
+ - [usermod, -G, deployit, ec2-user]
+
+ # start deployit service
+ - [service, deployit, start ]
+
+
+
+
+
+

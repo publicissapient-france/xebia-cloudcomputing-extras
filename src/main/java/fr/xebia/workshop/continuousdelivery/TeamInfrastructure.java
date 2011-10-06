@@ -15,22 +15,20 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Map;
+
 /**
  * <p>
  * Team infrastructure for the lab.
  * </p>
- * 
  */
 public class TeamInfrastructure {
     public static final Function<String, TeamInfrastructure> FUNCTION_TEAM_IDENTIFIER_TO_TEAM_INFRASTRUCTURE = new Function<String, TeamInfrastructure>() {
@@ -44,10 +42,9 @@ public class TeamInfrastructure {
     /**
      * The Jenkins server url (e.g. http://my-ec2-server:8080/) or
      * <code>null</code> if the given ec2 instance is <code>null</code>.
-     * 
-     * @throws IllegalStateException
-     *             if the given jenkins instance is not initialized and has a
-     *             <code>null</code> 'publicDnsName'.
+     *
+     * @throws IllegalStateException if the given jenkins instance is not initialized and has a
+     *                               <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public static String getJenkinsUrl(@Nullable Instance jenkins) throws IllegalStateException {
@@ -60,12 +57,29 @@ public class TeamInfrastructure {
     }
 
     /**
+     * The Deployit server url (e.g. http://my-ec2-server:4516/) or
+     * <code>null</code> if the given ec2 instance is <code>null</code>.
+     *
+     * @throws IllegalStateException if the given jenkins instance is not initialized and has a
+     *                               <code>null</code> 'publicDnsName'.
+     */
+    @Nullable
+    public static String getDeployitUrl(@Nullable Instance deployit) throws IllegalStateException {
+        if (deployit == null) {
+            return null;
+        }
+        Preconditions.checkState(deployit.getPublicDnsName() != null && !deployit.getPublicDnsName().isEmpty(),
+                "Given deployit is not yet initialized, it publicDnsName is null: %s", deployit);
+        return "http://" + deployit.getPublicDnsName() + ":4516/";
+    }
+
+
+    /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
      * <code>null</code> if the given ec2 instance is <code>null</code>.
-     * 
-     * @throws IllegalStateException
-     *             if the given tomcat instance is not initialized and has a
-     *             <code>null</code> 'publicDnsName'.
+     *
+     * @throws IllegalStateException if the given tomcat instance is not initialized and has a
+     *                               <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public static String getTomcatUrl(@Nullable Instance tomcat) throws IllegalStateException {
@@ -80,10 +94,9 @@ public class TeamInfrastructure {
     /**
      * The Rundeck server url (e.g. http://my-ec2-server:4440/) or
      * <code>null</code> if the given ec2 instance is <code>null</code>.
-     * 
-     * @throws IllegalStateException
-     *             if the given rundeck instance is not initialized and has a
-     *             <code>null</code> 'publicDnsName'.
+     *
+     * @throws IllegalStateException if the given rundeck instance is not initialized and has a
+     *                               <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public static String getRundeckUrl(Instance rundeck) {
@@ -158,11 +171,9 @@ public class TeamInfrastructure {
     }
 
     /**
-     * 
      * FIXME cleanup this dirty code (CLC)
-     * 
-     * @param environment
-     *            like "dev" or "valid"
+     *
+     * @param environment like "dev" or "valid"
      */
     public void addTomcat(@Nonnull String environment, @Nonnull Instance tomcatInstance, @Nonnull String tomcatServerName) {
         if ("dev".equals(environment)) {
@@ -290,9 +301,8 @@ public class TeamInfrastructure {
      * URL of the jenkins server like "http://my-server:8080/" or
      * <code>null</code> if the underlying jenkins instance is <code>null</code>
      * .
-     * 
+     *
      * @throws IllegalStateException
-     * 
      */
     public String getJenkinsUrl() throws IllegalStateException {
         return TeamInfrastructure.getJenkinsUrl(jenkins);
@@ -323,7 +333,7 @@ public class TeamInfrastructure {
 
         return projectMavenGroupId;
     }
-    
+
     public String getProjectMavenArtifactId() {
         return "xebia-petclinic";
     }
@@ -345,9 +355,8 @@ public class TeamInfrastructure {
     /**
      * URL of the rundeck server like "http://my-server:4440/" or
      * <code>null</code> if underlying rundeck is <code>null</code>.
-     * 
-     * @throws IllegalStateException
-     *             the underlying jenkins instance is <code>null</code>.
+     *
+     * @throws IllegalStateException the underlying jenkins instance is <code>null</code>.
      */
     @Nullable
     public String getRundeckUrl() throws IllegalStateException {
@@ -378,10 +387,9 @@ public class TeamInfrastructure {
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
      * <code>null</code> if the underlying ec2 instance is <code>null</code>.
-     * 
-     * @throws IllegalStateException
-     *             if the underlying tomcat instance is not initialized and has
-     *             a <code>null</code> 'publicDnsName'.
+     *
+     * @throws IllegalStateException if the underlying tomcat instance is not initialized and has
+     *                               a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getValidTomcat2Url() throws IllegalStateException {
@@ -391,10 +399,9 @@ public class TeamInfrastructure {
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
      * <code>null</code> if the underlying ec2 instance is <code>null</code>.
-     * 
-     * @throws IllegalStateException
-     *             if the underlying tomcat instance is not initialized and has
-     *             a <code>null</code> 'publicDnsName'.
+     *
+     * @throws IllegalStateException if the underlying tomcat instance is not initialized and has
+     *                               a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getValidTomcat1Url() throws IllegalStateException {
@@ -404,10 +411,9 @@ public class TeamInfrastructure {
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
      * <code>null</code> if the underlying ec2 instance is <code>null</code>.
-     * 
-     * @throws IllegalStateException
-     *             if the underlying tomcat instance is not initialized and has
-     *             a <code>null</code> 'publicDnsName'.
+     *
+     * @throws IllegalStateException if the underlying tomcat instance is not initialized and has
+     *                               a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getDevTomcatUrl() throws IllegalStateException {
