@@ -23,6 +23,7 @@ import com.amazonaws.services.ec2.model.*;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
 import com.google.common.io.Files;
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsFunctions;
@@ -33,10 +34,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -48,6 +46,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ContinuousDeliveryInfrastructureCreator {
 
+    private static final String KEY_PAIR_NAME = "continuous-delivery-workshop";
+
     public static void main(String[] args) {
 
         boolean createNexus = true;
@@ -55,6 +55,11 @@ public class ContinuousDeliveryInfrastructureCreator {
         boolean createTomcatDev = true;
         boolean createTomcatValid = true;
         final ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
+
+        //Check for Key in classpath : prevent to launch instances if not present
+        InputStream keyFile = Thread.currentThread().getContextClassLoader().getResourceAsStream(KEY_PAIR_NAME+".pem");
+        Preconditions.checkState(keyFile != null, "File '" + KEY_PAIR_NAME + ".pem' NOT found in the classpath");
+
         ExecutorService executorService = Executors.newFixedThreadPool(4);
         //final Collection<String> teamIdentifiers = Lists.newArrayList("clc", "1");
         final Collection<String> teamIdentifiers = Lists.newArrayList("bmo");
@@ -276,7 +281,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withMinCount(teamsIdentifiers.size()) //
                 .withMaxCount(teamsIdentifiers.size()) //
                 .withSecurityGroupIds("accept-all") //
-                .withKeyName("continuous-delivery-workshop") //
+                .withKeyName(KEY_PAIR_NAME) //
                 .withUserData(userData) //
 
                 ;
@@ -378,7 +383,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withMinCount(1) //
                 .withMaxCount(1) //
                 .withSecurityGroupIds("accept-all") //
-                .withKeyName("continuous-delivery-workshop") //
+                .withKeyName(KEY_PAIR_NAME) //
                 .withUserData(userData) //
 
                 ;
@@ -439,7 +444,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withMinCount(teamIdentifiers.size() * numberOfInstances) //
                 .withMaxCount(teamIdentifiers.size() * numberOfInstances) //
                 .withSecurityGroupIds("accept-all") //
-                .withKeyName("continuous-delivery-workshop") //
+                .withKeyName(KEY_PAIR_NAME)
                 .withUserData(userData) //
 
                 ;

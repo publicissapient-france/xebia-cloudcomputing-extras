@@ -15,16 +15,18 @@
  */
 package fr.xebia.cloud.amazon.aws.tools;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +97,7 @@ public class AmazonAwsUtils {
             List<Instance> result = ec2.runInstances(runInstancesRequest).getReservation().getInstances();
             result = AmazonAwsUtils.awaitForEc2Instances(result, ec2);
 
+            //Check for instances state
             while (result.size() < initialInstanceMinCount && tryCount < 3) {
                 runInstancesRequest.setMinCount(initialInstanceMinCount - result.size());
                 runInstancesRequest.setMaxCount(initialInstanceMinCount - result.size());
@@ -105,12 +108,26 @@ public class AmazonAwsUtils {
                 tryCount++;
             }
 
+            //Check for SSH availability
+            for(Iterator<Instance> itInstance = result.iterator();itInstance.hasNext();){
+                Instance instance = itInstance.next();
+                try{
+                    awaitForSshAvailability(instance);
+                }catch (IllegalStateException e){
+                    //Not available => terminate instance
+                    ec2.terminateInstances(new TerminateInstancesRequest(Lists.newArrayList(instance.getInstanceId())));
+                    itInstance.remove();
+                }
+            }
+
+
             if (result.size() < initialInstanceMinCount) {
                 throw new IllegalStateException("Failure to create " + initialInstanceMinCount + " instances, only " + result.size()
                         + " instances ("
                         + Joiner.on(",").join(Collections2.transform(result, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID))
                         + ") were started on request " + runInstancesRequest);
             }
+
             return result;
         } finally {
             // restore runInstancesRequest state
@@ -386,6 +403,10 @@ public class AmazonAwsUtils {
 
     /**
      * <p>
+     * Test for SSH availability on <i>instance</i>.
+     * If after 5 minutes the instance is not available, and {@link IllegalStateException} is thrown
+     * </p>
+     * <p>
      * See <a href=
      * "http://sthen.blogspot.com/2008/03/sftp-i-java-with-jsch-using-private-key.html"
      * >SFTP in Java with JSch Using Private Key Authentication </a>
@@ -395,13 +416,51 @@ public class AmazonAwsUtils {
      * priv key as bytes.
      * </p>
      * 
-     * @param host
-     *            host to connect to (e.g.
-     * @param username
-     * @param sshPrivateKeyFilePath
+     * @param instance The ec2 instance to test
      * @see JSch#addIdentity(String, byte[], byte[], byte[])
      */
-    public void testSshConnection(String host, String username, String sshPrivateKeyFilePath) {
-        // TODO : to implement
+    public static void awaitForSshAvailability(Instance instance) {
+        try {
+            final String username = "ec2-user";
+            final String ip = instance.getPublicIpAddress();
+            final String host = instance.getPublicDnsName();
+
+            //Read key file
+            InputStream keyFile = Thread.currentThread().getContextClassLoader().getResourceAsStream(instance.getKeyName()+".pem");
+            byte[] keyAsByte= new byte[keyFile.available()];
+            keyFile.read(keyAsByte);
+
+            JSch jSch = new JSch();
+            java.util.Properties config = new java.util.Properties();
+            //Dont check host name
+            config.put("StrictHostKeyChecking", "no");
+            //Use ip instead of host to prevent dns replication latency
+            Session session = jSch.getSession(username, ip);
+            session.setConfig(config);
+
+            jSch.addIdentity(username,keyAsByte,null,new byte[0]);
+            for(int i =0; i < 60; i++){
+                try{
+                    session.connect(5000);
+                    logger.info("Instance "+host+" is valid");
+                    return;
+                }catch(JSchException jsche){
+                    logger.debug("Instance not (yet ?) ready (" + host + ") : " + jsche.getMessage());
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            logger.error("Instance " + host + " is not valid !");
+            throw new IllegalStateException("Instance is read after 5 minutes");
+        } catch (FileNotFoundException e) {
+            Throwables.propagate(e);
+        } catch (IOException e) {
+            Throwables.propagate(e);
+        } catch (JSchException e) {
+            Throwables.propagate(e);
+        }
     }
 }
