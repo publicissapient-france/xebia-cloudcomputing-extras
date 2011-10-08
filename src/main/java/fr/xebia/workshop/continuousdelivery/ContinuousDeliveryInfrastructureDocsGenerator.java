@@ -21,9 +21,14 @@ import java.util.Collection;
 public class ContinuousDeliveryInfrastructureDocsGenerator {
 
     public static void main(String[] args) {
+        final WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
+                .withGithubGuestInfo("xebia-guest", "xebia-guest", "xxx")
+                .withNexusDomainName("nexus.xebia-tech-event.info")
+                .build();
+
         try {
             ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
-            Collection<TeamInfrastructure> teamInfrastructures = creator.discoverInfrasturctureTopology();
+            Collection<TeamInfrastructure> teamInfrastructures = creator.discoverInfrastructureTopology(workshopInfrastructure);
             creator.generateDocs(teamInfrastructures, "/tmp/continuous-delivery/");
         } catch (IOException e) {
             e.printStackTrace();

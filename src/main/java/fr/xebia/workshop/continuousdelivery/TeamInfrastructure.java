@@ -16,7 +16,6 @@
 package fr.xebia.workshop.continuousdelivery;
 
 import com.amazonaws.services.ec2.model.Instance;
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -31,13 +30,6 @@ import java.util.Map;
  * </p>
  */
 public class TeamInfrastructure {
-    public static final Function<String, TeamInfrastructure> FUNCTION_TEAM_IDENTIFIER_TO_TEAM_INFRASTRUCTURE = new Function<String, TeamInfrastructure>() {
-
-        @Override
-        public TeamInfrastructure apply(String teamIdentifier) {
-            return new TeamInfrastructure(teamIdentifier);
-        }
-    };
 
     /**
      * The Jenkins server url (e.g. http://my-ec2-server:8080/) or
@@ -115,6 +107,8 @@ public class TeamInfrastructure {
 
     private String devTomcatName = "#devTomcat#";
 
+    private final WorkshopInfrastructure workshopInfrastructure;
+    
     private final String identifier;
 
     private Instance jenkins;
@@ -135,8 +129,9 @@ public class TeamInfrastructure {
 
     private String validTomcat2Name = "#validTomcat2#";
 
-    public TeamInfrastructure(String identifier) {
+    public TeamInfrastructure(WorkshopInfrastructure workshopInfrastructure, String identifier) {
         super();
+        this.workshopInfrastructure = workshopInfrastructure;
         this.identifier = Preconditions.checkNotNull(identifier);
     }
 
@@ -198,14 +193,18 @@ public class TeamInfrastructure {
      * Constant: "http://nexus.xebia-tech-event.info:8081/nexus/"
      */
     public String getNexusUrl() {
-        return "http://nexus.xebia-tech-event.info:8081/nexus/";
+        return workshopInfrastructure.getNexusUrlWithDomainName();
     }
 
     /**
      * The Amazon EC2 instance of the Tomcat dev server
      */
     public Instance getDevTomcat() {
-        return devTomcat;
+        return replaceIfNull(devTomcat);
+    }
+    
+    private static Instance replaceIfNull(Instance instance) {
+        return instance != null ? instance : new NullInstance();
     }
 
     /**
@@ -226,7 +225,7 @@ public class TeamInfrastructure {
      * The Amazon EC2 instance of the Jenkins server
      */
     public Instance getJenkins() {
-        return jenkins;
+        return replaceIfNull(jenkins);
     }
 
     /**
@@ -242,12 +241,12 @@ public class TeamInfrastructure {
      * blank, the default xebia-petclinic project repository url is returned.
      * </p>
      * <p>
-     * e.g. "https://github.com/xebia-france-training/xebia-petclinic-team-1"
+     * e.g. "https://github.com/xebia-guest/xebia-petclinic-team-1"
      * </p>
      */
     @Nonnull
     public String getGithubRepositoryHomePageUrl() {
-        return "https://github.com/xebia-france-training/" + getGithubRepositoryName();
+        return workshopInfrastructure.getGithubGuestAccountUrl() + getGithubRepositoryName();
     }
 
     @Nonnull
@@ -265,65 +264,59 @@ public class TeamInfrastructure {
      * the default xebia-petclinic project repository url is returned.
      * </p>
      * <p>
-     * e.g. "https://github.com/xebia-france-training/xebia-petclinic-team-1"
+     * e.g. "https://github.com/xebia-guest/xebia-petclinic-team-1"
      * </p>
      */
     @Nonnull
     public String getGithubRepositoryCloneUrl() {
-        String url = "https://";
+        StringBuilder urlBuilder = new StringBuilder("https://");
 
-        String gitHubUsername = getGitHubAccountUsername();
+        String gitHubUsername = workshopInfrastructure.getGithubGuestAccountUsername();
         if (!Strings.isNullOrEmpty(gitHubUsername)) {
-            url += gitHubUsername + "@";
+            urlBuilder.append(gitHubUsername).append("@");
         }
-        url += "github.com/xebia-france-training/" + getGithubRepositoryName();
-        url += ".git";
-        return url;
+        return urlBuilder.append("github.com/")
+                .append(workshopInfrastructure.getGithubGuestAccountName())
+                .append(getGithubRepositoryName())
+                .append(".git")
+                .toString();
     }
-
+    
     /**
      * Username of the GitHub account.
      */
     @Nullable
     public String getGitHubAccountUsername() {
-        return "xebia-continuous-delivery-tech-event";
-    }
-
-    /**
-     * Password of the GitHub account.
-     */
-    @Nullable
-    public String getGitHubAccountPassword() {
-        return "1645faface";
+        return workshopInfrastructure.getGithubGuestAccountName();
     }
 
     /**
      * URL of the jenkins server like "http://my-server:8080/" or
-     * <code>null</code> if the underlying jenkins instance is <code>null</code>
+     * <code>""</code> if the underlying jenkins instance is <code>null</code>
      * .
      *
      * @throws IllegalStateException
      */
     public String getJenkinsUrl() throws IllegalStateException {
-        return TeamInfrastructure.getJenkinsUrl(jenkins);
+        return Strings.nullToEmpty(TeamInfrastructure.getJenkinsUrl(jenkins));
     }
 
     /**
      * URL of the jenkins server like "http://my-server:8080/" or
-     * <code>null</code> if the underlying jenkins instance is <code>null</code>
+     * <code>""</code> if the underlying jenkins instance is <code>null</code>
      * .
      *
      * @throws IllegalStateException
      */
     public String getDeployitUrl() throws IllegalStateException {
-        return TeamInfrastructure.getDeployitUrl(jenkins);
+        return Strings.nullToEmpty(TeamInfrastructure.getDeployitUrl(jenkins));
     }
 
     /**
      * Amazon EC2 instance of the Nexus server
      */
     public Instance getNexus() {
-        return nexus;
+        return replaceIfNull(nexus);
     }
 
     /**
@@ -353,7 +346,7 @@ public class TeamInfrastructure {
      * Amazon EC2 instance of the Nexus server
      */
     public Instance getRundeck() {
-        return rundeck;
+        return replaceIfNull(rundeck);
     }
 
     /**
@@ -365,20 +358,20 @@ public class TeamInfrastructure {
 
     /**
      * URL of the rundeck server like "http://my-server:4440/" or
-     * <code>null</code> if underlying rundeck is <code>null</code>.
+     * <code>""</code> if underlying rundeck is <code>null</code>.
      *
      * @throws IllegalStateException the underlying jenkins instance is <code>null</code>.
      */
     @Nullable
     public String getRundeckUrl() throws IllegalStateException {
-        return getRundeckUrl(rundeck);
+        return Strings.nullToEmpty(TeamInfrastructure.getRundeckUrl(rundeck));
     }
 
     /**
      * Amazon EC2 instance of the Valid Tomcat 1 server
      */
     public Instance getValidTomcat1() {
-        return validTomcat1;
+        return replaceIfNull(validTomcat1);
     }
 
     /**
@@ -392,43 +385,43 @@ public class TeamInfrastructure {
      * Amazon EC2 instance of the Valid Tomcat 2 server
      */
     public Instance getValidTomcat2() {
-        return validTomcat2;
+        return replaceIfNull(validTomcat2);
     }
 
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
-     * <code>null</code> if the underlying ec2 instance is <code>null</code>.
+     * <code>""</code> if the underlying ec2 instance is <code>null</code>.
      *
      * @throws IllegalStateException if the underlying tomcat instance is not initialized and has
      *                               a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getValidTomcat2Url() throws IllegalStateException {
-        return TeamInfrastructure.getTomcatUrl(validTomcat2);
+        return Strings.nullToEmpty(TeamInfrastructure.getTomcatUrl(validTomcat2));
     }
 
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
-     * <code>null</code> if the underlying ec2 instance is <code>null</code>.
+     * <code>""</code> if the underlying ec2 instance is <code>null</code>.
      *
      * @throws IllegalStateException if the underlying tomcat instance is not initialized and has
      *                               a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getValidTomcat1Url() throws IllegalStateException {
-        return TeamInfrastructure.getTomcatUrl(validTomcat1);
+        return Strings.nullToEmpty(TeamInfrastructure.getTomcatUrl(validTomcat1));
     }
 
     /**
      * The Tomcat server url (e.g. http://my-ec2-server:8080/) or
-     * <code>null</code> if the underlying ec2 instance is <code>null</code>.
+     * <code>""</code> if the underlying ec2 instance is <code>null</code>.
      *
      * @throws IllegalStateException if the underlying tomcat instance is not initialized and has
      *                               a <code>null</code> 'publicDnsName'.
      */
     @Nullable
     public String getDevTomcatUrl() throws IllegalStateException {
-        return TeamInfrastructure.getTomcatUrl(devTomcat);
+        return Strings.nullToEmpty(TeamInfrastructure.getTomcatUrl(devTomcat));
     }
 
     /**
@@ -492,5 +485,27 @@ public class TeamInfrastructure {
                 .add(validTomcat2Name, validTomcat2) //
                 .add("nexus", nexus) //
                 .toString();
+    }
+    
+    public static class NullInstance extends Instance {
+        @Override
+        public String getPrivateDnsName() {
+            return "";
+        }
+        
+        @Override
+        public String getPrivateIpAddress() {
+            return "";
+        }
+        
+        @Override
+        public String getPublicDnsName() {
+            return "";
+        }
+        
+        @Override
+        public String getPublicIpAddress() {
+         return "";
+        }
     }
 }

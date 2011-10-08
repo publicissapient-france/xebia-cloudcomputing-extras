@@ -23,13 +23,12 @@ import org.slf4j.LoggerFactory;
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 /**
- * Creates a job in a Jenkins server for a "Petclinic" project hosted at
- * https://github.com/xebia-france-training/.
+ * Creates a job in a Jenkins server for a "Petclinic" project hosted on Github.
  * 
  * Example:
  * 
  * <pre>
- * new PetclinicJenkinsJobCreator(&quot;http://ec2-46-137-62-232.eu-west-1.compute.amazonaws.com:8080&quot;).create(new PetclinicProjectInstance(&quot;42&quot;))
+ * new PetclinicJenkinsJobCreator(&quot;http://ec2-46-137-62-232.eu-west-1.compute.amazonaws.com:8080&quot;).create(new PetclinicProjectInstance(&quot;xebia-guest&quot;, &quot;42&quot;))
  *         .triggerBuild();
  * </pre>
  */
@@ -49,6 +48,7 @@ public class PetclinicJenkinsJobCreator {
 
         HttpPost post = new HttpPost(jenkinsUrl + "/createItem?name=" + project.projectName);
         Map<String, Object> parameters = newHashMap();
+        parameters.put("accountName", project.accountName);
         parameters.put("projectName", project.projectName);
         parameters.put("groupId", project.groupId);
         parameters.put("artifactId", project.artifactId);

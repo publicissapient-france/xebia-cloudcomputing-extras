@@ -21,17 +21,22 @@ import org.junit.Test;
 
 public class ContinuousDeliveryInfrastructureCreatorTest {
 
+    private WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
+            .withGithubGuestInfo("account", "user", "password")
+            .withNexusDomainName("example.org")
+            .build();
+
     @Test
-    public void testFindInfrasturctureTopology() {
+    public void testFindInfrastructureTopology() {
         ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
-        Collection<TeamInfrastructure> teamInfrastructures = creator.discoverInfrasturctureTopology();
+        Collection<TeamInfrastructure> teamInfrastructures = creator.discoverInfrastructureTopology(workshopInfrastructure);
         System.out.println(teamInfrastructures);
     }
 
     @Test
     public void testGenerateDocs() throws Exception {
         ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
-        Collection<TeamInfrastructure> teamInfrastructures = creator.discoverInfrasturctureTopology();
+        Collection<TeamInfrastructure> teamInfrastructures = creator.discoverInfrastructureTopology(workshopInfrastructure);
         creator.generateDocs(teamInfrastructures, "/tmp/continuous-delivery-wiki-test");
     }
 

@@ -15,6 +15,8 @@
  */
 package fr.xebia.workshop.git;
 
+import static java.util.Arrays.asList;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,12 +58,10 @@ public class GithubRepositoriesDeleter {
      * @param args
      */
     public static void main(String[] args) {
-        String[] teams = {"team1", "team2"};
-
         final GithubRepositoriesDeleter deleter = new GithubRepositoriesDeleter()
                 .withGithubLoginPassword("xebia-guest", args[0]);
 
-        for (String team : teams) {
+        for (String team : asList("1", "2", "3")) {
             deleter.githubRepository("xebia-petclinic-" + team);
 
         }
