@@ -15,8 +15,6 @@
  */
 package fr.xebia.cloud.cloudinit;
 
-import static org.junit.Assert.*;
-
 import java.io.InputStreamReader;
 
 import org.junit.Test;
