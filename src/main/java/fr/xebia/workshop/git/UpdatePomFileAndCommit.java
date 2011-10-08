@@ -32,6 +32,7 @@ import org.eclipse.jgit.errors.UnmergedPathException;
 
 public class UpdatePomFileAndCommit implements GitRepositoryHandler {
 
+    private static final String GIT_SCM_PREFIX = "scm:git:";
     private static final String POM_XML = "pom.xml";
     static final String COMMIT_MESSAGE = "Sets groupId to team ID";
 
@@ -88,18 +89,9 @@ public class UpdatePomFileAndCommit implements GitRepositoryHandler {
 
     private void updateMavenModel(Model model, GitRepositoryInfo repositoryInfo) {
         model.setGroupId(model.getGroupId() + "-" + teamId);
-        String scmConnectionUrl = getScmConnectionUrl(repositoryInfo);
         Scm scm = new Scm();
-        scm.setConnection(scmConnectionUrl);
-        scm.setDeveloperConnection(scmConnectionUrl);
+        scm.setConnection(GIT_SCM_PREFIX + repositoryInfo.getReadOnlyUrl());
+        scm.setDeveloperConnection(GIT_SCM_PREFIX + repositoryInfo.getDeveloperUrl());
         model.setScm(scm);
-    }
-
-    private String getScmConnectionUrl(GitRepositoryInfo repositoryInfo) {
-        return new StringBuilder()
-                .append("scm:git:git://github.com/")
-                .append(repositoryInfo.getAccountName())
-                .append("/")
-                .append(repositoryInfo.getRepositoryName()).toString();
     }
 }
