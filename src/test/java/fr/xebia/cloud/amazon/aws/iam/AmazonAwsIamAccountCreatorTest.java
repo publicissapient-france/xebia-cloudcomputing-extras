@@ -15,17 +15,10 @@
  */
 package fr.xebia.cloud.amazon.aws.iam;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 
 import org.junit.Ignore;
 import org.junit.Test;
-
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
-import com.amazonaws.services.simpleemail.model.VerifyEmailAddressRequest;
-
-import fr.xebia.cloud.amazon.aws.iam.AmazonAwsIamAccountCreator;
 
 public class AmazonAwsIamAccountCreatorTest {
 

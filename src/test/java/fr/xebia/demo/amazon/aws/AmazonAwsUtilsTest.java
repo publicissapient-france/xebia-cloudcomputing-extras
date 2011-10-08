@@ -15,8 +15,6 @@
  */
 package fr.xebia.demo.amazon.aws;
 
-import static org.junit.Assert.*;
-
 import java.util.Collection;
 import java.util.List;
 
