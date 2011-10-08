@@ -15,9 +15,12 @@
  */
 package fr.xebia.workshop.git;
 
-import com.github.api.v2.schema.Repository;
-import com.github.api.v2.services.GitHubServiceFactory;
-import com.github.api.v2.services.RepositoryService;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand;
@@ -26,11 +29,9 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import com.github.api.v2.schema.Repository;
+import com.github.api.v2.services.GitHubServiceFactory;
+import com.github.api.v2.services.RepositoryService;
 
 /**
  * Creates github repositories. You can specify a source github repository and a GitRepositoryHandler to modify the
@@ -164,22 +165,26 @@ public class GithubRepositoriesCreator {
         Git git = initGitLocalRepository(tmpRepoDir);
 
         for (GithubCreateRepositoryRequest createRequest : createRequests) {
-            createRequest.initWithDefaultGithubCreateRepositoryRequest(defaultGithubCreateRepositoryRequest);
+            try {
+                createRequest.initWithDefaultGithubCreateRepositoryRequest(defaultGithubCreateRepositoryRequest);
 
-            Repository repository = createGithubRepository(createRequest);
+                Repository repository = createGithubRepository(createRequest);
 
-            if (createRequest.getGitRepositoryHandler() != null) {
-                processGitRepositoryHandler(git, createRequest);
+                if (createRequest.getGitRepositoryHandler() != null) {
+                    processGitRepositoryHandler(git, createRequest);
 
+                }
+                repositories.add(repository);
+            } catch (Exception e) {
+                logger.error("Could not create repository: " + createRequest, e);
             }
-            repositories.add(repository);
         }
 
-        //clean
+        // clean
         try {
             FileUtils.deleteDirectory(tmpRepoDir);
         } catch (IOException e) {
-            throw new RuntimeException("cannot delete local temporary git repository", e);
+            logger.warn("cannot delete local temporary git repository", e);
         }
         createRequests.clear();
 

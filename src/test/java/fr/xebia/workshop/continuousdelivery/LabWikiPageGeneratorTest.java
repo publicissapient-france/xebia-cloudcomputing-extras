@@ -28,7 +28,12 @@ public class LabWikiPageGeneratorTest {
 
     @Test
     public void generate_page() {
-        TeamInfrastructure infrastructure = new TeamInfrastructure("3");
+        WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
+                .withGithubGuestInfo("account", "username", "password")
+                .withNexusDomainName("example.org")
+                .build();
+        
+        TeamInfrastructure infrastructure = new TeamInfrastructure(workshopInfrastructure, "3");
 
         Instance jenkins = new Instance().withPublicDnsName("ec2-79-125-58-67-jenkins.eu-west-1.compute.amazonaws.com");
         infrastructure.setJenkins(jenkins);
@@ -60,6 +65,7 @@ public class LabWikiPageGeneratorTest {
 
         Map<String, Object> rootMap = Maps.newHashMap();
         rootMap.put("infrastructure", infrastructure);
+        rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}'");
         String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
         System.out.println(page);
     }

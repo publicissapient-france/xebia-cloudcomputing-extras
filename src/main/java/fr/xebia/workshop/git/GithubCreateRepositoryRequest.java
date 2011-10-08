@@ -18,6 +18,7 @@ package fr.xebia.workshop.git;
 import com.github.api.v2.services.auth.Authentication;
 import com.github.api.v2.services.auth.LoginPasswordAuthentication;
 import com.github.api.v2.services.auth.OAuthAuthentication;
+import com.google.common.base.Objects;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
@@ -199,5 +200,10 @@ public class GithubCreateRepositoryRequest implements GitRepositoryInfo {
 
     public CredentialsProvider getCredentialsProvider() {
         return credentialsProvider;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).add("url", getGithubRepositoryUrl()).toString();
     }
 }

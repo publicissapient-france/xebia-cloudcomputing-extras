@@ -15,61 +15,61 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
-import com.google.common.base.Charsets;
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
+import com.google.common.base.*;
 import com.google.common.collect.*;
 import com.google.common.io.Files;
+
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsFunctions;
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 import fr.xebia.cloud.cloudinit.CloudInitUserDataBuilder;
 import fr.xebia.cloud.cloudinit.FreemarkerUtils;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import fr.xebia.workshop.git.*;
 
 public class ContinuousDeliveryInfrastructureCreator {
 
     private static final String KEY_PAIR_NAME = "continuous-delivery-workshop";
 
     public static void main(String[] args) {
+        final WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
+                .withGithubGuestInfo("xebia-guest", "xebia-guest", "xebia42.*") // "xebia-continuous-delivery-tech-event" / "1645faface"
+                .withNexusPublicIp("46.137.168.248")
+                .withNexusDomainName("nexus.xebia-tech-event.info")
+                .build();
 
         boolean createNexus = true;
+        boolean createRepositories = true;
         boolean createJenkins = true;
         boolean createTomcatDev = true;
         boolean createTomcatValid = true;
+        
         final ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
 
         //Check for Key in classpath : prevent to launch instances if not present
         InputStream keyFile = Thread.currentThread().getContextClassLoader().getResourceAsStream(KEY_PAIR_NAME+".pem");
         Preconditions.checkState(keyFile != null, "File '" + KEY_PAIR_NAME + ".pem' NOT found in the classpath");
 
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
-        //final Collection<String> teamIdentifiers = Lists.newArrayList("clc", "1");
-        final Collection<String> teamIdentifiers = Lists.newArrayList("bmo");
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        final Collection<String> teamIdentifiers = Lists.newArrayList("1", "2", "3");
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
             @Override
             public Instance call() throws Exception {
                 try {
-                    return creator.buildNexus();
+                    return creator.buildNexus(workshopInfrastructure);
                 } catch (Exception e) {
                     logger.error("Exception creating nexus", e);
                     throw e;
@@ -80,12 +80,27 @@ public class ContinuousDeliveryInfrastructureCreator {
             executorService.submit(createNexusTask);
         }
 
+        Runnable createRepositoriesTask = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    creator.buildGithubRepositories(workshopInfrastructure, teamIdentifiers);
+                } catch (Exception e) {
+                    logger.error("Exception creating Github repositories", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        if (createRepositories) {
+            executorService.submit(createRepositoriesTask);
+        }
+
         Callable<Map<String, Instance>> createJenkinsTask = new Callable<Map<String, Instance>>() {
 
             @Override
             public Map<String, Instance> call() throws Exception {
                 try {
-                    return creator.buildJenkins(teamIdentifiers);
+                    return creator.buildJenkins(workshopInfrastructure, teamIdentifiers);
                 } catch (Exception e) {
                     logger.error("Exception creating jenkins", e);
                     throw e;
@@ -131,13 +146,14 @@ public class ContinuousDeliveryInfrastructureCreator {
         try {
             executorService.awaitTermination(10, TimeUnit.MINUTES);
 
-            Collection<TeamInfrastructure> teamsInfrastructures = creator.discoverInfrasturctureTopology();
+            Collection<TeamInfrastructure> teamsInfrastructures = creator.discoverInfrastructureTopology(workshopInfrastructure);
 
             creator.generateDocs(teamsInfrastructures, "/tmp/continuous-delivery/");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        System.exit(0);
     }
 
     public void generateDocs(Collection<TeamInfrastructure> teamsInfrastructures, String baseWikiFolder) throws IOException {
@@ -197,7 +213,7 @@ public class ContinuousDeliveryInfrastructureCreator {
         ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
     }
 
-    public Collection<TeamInfrastructure> discoverInfrasturctureTopology() {
+    public Collection<TeamInfrastructure> discoverInfrastructureTopology(final WorkshopInfrastructure workshopInfrastructure) {
         Filter filter = new Filter("tag:Workshop", Lists.newArrayList("continuous-delivery-workshop"));
         List<Reservation> reservations = ec2.describeInstances(new DescribeInstancesRequest().withFilters(filter)).getReservations();
 
@@ -229,7 +245,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .makeComputingMap(new Function<String, TeamInfrastructure>() {
                     @Override
                     public TeamInfrastructure apply(String teamIdentifier) {
-                        return new TeamInfrastructure(teamIdentifier);
+                        return new TeamInfrastructure(workshopInfrastructure, teamIdentifier);
                     }
                 });
 
@@ -260,11 +276,26 @@ public class ContinuousDeliveryInfrastructureCreator {
         return teamInfrastructures;
     }
 
+    public void buildGithubRepositories(WorkshopInfrastructure infra, Iterable<String> teamIdentifiers) {
+        final GithubRepositoriesCreator creator = new GithubRepositoriesCreator()
+                .fromGithubRepository("git://github.com/xebia-france-training/xebia-petclinic.git")
+                .onAccountName(infra.getGithubGuestAccountName())
+                .withAccessType(GithubCreateRepositoryRequest.AccessType.HTTP)
+                .withGithubLoginPassword(infra.getGithubGuestAccountUsername(), infra.getGithubGuestAccountPassword());
+
+        for (String team : teamIdentifiers) {
+            creator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
+                    .toRepositoryName("xebia-petclinic-" + team)
+                    .withGitRepositoryHandler(new UpdatePomFileAndCommit(team)));
+        }
+        creator.createRepositories();
+    }
+
     /**
      * @param teamsIdentifiers
      * @return jenkins instances by teamIdentifier
      */
-    public Map<String, Instance> buildJenkins(Collection<String> teamsIdentifiers) {
+    public Map<String, Instance> buildJenkins(WorkshopInfrastructure workshopInfrastructure, Collection<String> teamsIdentifiers) {
         logger.info("CREATE JENKINS/RUNDECK SERVERS");
 
         AmazonAwsUtils.terminateInstancesByRole(TeamInfrastructure.ROLE_JENKINS_RUNDECK, ec2);
@@ -328,11 +359,15 @@ public class ContinuousDeliveryInfrastructureCreator {
                 Instance jenkins = entry.getValue();
                 String teamIdentifier = entry.getKey();
                 String jenkinsUrl = TeamInfrastructure.getJenkinsUrl(jenkins);
+                if (jenkinsUrl == null) {
+                    continue;
+                }
+                
                 logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, jenkins.getInstanceId());
 
                 try {
                     AmazonAwsUtils.awaitForHttpAvailability(jenkinsUrl);
-                    PetclinicProjectInstance petClinicProjectInstance = new PetclinicProjectInstance(teamIdentifier);
+                    PetclinicProjectInstance petClinicProjectInstance = new PetclinicProjectInstance(workshopInfrastructure.getGithubGuestAccountName(), teamIdentifier);
                     new PetclinicJenkinsJobCreator(jenkinsUrl).create(petClinicProjectInstance).triggerBuild();
                 } catch (Exception e) {
                     logger.warn("Silently skip " + e, e);
@@ -347,6 +382,10 @@ public class ContinuousDeliveryInfrastructureCreator {
                 Instance deployit = entry.getValue();
                 String teamIdentifier = entry.getKey();
                 String deployitUrl = TeamInfrastructure.getDeployitUrl(deployit);
+                if (deployitUrl == null) {
+                    continue;
+                }
+                
                 logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, deployit.getInstanceId());
 
                 try {
@@ -367,7 +406,7 @@ public class ContinuousDeliveryInfrastructureCreator {
         return jenkinsInstancesByTeamIdentifier;
     }
 
-    public Instance buildNexus() {
+    public Instance buildNexus(WorkshopInfrastructure workshopInfrastructure) throws InterruptedException {
         logger.info("START CREATE NEXUS SERVER");
 
         // TERMINATE EXISTING NEXUS SERVERS IF EXIST
@@ -401,7 +440,10 @@ public class ContinuousDeliveryInfrastructureCreator {
                         new Tag("Role", TeamInfrastructure.ROLE_NEXUS));
         ec2.createTags(createTagsRequest);
 
-        String publicIp = "46.137.168.248";
+        // first waits for Nexus availability, otherwise the following elastic IP assignment will break its installation
+        waitForNexusAvailability(nexusInstance);
+        
+        final String publicIp = workshopInfrastructure.getNexusPublicIp();
 
         // ASSOCIATE NEXUS INSTANCE WITH PUBLIC IP
         Address address = Iterables.getOnlyElement(ec2.describeAddresses(new DescribeAddressesRequest().withPublicIps(publicIp))
@@ -416,14 +458,34 @@ public class ContinuousDeliveryInfrastructureCreator {
 
         ec2.associateAddress(new AssociateAddressRequest(nexusInstance.getInstanceId(), publicIp));
 
-        AmazonAwsUtils.awaitForHttpAvailability("http://" + publicIp + ":8081/nexus/");
-        AmazonAwsUtils.awaitForHttpAvailability("http://nexus.xebia-tech-event.info:8081/nexus/");
+        try {
+            AmazonAwsUtils.awaitForHttpAvailability(workshopInfrastructure.getNexusUrlWithIp());
+            AmazonAwsUtils.awaitForHttpAvailability(workshopInfrastructure.getNexusUrlWithDomainName());
+        } catch (Exception e) {
+            logger.warn("Silently skipped " + e, e);
+        }
 
         logger.info("1 NEXUS SERVER {} SUCCESSFULLY CREATED AND ASSOCIATED WITH {}: {}", new Object[]{nexusInstance.getInstanceId(),
                 publicIp, nexusInstance});
 
         return nexusInstance;
 
+    }
+
+    private void waitForNexusAvailability(Instance nexusInstance) throws InterruptedException {
+        int maxTries = 3;
+        int tries = 0;
+        boolean success = false;
+        while (!success && tries < maxTries) {
+            try {
+                AmazonAwsUtils.awaitForHttpAvailability("http://" + nexusInstance.getPublicIpAddress() + ":8081/nexus/");
+                success = true;
+            } catch (Exception e) {
+                logger.warn("Silently skipped " + e, e);
+                tries++;
+                Thread.sleep(3000);
+            }
+        }
     }
 
     public List<Instance> buildTomcatServers(Collection<String> teamIdentifiers, String environment, int numberOfInstances) {
