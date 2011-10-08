@@ -163,13 +163,26 @@ public class GithubCreateRepositoryRequest implements GitRepositoryInfo {
             throw new IllegalArgumentException("access type not defined");
         }
     }
+    
+    @Override
+    public String getDeveloperUrl() {
+        return getGithubRepositoryUrl();
+    }
 
     @Override
+    public String getReadOnlyUrl() {
+        return new StringBuilder()
+                .append("git://github.com/")
+                .append(accountName)
+                .append("/")
+                .append(repositoryName)
+                .toString();
+    }
+
     public String getRepositoryName() {
         return repositoryName;
     }
 
-    @Override
     public String getAccountName() {
         return accountName;
     }
