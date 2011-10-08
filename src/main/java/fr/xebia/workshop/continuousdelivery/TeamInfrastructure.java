@@ -487,6 +487,7 @@ public class TeamInfrastructure {
                 .toString();
     }
     
+    // quick fix for to please FreeMarker
     public static class NullInstance extends Instance {
         @Override
         public String getPrivateDnsName() {
