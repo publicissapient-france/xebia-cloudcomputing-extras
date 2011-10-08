@@ -15,6 +15,11 @@
  */
 package fr.xebia.workshop.git;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Scm;
@@ -25,18 +30,11 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.UnmergedPathException;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-
 public class UpdatePomFileAndCommit implements GitRepositoryHandler {
 
-    public static final String POM_XML = "pom.xml";
-    public static final String COMMIT_MESSAGE = "update groupid with team id in pom.xml";
+    private static final String POM_XML = "pom.xml";
+    static final String COMMIT_MESSAGE = "Sets groupId to team ID";
 
-    private String account;
-    private String repository;
     private String teamId;
 
     public UpdatePomFileAndCommit(String teamId) {
@@ -44,14 +42,17 @@ public class UpdatePomFileAndCommit implements GitRepositoryHandler {
     }
 
     @Override
-    public void updateGitRepository(Git git, GithubCreateRepositoryRequest createRequest) throws GitAPIException {
+    public void updateGitRepository(Git git, GitRepositoryInfo repositoryInfo) throws GitAPIException {
         File pomFile = getPomFile(git);
 
-        updatePomGroupId(pomFile, createRequest);
+        updatePomGroupId(pomFile, repositoryInfo);
 
         git.add().addFilepattern(POM_XML).call();
         try {
-            git.commit().setMessage(COMMIT_MESSAGE).call();
+            git.commit()
+                    .setCommitter("Team " + teamId, "")
+                    .setMessage(COMMIT_MESSAGE)
+                    .call();
         } catch (UnmergedPathException e) {
             throw new IllegalStateException("Cannot commit git repository", e);
         }
@@ -61,7 +62,7 @@ public class UpdatePomFileAndCommit implements GitRepositoryHandler {
         return new File(git.getRepository().getWorkTree(), POM_XML);
     }
 
-    private void updatePomGroupId(File pomFile, GithubCreateRepositoryRequest createRequest) {
+    private void updatePomGroupId(File pomFile, GitRepositoryInfo repositoryInfo) {
         FileReader reader = null;
         FileWriter writer = null;
         MavenXpp3Reader mavenXpp3Reader = new MavenXpp3Reader();
@@ -72,7 +73,7 @@ public class UpdatePomFileAndCommit implements GitRepositoryHandler {
 
             reader = new FileReader(pomFile);
             model = mavenXpp3Reader.read(reader);
-            updateMavenModel(model, createRequest);
+            updateMavenModel(model, repositoryInfo);
             writer = new FileWriter(pomFile);
             mavenXpp3Writer.write(writer, model);
         } catch (IOException e) {
@@ -85,20 +86,20 @@ public class UpdatePomFileAndCommit implements GitRepositoryHandler {
         }
     }
 
-    private void updateMavenModel(Model model, GithubCreateRepositoryRequest createRequest) {
+    private void updateMavenModel(Model model, GitRepositoryInfo repositoryInfo) {
         model.setGroupId(model.getGroupId() + "." + teamId);
-        String scmConnectionUrl = getScmConnectionUrl(createRequest);
+        String scmConnectionUrl = getScmConnectionUrl(repositoryInfo);
         Scm scm = new Scm();
         scm.setConnection(scmConnectionUrl);
         scm.setDeveloperConnection(scmConnectionUrl);
         model.setScm(scm);
     }
 
-    private String getScmConnectionUrl(GithubCreateRepositoryRequest createRequest) {
-        return  new StringBuilder()
+    private String getScmConnectionUrl(GitRepositoryInfo repositoryInfo) {
+        return new StringBuilder()
                 .append("scm:git:git://github.com/")
-                .append(createRequest.getAccountName())
+                .append(repositoryInfo.getAccountName())
                 .append("/")
-                .append(createRequest.getRepositoryName()).toString();
+                .append(repositoryInfo.getRepositoryName()).toString();
     }
 }

@@ -15,15 +15,9 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
 
 public class ContinuousDeliveryInfrastructureCreatorTest {
 

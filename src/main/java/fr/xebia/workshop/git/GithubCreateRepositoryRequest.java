@@ -21,12 +21,14 @@ import com.github.api.v2.services.auth.OAuthAuthentication;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
-public class GithubCreateRepositoryRequest {
+public class GithubCreateRepositoryRequest implements GitRepositoryInfo {
 
     public static final String DEFAULT_HOST = "github.com";
 
-    public enum AccessType { HTTP,
-        SSH };
+    public enum AccessType {
+        HTTP,
+        SSH
+    };
 
     private String githubRepositoryUrl;
 
@@ -117,12 +119,12 @@ public class GithubCreateRepositoryRequest {
     public GithubCreateRepositoryRequest withGithubLoginPassword(String githubLogin, String githubPassword) {
         this.authentication = new LoginPasswordAuthentication(githubLogin, githubPassword);
         this.credentialsProvider = new UsernamePasswordCredentialsProvider(githubLogin, githubPassword);
-         return this;
+        return this;
     }
 
     public GithubCreateRepositoryRequest withGithubOAuthToken(String githubOAuth) {
         this.authentication = new OAuthAuthentication(githubOAuth);
-         return this;
+        return this;
     }
 
     public String getGithubRepositoryUrl() {
@@ -134,37 +136,39 @@ public class GithubCreateRepositoryRequest {
 
     private String buildGithubRepositoryUrl(AccessType accessType) {
         switch (accessType) {
-            case HTTP :
-                return new StringBuilder()
-                        .append("https://")
-                        .append(accountName)
-                        .append("@")
-                        .append(host)
-                        .append("/")
-                        .append(accountName)
-                        .append("/")
-                        .append(repositoryName)
-                        .append(".git")
-                        .toString();
-            case SSH :
-                return new StringBuilder()
-                        .append("git@")
-                        .append(host)
-                        .append(":")
-                        .append(accountName)
-                        .append("/")
-                        .append(repositoryName)
-                        .append(".git")
-                        .toString();
-            default:
-                throw new IllegalArgumentException("access type not defined");
+        case HTTP:
+            return new StringBuilder()
+                    .append("https://")
+                    .append(accountName)
+                    .append("@")
+                    .append(host)
+                    .append("/")
+                    .append(accountName)
+                    .append("/")
+                    .append(repositoryName)
+                    .append(".git")
+                    .toString();
+        case SSH:
+            return new StringBuilder()
+                    .append("git@")
+                    .append(host)
+                    .append(":")
+                    .append(accountName)
+                    .append("/")
+                    .append(repositoryName)
+                    .append(".git")
+                    .toString();
+        default:
+            throw new IllegalArgumentException("access type not defined");
         }
     }
 
+    @Override
     public String getRepositoryName() {
         return repositoryName;
     }
 
+    @Override
     public String getAccountName() {
         return accountName;
     }
