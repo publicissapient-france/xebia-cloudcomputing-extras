@@ -20,5 +20,5 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 
 public interface GitRepositoryHandler {
 
-   void updateGitRepository(Git git, GithubCreateRepositoryRequest githubCreateRepositoryRequest) throws GitAPIException;
+   void updateGitRepository(Git git, GitRepositoryInfo repositoryInfo) throws GitAPIException;
 }

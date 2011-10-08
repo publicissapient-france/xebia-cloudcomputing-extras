@@ -46,21 +46,29 @@ import java.util.UUID;
  * http://help.github.com/multiple-ssh-keys/
  *
  */
-public class GithubRepositoriesJobCreator {
+public class GithubRepositoriesCreator {
 
-    private static final Logger logger = LoggerFactory.getLogger(GithubRepositoriesJobCreator.class);
+    private static final Logger logger = LoggerFactory.getLogger(GithubRepositoriesCreator.class);
 
     public static final String GIT_TMP_REPO_PREFIX = "git-tmp-repo-";
     public static final String JAVA_IO_TMPDIR = "java.io.tmpdir";
     public static final String DEFAULT_TMPDIR = "temp";
 
-    private GitHubServiceFactory gitHubServiceFactory = GitHubServiceFactory.newInstance();
+    private final GitHubServiceFactory gitHubServiceFactory;
 
     private String sourceGitHubRepositoryUrl;
 
     private List<GithubCreateRepositoryRequest> createRequests = new ArrayList<GithubCreateRepositoryRequest>();
 
     private GithubCreateRepositoryRequest defaultGithubCreateRepositoryRequest = new GithubCreateRepositoryRequest();
+    
+    public GithubRepositoriesCreator() {
+        gitHubServiceFactory = GitHubServiceFactory.newInstance();
+    }
+
+    public GithubRepositoriesCreator(GitHubServiceFactory factory) {
+        gitHubServiceFactory = factory;
+    }
 
     /**
      * Use cases just for demo
@@ -73,24 +81,24 @@ public class GithubRepositoriesJobCreator {
         if (GithubCreateRepositoryRequest.AccessType.HTTP.name().equals(args[0])) {
             String passwd = args[1];
 
-            final GithubRepositoriesJobCreator jobCreator = new GithubRepositoriesJobCreator()
-                    .fromGithubRepository("git@github.com:xebia-france-training/xebia-petclinic.git")
+            final GithubRepositoriesCreator creator = new GithubRepositoriesCreator()
+                    .fromGithubRepository("git://github.com/xebia-france-training/xebia-petclinic.git")
                     .onAccountName("xebia-guest")
                     .withAccessType(GithubCreateRepositoryRequest.AccessType.HTTP)
                     .withGithubLoginPassword("xebia-guest", passwd);
 
             for (String team : teams) {
-                jobCreator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
+                creator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
                         .toRepositoryName("xebia-petclinic-" + team)
                         .withGitRepositoryHandler(new UpdatePomFileAndCommit(team)));
             }
-            jobCreator.createRepositories();
+            creator.createRepositories();
         }
 
         if (GithubCreateRepositoryRequest.AccessType.SSH.name().equals(args[0])) {
             String token = args[1];
 
-            final GithubRepositoriesJobCreator jobCreator = new GithubRepositoriesJobCreator()
+            final GithubRepositoriesCreator jobCreator = new GithubRepositoriesCreator()
                     .fromGithubRepository("git@github.com:xebia-france-training/xebia-petclinic.git")
                     .onAccountName("xebia-guest")
                     .atHost("github-xebia-guest")
@@ -105,47 +113,47 @@ public class GithubRepositoriesJobCreator {
         }
     }
 
-    public GithubRepositoriesJobCreator fromGithubRepository(String sourceGitHubRepositoryUrl) {
+    public GithubRepositoriesCreator fromGithubRepository(String sourceGitHubRepositoryUrl) {
         this.sourceGitHubRepositoryUrl = sourceGitHubRepositoryUrl;
         return this;
     }
 
-    public GithubRepositoriesJobCreator addGithubCreateRepositoryRequest(GithubCreateRepositoryRequest githubCreateRepositoryRequest) {
+    public GithubRepositoriesCreator addGithubCreateRepositoryRequest(GithubCreateRepositoryRequest githubCreateRepositoryRequest) {
         this.createRequests.add(githubCreateRepositoryRequest);
         return this;
     }
 
-    public GithubRepositoriesJobCreator withDescription(String defaultDescription) {
+    public GithubRepositoriesCreator withDescription(String defaultDescription) {
         this.defaultGithubCreateRepositoryRequest.withDescription(defaultDescription);
         return this;
     }
 
-    public GithubRepositoriesJobCreator withHomepage(String defaultHomepage) {
+    public GithubRepositoriesCreator withHomepage(String defaultHomepage) {
         this.defaultGithubCreateRepositoryRequest.withHomepage(defaultHomepage);
         return this;
     }
 
-    public GithubRepositoriesJobCreator onAccountName(String defaultTargetAccountName) {
+    public GithubRepositoriesCreator onAccountName(String defaultTargetAccountName) {
         this.defaultGithubCreateRepositoryRequest.onAccountName(defaultTargetAccountName);
         return this;
     }
 
-    public GithubRepositoriesJobCreator withAccessType(GithubCreateRepositoryRequest.AccessType defaultAccessType) {
+    public GithubRepositoriesCreator withAccessType(GithubCreateRepositoryRequest.AccessType defaultAccessType) {
         this.defaultGithubCreateRepositoryRequest.withAccessType(defaultAccessType);
         return this;
     }
 
-    public GithubRepositoriesJobCreator atHost(String defaultHost) {
+    public GithubRepositoriesCreator atHost(String defaultHost) {
         this.defaultGithubCreateRepositoryRequest.atHost(defaultHost);
         return this;
     }
 
-    public GithubRepositoriesJobCreator withGithubLoginPassword(String defaultLogin, String defaultPassword) {
+    public GithubRepositoriesCreator withGithubLoginPassword(String defaultLogin, String defaultPassword) {
         this.defaultGithubCreateRepositoryRequest.withGithubLoginPassword(defaultLogin, defaultPassword);
         return this;
     }
 
-    public GithubRepositoriesJobCreator withGithubOAuthToken(String defaulGithubOAuthToken) {
+    public GithubRepositoriesCreator withGithubOAuthToken(String defaulGithubOAuthToken) {
         this.defaultGithubCreateRepositoryRequest.withGithubOAuthToken(defaulGithubOAuthToken);
         return this;
     }

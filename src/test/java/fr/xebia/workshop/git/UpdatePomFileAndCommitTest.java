@@ -15,95 +15,125 @@
  */
 package fr.xebia.workshop.git;
 
-import junit.framework.Assert;
-import org.custommonkey.xmlunit.Diff;
-import org.custommonkey.xmlunit.XMLUnit;
-import org.eclipse.jgit.api.AddCommand;
-import org.eclipse.jgit.api.CommitCommand;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Repository;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import org.apache.commons.io.FileUtils;
+import org.custommonkey.xmlunit.Diff;
+import org.custommonkey.xmlunit.XMLUnit;
+import org.eclipse.jgit.api.AddCommand;
+import org.eclipse.jgit.api.CommitCommand;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.Repository;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-
+@RunWith(MockitoJUnitRunner.class)
 public class UpdatePomFileAndCommitTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(GithubRepositoriesJobCreator.class);
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePomFileAndCommitTest.class);
+
+    @Mock
+    private Repository repository;
+    @Mock
+    private Git git;
+    @Mock
+    private AddCommand addCommand;
+    @Mock
+    private CommitCommand commitCommand;
+
+    private File pomFile = new File("target/test-classes/git/project/pom.xml");
+    private String pomContent;
+
+    @Before
+    public void mockGitBehavior() {
+        when(git.getRepository()).thenReturn(repository);
+        when(git.add()).thenReturn(addCommand);
+        when(git.commit()).thenReturn(commitCommand);
+
+        when(repository.getWorkTree()).thenReturn(new File("target/test-classes/git/project/"));
+
+        when(addCommand.addFilepattern(anyString())).thenReturn(addCommand);
+
+        when(commitCommand.setMessage(anyString())).thenReturn(commitCommand);
+        when(commitCommand.setCommitter(anyString(), anyString())).thenReturn(commitCommand);
+    }
+
+    // prevents tests failures when the workspace is not cleaned between two tests
+    @Before
+    public void storeTargetPomContent() throws Exception {
+        pomContent = FileUtils.readFileToString(pomFile);
+    }
+
+    @After
+    public void restoreTargetPomContent() throws Exception {
+        FileUtils.writeStringToFile(pomFile, pomContent);
+    }
 
     @Test
-    public void should_replace_group_id_in_pom_xml() throws IOException, GitAPIException, SAXException {
-        //given
+    public void should_replace_group_id_in_pom_xml() throws Exception {
+        // given
         UpdatePomFileAndCommit addTeamIdInPomGroupID = new UpdatePomFileAndCommit("team.test");
-
-        Repository repository = mock(Repository.class);
-        Git git = mock(Git.class);
-        AddCommand addCommand = mock(AddCommand.class);
-        CommitCommand commitCommand = mock(CommitCommand.class);
-
-        when(git.getRepository()).thenReturn(repository);
-        when(repository.getWorkTree()).thenReturn(new File("target/test-classes/git/project/"));
-        when(git.add()).thenReturn(addCommand);
-        when(addCommand.addFilepattern(anyString())).thenReturn(addCommand);
-        when(git.commit()).thenReturn(commitCommand);
-        when(commitCommand.setMessage(anyString())).thenReturn(commitCommand);
 
         GithubCreateRepositoryRequest createRepositoryRequest = new GithubCreateRepositoryRequest()
                 .toRepositoryName("xebia-petclinic-team-test")
                 .onAccountName("account");
 
-        //when
+        // when
         addTeamIdInPomGroupID.updateGitRepository(git, createRepositoryRequest);
 
-        //then
-        FileInputStream updatedPom = new FileInputStream("target/test-classes/git/project/pom.xml");
+        // then
+        FileInputStream updatedPom = new FileInputStream(pomFile);
         InputStream referencePom = getClass().getResourceAsStream("/git/project/reference/pom.xml");
-        XMLUnit.setIgnoreWhitespace(true);
-        Diff diff = XMLUnit.compareXML(new InputSource(referencePom), new InputSource(updatedPom));
+        Diff diff = makeDiff(referencePom, updatedPom);
 
         logger.info(diff.toString());
-        Assert.assertEquals(true, diff.identical());
+        assertEquals(true, diff.identical());
+    }
+
+    private Diff makeDiff(InputStream stream1, InputStream stream2) throws SAXException, IOException {
+        XMLUnit.setIgnoreWhitespace(true);
+        return XMLUnit.compareXML(new InputSource(stream1), new InputSource(stream2));
     }
 
     @Test
-    public void should_add_and_commit_pom_xml() throws IOException, GitAPIException, SAXException {
-        //given
+    public void should_add_and_commit_pom_xml() throws Exception {
+        // given
         UpdatePomFileAndCommit addTeamIdInPomGroupID = new UpdatePomFileAndCommit("team.test");
 
-        Repository repository = mock(Repository.class);
-        Git git = mock(Git.class);
-        AddCommand addCommand = mock(AddCommand.class);
-        CommitCommand commitCommand = mock(CommitCommand.class);
-
-        when(git.getRepository()).thenReturn(repository);
-        when(repository.getWorkTree()).thenReturn(new File("target/test-classes/git/project/"));
-        when(git.add()).thenReturn(addCommand);
-        when(addCommand.addFilepattern(anyString())).thenReturn(addCommand);
-        when(git.commit()).thenReturn(commitCommand);
-        when(commitCommand.setMessage(anyString())).thenReturn(commitCommand);
-
-
-        //when
+        // when
         addTeamIdInPomGroupID.updateGitRepository(git, new GithubCreateRepositoryRequest());
 
-        //then
-        verify(addCommand, times(1)).addFilepattern(eq("pom.xml"));
+        // then
+        verify(addCommand, times(1)).addFilepattern("pom.xml");
         verify(addCommand, times(1)).call();
-        verify(commitCommand, times(1)).setMessage(eq("update groupid with team id in pom.xml"));
+        verify(commitCommand).setMessage(UpdatePomFileAndCommit.COMMIT_MESSAGE);
         verify(commitCommand, times(1)).call();
     }
 
+    @Test
+    public void should_not_use_system_git_account() throws Exception {
+        // given
+        UpdatePomFileAndCommit addTeamIdInPomGroupID = new UpdatePomFileAndCommit("tEsT");
+
+        // when
+        addTeamIdInPomGroupID.updateGitRepository(git, new GithubCreateRepositoryRequest());
+        verify(commitCommand).setCommitter("Team tEsT", "");
+    }
 }

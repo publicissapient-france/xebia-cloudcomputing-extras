@@ -15,32 +15,41 @@
  */
 package fr.xebia.workshop.git;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.api.v2.services.GitHubException;
 import com.github.api.v2.services.GitHubServiceFactory;
 import com.github.api.v2.services.RepositoryService;
 import com.github.api.v2.services.auth.Authentication;
 import com.github.api.v2.services.auth.LoginPasswordAuthentication;
 import com.github.api.v2.services.auth.OAuthAuthentication;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Delete github repositories.
  *
  */
-public class GithubRepositoriesJobDeleter {
+public class GithubRepositoriesDeleter {
 
-    private static final Logger logger = LoggerFactory.getLogger(GithubRepositoriesJobCreator.class);
+    private static final Logger logger = LoggerFactory.getLogger(GithubRepositoriesDeleter.class);
 
-    GitHubServiceFactory gitHubServiceFactory = GitHubServiceFactory.newInstance();
+    private final GitHubServiceFactory gitHubServiceFactory;
 
-    private List<String> githubRepositoryNames = new ArrayList<String>();
+    private final List<String> githubRepositoryNames = new ArrayList<String>();
 
     // auth for github
     private Authentication authentication;
+
+    public GithubRepositoriesDeleter() {
+        gitHubServiceFactory = GitHubServiceFactory.newInstance();
+    }
+
+    public GithubRepositoriesDeleter(GitHubServiceFactory factory) {
+        gitHubServiceFactory = factory;
+    }
 
     /**
      * Show use cases
@@ -49,27 +58,27 @@ public class GithubRepositoriesJobDeleter {
     public static void main(String[] args) {
         String[] teams = {"team1", "team2"};
 
-        final GithubRepositoriesJobDeleter jobCreator = new GithubRepositoriesJobDeleter()
+        final GithubRepositoriesDeleter deleter = new GithubRepositoriesDeleter()
                 .withGithubLoginPassword("xebia-guest", args[0]);
 
         for (String team : teams) {
-            jobCreator.githubRepository("xebia-petclinic-" + team);
+            deleter.githubRepository("xebia-petclinic-" + team);
 
         }
-        jobCreator.deleteRepositories();
+        deleter.deleteRepositories();
     }
 
-    public GithubRepositoriesJobDeleter githubRepository(String gitHubRepositoryUrl) {
+    public GithubRepositoriesDeleter githubRepository(String gitHubRepositoryUrl) {
         this.githubRepositoryNames .add(gitHubRepositoryUrl);
         return this;
     }
 
-    public GithubRepositoriesJobDeleter withGithubLoginPassword(String login, String password) {
+    public GithubRepositoriesDeleter withGithubLoginPassword(String login, String password) {
         this.authentication = new LoginPasswordAuthentication(login, password);
         return this;
     }
 
-    public GithubRepositoriesJobDeleter withGithubOAuthToken(String githubOAuthToken) {
+    public GithubRepositoriesDeleter withGithubOAuthToken(String githubOAuthToken) {
         this.authentication = new OAuthAuthentication(githubOAuthToken);
         return this;
     }
