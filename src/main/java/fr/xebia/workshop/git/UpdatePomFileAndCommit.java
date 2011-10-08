@@ -87,7 +87,7 @@ public class UpdatePomFileAndCommit implements GitRepositoryHandler {
     }
 
     private void updateMavenModel(Model model, GitRepositoryInfo repositoryInfo) {
-        model.setGroupId(model.getGroupId() + "." + teamId);
+        model.setGroupId(model.getGroupId() + "-" + teamId);
         String scmConnectionUrl = getScmConnectionUrl(repositoryInfo);
         Scm scm = new Scm();
         scm.setConnection(scmConnectionUrl);
