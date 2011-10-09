@@ -86,7 +86,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 try {
                     creator.deleteGithubRepositories(workshopInfrastructure, teamIdentifiers);
                 } catch (Exception e) {
-                    logger.error("Exception creating Github repositories", e);
+                    logger.error("Exception deleting Github repositories", e);
                     throw new RuntimeException(e);
                 }
             }
@@ -308,7 +308,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withGithubLoginPassword(infra.getGithubGuestAccountUsername(), infra.getGithubGuestAccountPassword());
 
         for (String team : teamIdentifiers) {
-            deleter.githubRepository("xebia-petclinic-" + team);
+            deleter.githubRepositoryName("xebia-petclinic-" + team);
         }
         deleter.deleteRepositories();
     }
