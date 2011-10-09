@@ -62,7 +62,7 @@ public class ContinuousDeliveryInfrastructureCreator {
         Preconditions.checkState(keyFile != null, "File '" + KEY_PAIR_NAME + ".pem' NOT found in the classpath");
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
-        final Collection<String> teamIdentifiers = Lists.newArrayList("1");
+        final Collection<String> teamIdentifiers = Lists.newArrayList("1", "2", "3");
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
