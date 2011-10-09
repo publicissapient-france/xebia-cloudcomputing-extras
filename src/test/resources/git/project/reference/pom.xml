@@ -16,14 +16,14 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>fr.xebia.demo.petclinic.team.test</groupId>
+    <groupId>fr.xebia.demo.petclinic-team.test</groupId>
     <artifactId>xebia-petclinic</artifactId>
     <version>1.0.3-SNAPSHOT</version>
     <packaging>war</packaging>
     <name>xebia-petclinic</name>
     <scm>
         <connection>scm:git:git://github.com/account/xebia-petclinic-team-test</connection>
-        <developerConnection>scm:git:git://github.com/account/xebia-petclinic-team-test</developerConnection>
+        <developerConnection>scm:git:git@github.com:account/xebia-petclinic-team-test.git</developerConnection>
     </scm>
     <distributionManagement>
         <repository>
