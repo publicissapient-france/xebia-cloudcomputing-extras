@@ -62,14 +62,14 @@ public class GithubRepositoriesDeleter {
                 .withGithubLoginPassword("xebia-guest", args[0]);
 
         for (String team : asList("1", "2", "3")) {
-            deleter.githubRepository("xebia-petclinic-" + team);
+            deleter.githubRepositoryName("xebia-petclinic-" + team);
 
         }
         deleter.deleteRepositories();
     }
 
-    public GithubRepositoriesDeleter githubRepository(String gitHubRepositoryUrl) {
-        this.githubRepositoryNames .add(gitHubRepositoryUrl);
+    public GithubRepositoriesDeleter githubRepositoryName(String gitHubRepositoryName) {
+        this.githubRepositoryNames .add(gitHubRepositoryName);
         return this;
     }
 
