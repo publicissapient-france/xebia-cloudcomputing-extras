@@ -61,7 +61,16 @@ runcmd:
  - [chmod, 400, /var/lib/jenkins/.ssh/continuous-delivery-workshop.pem] 
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.ssh]
  - [ sh, -xc, "echo '/var/lib/jenkins/.ssh/continuous-delivery-workshop.pem provisioned'" ]
- 
+
+ # add ssh config to github authentication
+ - [sh, -xc, "echo \"# Github ssh config\" >> /var/lib/jenkins/.ssh/config"]
+ - [sh, -xc, "echo \"Host github.com\" >> /var/lib/jenkins/.ssh/config"]
+ - [sh, -xc, "echo \"HostName github.com\" >> /var/lib/jenkins/.ssh/config"]
+ - [sh, -xc, "echo \"User git\" >> /var/lib/jenkins/.ssh/config"]
+ - [sh, -xc, "echo \"StrictHostKeyChecking no\" >> /var/lib/jenkins/.ssh/config"]
+ - [sh, -xc, "echo \"IdentityFile /var/lib/jenkins/.ssh/continuous-delivery-workshop.pem\" >> /var/lib/jenkins/.ssh/config"]
+ - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.ssh/config]
+
  # tells Jenkins where to find Maven
  - [sh, -xc, "echo \"<?xml version='1.0' encoding='UTF-8'?>\" >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [sh, -xc, "echo '<hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
@@ -169,9 +178,3 @@ runcmd:
 
  # start deployit service
  - [service, deployit, start ]
-
-
-
-
-
-

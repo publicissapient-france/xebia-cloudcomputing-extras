@@ -54,7 +54,7 @@ public class ContinuousDeliveryInfrastructureCreator {
         boolean createJenkins = true;
         boolean createTomcatDev = true;
         boolean createTomcatValid = true;
-        
+
         final ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
 
         //Check for Key in classpath : prevent to launch instances if not present
@@ -62,7 +62,7 @@ public class ContinuousDeliveryInfrastructureCreator {
         Preconditions.checkState(keyFile != null, "File '" + KEY_PAIR_NAME + ".pem' NOT found in the classpath");
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
-        final Collection<String> teamIdentifiers = Lists.newArrayList("1", "2", "3");
+        final Collection<String> teamIdentifiers = Lists.newArrayList("1");
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
@@ -80,6 +80,17 @@ public class ContinuousDeliveryInfrastructureCreator {
             executorService.submit(createNexusTask);
         }
 
+        Runnable deleteExistingRepositoriesTask = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    creator.deleteGithubRepositories(workshopInfrastructure, teamIdentifiers);
+                } catch (Exception e) {
+                    logger.error("Exception creating Github repositories", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        };
         Runnable createRepositoriesTask = new Runnable() {
             @Override
             public void run() {
@@ -92,6 +103,7 @@ public class ContinuousDeliveryInfrastructureCreator {
             }
         };
         if (createRepositories) {
+            executorService.submit(deleteExistingRepositoriesTask);
             executorService.submit(createRepositoriesTask);
         }
 
@@ -291,6 +303,16 @@ public class ContinuousDeliveryInfrastructureCreator {
         creator.createRepositories();
     }
 
+    public void deleteGithubRepositories(WorkshopInfrastructure infra, Iterable<String> teamIdentifiers) {
+        final GithubRepositoriesDeleter deleter = new GithubRepositoriesDeleter()
+                .withGithubLoginPassword(infra.getGithubGuestAccountUsername(), infra.getGithubGuestAccountPassword());
+
+        for (String team : teamIdentifiers) {
+            deleter.githubRepository("xebia-petclinic-" + team);
+        }
+        deleter.deleteRepositories();
+    }
+
     /**
      * @param teamsIdentifiers
      * @return jenkins instances by teamIdentifier
@@ -362,7 +384,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 if (jenkinsUrl == null) {
                     continue;
                 }
-                
+
                 logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, jenkins.getInstanceId());
 
                 try {
@@ -385,7 +407,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 if (deployitUrl == null) {
                     continue;
                 }
-                
+
                 logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, deployit.getInstanceId());
 
                 try {
@@ -442,7 +464,7 @@ public class ContinuousDeliveryInfrastructureCreator {
 
         // first waits for Nexus availability, otherwise the following elastic IP assignment will break its installation
         waitForNexusAvailability(nexusInstance);
-        
+
         final String publicIp = workshopInfrastructure.getNexusPublicIp();
 
         // ASSOCIATE NEXUS INSTANCE WITH PUBLIC IP
