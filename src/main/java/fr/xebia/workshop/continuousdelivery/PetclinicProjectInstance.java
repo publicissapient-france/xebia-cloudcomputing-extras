@@ -13,7 +13,7 @@ public class PetclinicProjectInstance {
     public final String projectName;
 
     public PetclinicProjectInstance(String accountName, String teamId) {
-        checkArgument(teamId != null && !teamId.trim().isEmpty(), "AccountName must not be blank");
+        checkArgument(accountName != null && !accountName.trim().isEmpty(), "AccountName must not be blank");
         checkArgument(teamId != null && !teamId.trim().isEmpty(), "Team ID must not be blank");
 
         this.accountName = accountName;
