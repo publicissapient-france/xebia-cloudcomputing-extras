@@ -80,21 +80,11 @@ public class ContinuousDeliveryInfrastructureCreator {
             executorService.submit(createNexusTask);
         }
 
-        Runnable deleteExistingRepositoriesTask = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    creator.deleteGithubRepositories(workshopInfrastructure, teamIdentifiers);
-                } catch (Exception e) {
-                    logger.error("Exception deleting Github repositories", e);
-                    throw new RuntimeException(e);
-                }
-            }
-        };
         Runnable createRepositoriesTask = new Runnable() {
             @Override
             public void run() {
                 try {
+                     creator.deleteGithubRepositories(workshopInfrastructure, teamIdentifiers);
                     creator.buildGithubRepositories(workshopInfrastructure, teamIdentifiers);
                 } catch (Exception e) {
                     logger.error("Exception creating Github repositories", e);
@@ -103,7 +93,6 @@ public class ContinuousDeliveryInfrastructureCreator {
             }
         };
         if (createRepositories) {
-            executorService.submit(deleteExistingRepositoriesTask);
             executorService.submit(createRepositoriesTask);
         }
 
