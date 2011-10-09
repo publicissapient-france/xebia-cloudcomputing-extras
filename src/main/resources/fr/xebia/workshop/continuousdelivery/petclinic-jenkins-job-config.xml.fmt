@@ -22,7 +22,7 @@
       <hudson.plugins.git.UserRemoteConfig>
         <name></name>
         <refspec></refspec>
-        <url>https://github.com/${accountName}/${projectName}.git</url>
+        <url>ssh://git@github.com/${accountName}/${projectName}.git</url>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>
     <branches>
