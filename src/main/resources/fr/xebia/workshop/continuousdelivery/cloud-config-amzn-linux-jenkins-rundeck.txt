@@ -174,7 +174,7 @@ runcmd:
  - ["chkconfig", "--add", "deployit"]
 
  # add user ec2-user to group deployit
- - [usermod, -G, deployit, ec2-user]
+ - [usermod, -a, -G, deployit, ec2-user]
 
  # start deployit service
  - [service, deployit, start ]
