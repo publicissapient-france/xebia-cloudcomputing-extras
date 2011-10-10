@@ -10,7 +10,7 @@
 
 <table>
 <tr><td> *SSH Private key* </td><td> [https://s3-eu-west-1.amazonaws.com/continuous-delivery/continuous-delivery-workshop.pem continuous-delivery-workshop.pem]</td></tr>
-<tr><td> *GitHub project repository url* </td><td> [${infrastructure.githubRepositoryHomePageUrl}] </td></tr>
+<tr><td> *!GitHub project repository url* </td><td> [${infrastructure.githubRepositoryHomePageUrl}] </td></tr>
 <tr><td> *Jenkins URL* </td><td> [${infrastructure.jenkinsUrl}] </td></tr>
 <tr><td> *Rundeck URL* </td><td> [${infrastructure.rundeckUrl}] </td></tr>
 <tr><td> *Deployit URL* </td><td> [${infrastructure.deployitUrl}] </td></tr>
@@ -368,7 +368,7 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
  * Create a new Jenkins *Free Style Project* named "{{{deploy-petclinic-on-tomcat-valid}}}" to invoke Rundeck job with the following parameters:
   ** Rundeck job identifier: {{{deploy-petclinic-on-tomcat-valid:tomcat-deploy-petclinic}}}
   ** Job options (optional): {{{version = LATEST}}}
-  ** Wait for RunDeck job to finish ?: {{{checked}}}
+  ** Wait for Rundeck job to finish ?: {{{checked}}}
   ** Should fail the build ?: {{{checked}}}
   <img height="140" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-job-rundeck-configuration-screenshot.png" />
  * Trigger the build and verify it works
