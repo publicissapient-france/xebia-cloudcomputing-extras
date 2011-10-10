@@ -277,6 +277,7 @@ public class TeamInfrastructure {
         }
         return urlBuilder.append("github.com/")
                 .append(workshopInfrastructure.getGithubGuestAccountName())
+                .append("/")
                 .append(getGithubRepositoryName())
                 .append(".git")
                 .toString();
