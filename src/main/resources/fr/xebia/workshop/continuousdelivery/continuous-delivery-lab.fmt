@@ -65,6 +65,26 @@ ${infrastructure.githubRepositoryName} > git commit -m "test" src/main/webapp/WE
 ${infrastructure.githubRepositoryName} > git push
 }}}
  # Verify that Jenkins detects the Git change and triggers a build : [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/]
+ # Do a release of the application
+  ## Add the Nexus credentials to your Maven settings.xml file :
+   {{{
+<settings>
+  <servers>
+    <!-- Xebia Workshop -->
+    <server>
+      <id>xebia-tech-event-nexus-releases</id>
+      <username>deployment</username>
+      <password>deployment123</password>
+    </server>
+    <server>
+      <id>xebia-tech-event-nexus-snapshots</id>
+      <username>deployment</username>
+      <password>deployment123</password>
+    </server>
+  </servers>
+<//settings>
+  ## Execute {{{mvn release:prepare release:perform}}}
+ # Verify that the new release is available in Nexus : [${infrastructure.nexusUrl}content/groups/public/fr/xebia/demo/petclinic-${infrastructure.identifier}/xebia-petclinic/]
 ----
 
 = Lab : Tomcat Maven Plugin =
@@ -334,8 +354,10 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
 	privateDnsName="${infrastructure.validTomcat2.privateDnsName}"
 	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1"/>
 </code>
- # Go back to [${infrastructure.rundeckUrl} Rundeck web admin console]
- # Click on "New job ..."
+ # Go back to [${infrastructure.rundeckUrl} Rundeck web admin console], and let's have a look at all your nodes (servers) :
+ # Click on the filter ("Name: localhost   Project: deploy-petclinic-on-tomcat-valid") and in the "name" filter, replace "localhost" with ".*" and click on "Filter". You should now see all 3 servers : the 2 tomcat servers, and the local rundeck server.
+ # You can test that everything works by executing a command on all 3 servers : type "whoami" in the command field, and click "Run"...
+ # Now, we will create our first job : click on the "Jobs" tab on the top of the page, and then on "New job ..." (on the right)
   <img height="100" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-new-job-screenshot.png" />
  # Create a new job:
   * Save this Job?: {{{Yes}}}
@@ -343,35 +365,52 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
   * Options:
    ** Name: {{{version}}}
    ** Default value: {{{LATEST}}}
-   ** Remote URL: TODO: check that the nexus url is not missing the "g"/groupId parameter
+   ** Remote URL:
      {{{
   http://nexus.xebia-tech-event.info:8081/nexus/service/local/rundeck/options/version?g=${infrastructure.projectMavenGroupId}&a=xebia-petclinic&includeLatest=true
 }}}
    ** Restrictions: {{{Enforced from Allowed Values}}}
+   ** Click on the "save" button to save this option
   * Shell command: 
      {{{
   /opt/tomcat/apache-tomcat-6/bin/tomcat-deploy-petclinic fr.xebia.demo.petclinic-${infrastructure.identifier} ${r"${option.version}"}
 }}}
+   ** Click on the "save" button to save this command
   * Dispatch to Node: {{{checked}}}
-  * Includes: {{{tags}}}, type "{{{tomcat}}}"
+  * Includes: {{{tags}}}, type "{{{tomcat}}}", and check that the "matched nodes" are valid-tomcat-1 and valid-tomcat-2...
   * Click on *Create and Run*
    <img height="350" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-new-job-details-screenshot.png" />
-  * Run the creation script
-  
+  * While the script is running, follow the output
+  * At the end, check your apps on both tomcat servers : [${infrastructure.validTomcat1Url}/xebia-petclinic/] and [${infrastructure.validTomcat2Url}/xebia-petclinic/]
+
+=== Nexus integration (multiple versions) ===
+
+When you execute a job in Rundeck, you can choose the version of the WAR to deploy. The list of available versions comes from Nexus.
+If you have only 1 version in the list, it is the moment to do a release of the petclinic application : run {{{mvn release:prepare release:perform}}} and re-execute the Rundeck job : you can now choose the version to deploy !
+ 
 === Invoke Rundeck job from Jenkins ===
- * Configure Jenkins Rundeck connection parameters
+
+We will now link Jenkins and Rundeck, so that each successfull build is followed by a deployment on the valid servers :
+
+ * Go to the Jenkins configuration page [${infrastructure.jenkinsUrl}/configure], and configure the Rundeck connection parameters (in the bottom of the page) :
   ** URL: {{{http://${infrastructure.rundeck.publicDnsName}:4440/}}}
   ** Login: {{{admin}}}
   ** Password: {{{admin}}}
-  ** Click on "Test connection"
+  ** Click on "Test connection", you should get a success message
+  ** Save
   <img height="75" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-rundeck-connection-screenshot.png" />
- * Create a new Jenkins *Free Style Project* named "{{{deploy-petclinic-on-tomcat-valid}}}" to invoke Rundeck job with the following parameters:
+
+ * Edit your Jenkins job at [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/configuration], and configure the Rundeck plugin (in the bottom of the page) with the following parameters :
   ** Rundeck job identifier: {{{deploy-petclinic-on-tomcat-valid:tomcat-deploy-petclinic}}}
   ** Job options (optional): {{{version = LATEST}}}
   ** Wait for Rundeck job to finish ?: {{{checked}}}
   ** Should fail the build ?: {{{checked}}}
   <img height="140" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-job-rundeck-configuration-screenshot.png" />
- * Trigger the build and verify it works
+ * Save, trigger the build and verify it works
+
+You can now test your deployment chain by editing a file in the petclinic project, and committing/pushing it to github : Jenkins will pick up the change, build the WAR, deploy it to Nexus, and ask Rundeck to deploy the project on the tomcat valid servers.
+
+You can also do "on-demand" deploys : in the Jenkins job configuration page at [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/configuration], in the Rundeck plugin parameters, type "#deploy" in the "tag" field. Save and trigger a build : it won't be deploy on rundeck. But if you commit a file with a commit message containing "#deploy", it will be deployed. 
 
 ----
 
@@ -419,6 +458,8 @@ git push
  # Connect to your Deployit server ${infrastructure.deployitUrl} (login=admin, password=admin)
  # Verify the application has been deployed
 <img height=90" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/deployit-check-deployment-ok.png" />
+
+----
 *END OF THE LAB THANK YOU!*
 
 _${generator}_
