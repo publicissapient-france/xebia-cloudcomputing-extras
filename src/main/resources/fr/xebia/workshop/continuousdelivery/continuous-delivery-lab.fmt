@@ -126,12 +126,12 @@ ${infrastructure.devTomcatUrl}xebia-petclinic
 
 == Script Specifications ==
 This script must:
- # Be installed under{{{$TOMCAT_HOME/bin/tomcat-deploy-petclinic}}} (use a [http://en.wikipedia.org/wiki/Shebang_(Unix) Unix Shebang] instead of suffixing your script by ".sh", ".py", etc)
+ # Be installed under {{{$TOMCAT_HOME/bin/tomcat-deploy-petclinic}}} (use a [http://en.wikipedia.org/wiki/Shebang_(Unix) Unix Shebang] instead of suffixing your script by ".sh", ".py", etc)
  # Stop the Tomcat server if it is running
  # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic.war}}} file if exists,
  # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic}}} folder if exists,
  # Download latest version of {{{xebia-petclinic.war}}} (groupId=${infrastructure.projectMavenGroupId}, artifactId=${infrastructure.projectMavenArtifactId}) and copy it to {{{$TOMCAT_HOME/webapps/}}}
-  ** {{{xebia-petclinic.war}}} is deployed on [${infrastructure.nexusUrl}/content/groups/public/] but it is more elegant to use Nexus REST API (see below)
+  ** {{{xebia-petclinic.war}}} is deployed on [${infrastructure.nexusUrl}content/groups/public/] but it is more elegant to use Nexus REST API (see below)
  # Start Tomcat server
  # Go further in the lab: test that the URL http://localhost:8080/xebia-petclinic/ returns "200 OK"
  
@@ -299,7 +299,7 @@ Here is the configuration of the previous task with Rundeck.
   <img height=90" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-create-project-screenshot.png" />
  # Connect via SSH to the rundeck server: 
   {{{
-ssh -i continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck.publicDnsName}
+ssh -i ~/.aws/continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck.publicDnsName}
 }}}
   # Update the project configuration files in folder "{{{/var/rundeck/projects/deploy-petclinic-on-tomcat-valid/etc/}}}":
   # Modify the *{{{project.properties}}}* to declare the ssh private key of the workshop
