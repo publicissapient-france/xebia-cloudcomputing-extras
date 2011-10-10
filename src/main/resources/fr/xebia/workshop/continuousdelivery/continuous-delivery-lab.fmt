@@ -82,7 +82,8 @@ ${infrastructure.githubRepositoryName} > git push
       <password>deployment123</password>
     </server>
   </servers>
-<//settings>
+</settings>
+}}}
   ## Execute {{{mvn release:prepare release:perform}}}
  # Verify that the new release is available in Nexus : [${infrastructure.nexusUrl}content/groups/public/fr/xebia/demo/petclinic-${infrastructure.identifier}/xebia-petclinic/]
 ----
