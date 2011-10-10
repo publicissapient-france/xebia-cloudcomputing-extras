@@ -34,6 +34,8 @@ runcmd:
  - [sh, -xc, "echo $(date) ': Rundeck is installed'"]
  - [sh, -xc, "/etc/init.d/rundeckd restart"]
  - [sh, -xc, "echo $(date) ': Rundeck is restarted'"]
+ # fix Rundeck config (public url)
+ - [sed, -i, 's/#grails.serverURL=http:\/\/hostname:PORT/grails.serverURL=http:\/\/'`curl -s http://queryip.net/url/`':4440/', '/etc/rundeck/rundeck-config.properties']
 
  # provision ssh private key for rundeck
  - [mkdir, /var/rundeck/.ssh]
