@@ -34,6 +34,10 @@
     </scm>
     <repositories>
         <repository>
+            <id>xebia-repository</id>
+            <url>http://xebia-france.googlecode.com/svn/repository/maven2/</url>
+        </repository>
+        <repository>
             <id>jgit-repository</id>
             <url>http://download.eclipse.org/jgit/maven</url>
         </repository>
@@ -183,8 +187,6 @@
             <groupId>com.github.api.v2</groupId>
             <artifactId>github-java-sdk</artifactId>
             <version>0.1</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/github-java-sdk.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
