@@ -73,6 +73,17 @@ runcmd:
  - [sh, -xc, "echo \"IdentityFile /var/lib/jenkins/.ssh/continuous-delivery-workshop.pem\" >> /var/lib/jenkins/.ssh/config"]
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.ssh/config]
 
+ # tells Jenkins where to find Rundeck
+ - [sh, -xc, "echo \"<?xml version='1.0' encoding='UTF-8'?>\" >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [sh, -xc, "echo '<org.jenkinsci.plugins.rundeck.RundeckNotifier_-RundeckDescriptor>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [sh, -xc, "echo '  <rundeckInstance>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [sh, -xc, "echo '    <url>http://'\u0060curl -s http://queryip.net/url/\u0060':4440</url>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [sh, -xc, "echo '    <login>admin</login>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [sh, -xc, "echo '    <password>admin</password>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [sh, -xc, "echo '  </rundeckInstance>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [sh, -xc, "echo '</org.jenkinsci.plugins.rundeck.RundeckNotifier_-RundeckDescriptor>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
+ - [chown, "jenkins:jenkins", /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml]
+
  # tells Jenkins where to find Maven
  - [sh, -xc, "echo \"<?xml version='1.0' encoding='UTF-8'?>\" >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
  - [sh, -xc, "echo '<hudson.tasks.Maven_-DescriptorImpl>' >> /var/lib/jenkins/hudson.tasks.Maven.xml"]
