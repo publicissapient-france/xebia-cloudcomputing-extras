@@ -306,6 +306,9 @@ Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Pl
 
 = Lab. Automated Tomcat Deployment with Rundeck = 
 
+*Goal:* Use [http://rundeck.org/ Rundeck] to execute tasks on remote servers => deploy the petclinic application on both tomcat-valid servers using the previous Shell script.
+We will also use the "Jenkins Rundeck Plugin" to automatically deploy the application after a successful build.
+
 == Architecture ==
 
 <img width="400" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-rundeck.png"/>
@@ -316,18 +319,12 @@ Note: the [https://wiki.jenkins-ci.org/display/JENKINS/SSH+plugin Jenkins SSH Pl
 Here is the configuration of the previous task with Rundeck.
  # Deploy the "[http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]" shell script on your "Tomcat Valid 1" and "Tomcat Valid 2" servers
  # Connect to your Rundeck server ${infrastructure.rundeckUrl} (login=admin, password=admin)
- # Create a new Rundeck project "{{{deploy-petclinic-on-tomcat-valid}}}"
-  <img height=90" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-create-project-screenshot.png" />
- # Connect via SSH to the rundeck server: 
+ # A project has already been created : "{{{deploy-petclinic-on-tomcat-valid}}}", but it has no knowledge of your Tomcat-valid servers...
+ # We will configure the rundeck project : connect via SSH to the rundeck server: 
   {{{
 ssh -i ~/.aws/continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck.publicDnsName}
 }}}
-  # Update the project configuration files in folder "{{{/var/rundeck/projects/deploy-petclinic-on-tomcat-valid/etc/}}}":
-  # Modify the *{{{project.properties}}}* to declare the ssh private key of the workshop
-   {{{
-project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
-}}}
-  # Add your Valid Tomcat servers in *{{{resources.xml}}}*:
+  # Edit the file *{{{/var/rundeck/projects/deploy-petclinic-on-tomcat-valid/etc/resources.xml}}}* in order to add your valid tomcat servers :
     <code language="xml"><node 
 	name="valid-tomcat-1" 
 	description="valid-tomcat-1" 
@@ -379,9 +376,10 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
    ** Click on the "save" button to save this command
   * Dispatch to Node: {{{checked}}}
   * Includes: {{{tags}}}, type "{{{tomcat}}}", and check that the "matched nodes" are valid-tomcat-1 and valid-tomcat-2...
+  * Thread Count: {{{2}}} (so that your application is deployed on the 2 servers at the same time)
   * Click on *Create and Run*
    <img height="350" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-new-job-details-screenshot.png" />
-  * While the script is running, follow the output
+  * While the script is running, follow the output...
   * At the end, check your apps on both tomcat servers : [${infrastructure.validTomcat1Url}/xebia-petclinic/] and [${infrastructure.validTomcat2Url}/xebia-petclinic/]
 
 === Nexus integration (multiple versions) ===
