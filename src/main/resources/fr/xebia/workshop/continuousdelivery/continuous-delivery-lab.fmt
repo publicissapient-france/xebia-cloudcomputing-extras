@@ -320,7 +320,7 @@ We will also use the "Jenkins Rundeck Plugin" to automatically deploy the applic
 
 === Deploy Petclinic from Rundeck ===
 Here is the configuration of the previous task with Rundeck.
- # Deploy the "[http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]" shell script on your "Tomcat Valid 1" and "Tomcat Valid 2" servers
+ # Make sure the "[http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]" shell script has been uploaded on your "Tomcat Valid 1" and "Tomcat Valid 2" servers (see the 'Scripted Tomcat Deployment' section)
  # Connect to your Rundeck server ${infrastructure.rundeckUrl} (login=admin, password=admin)
  # A project has already been created : "{{{deploy-petclinic-on-tomcat-valid}}}", but it has no knowledge of your Tomcat-valid servers...
  # We will configure the rundeck project : connect via SSH to the rundeck server: 
