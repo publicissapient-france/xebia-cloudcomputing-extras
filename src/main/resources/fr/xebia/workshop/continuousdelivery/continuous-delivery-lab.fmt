@@ -112,7 +112,7 @@ cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
 }}}
   ## Connect to the application and check your modification
 {{{
-http://localhost:8080
+http://localhost:8080/xebia-petclinic
 }}}
 
 === Deploy the application to the remote Dev Instance of Tomcat ===
