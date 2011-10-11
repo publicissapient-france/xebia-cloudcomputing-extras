@@ -247,21 +247,24 @@ fi
 
 === SCP connection parameters to Tomcat servers ===
 
-SCP command lines to copy a local "{{{tomcat-deploy-petclinic}}} to the remote tomcat servers.
+SCP command lines to copy a local "{{{tomcat-deploy-petclinic}}}" to the remote tomcat servers, and SSH command lines to make it executable.
 <table>
 <tr><td> *Tomcat Dev SSH* </td><td> 
 {{{
 scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.devTomcat.publicDnsName}:/opt/tomcat/apache-tomcat-6/bin/
+ssh -i ~/.aws/continuous-delivery-workshop.pem tomcat@${infrastructure.devTomcat.publicDnsName} chmod a+x /opt/tomcat/apache-tomcat-6/bin/tomcat-deploy-petclinic
 }}}
  </td></tr>
 <tr><td> *Tomcat Valid 1 SSH* </td><td> 
 {{{
 scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.validTomcat1.publicDnsName}:/opt/tomcat/apache-tomcat-6/bin/
+ssh -i ~/.aws/continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat1.publicDnsName} chmod a+x /opt/tomcat/apache-tomcat-6/bin/tomcat-deploy-petclinic
 }}}
  </td></tr>
 <tr><td> *Tomcat Valid 2 SSH* </td><td> 
 {{{
 scp -i ~/.aws/continuous-delivery-workshop.pem tomcat-deploy-petclinic tomcat@${infrastructure.validTomcat2.publicDnsName}:/opt/tomcat/apache-tomcat-6/bin/
+ssh -i ~/.aws/continuous-delivery-workshop.pem tomcat@${infrastructure.validTomcat2.publicDnsName} chmod a+x /opt/tomcat/apache-tomcat-6/bin/tomcat-deploy-petclinic
 }}}
 </td></tr>
 <table>
