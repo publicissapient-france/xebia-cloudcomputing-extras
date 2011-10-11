@@ -402,7 +402,7 @@ We will now link Jenkins and Rundeck, so that each successfull build is followed
   ** Save
   <img height="75" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-rundeck-connection-screenshot.png" />
 
- * Edit your Jenkins job at [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/configuration], and configure the Rundeck plugin (in the bottom of the page) with the following parameters :
+ * Edit your Jenkins job at [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/configure], and configure the Rundeck plugin (in the bottom of the page) with the following parameters :
   ** Rundeck job identifier: {{{deploy-petclinic-on-tomcat-valid:tomcat-deploy-petclinic}}}
   ** Job options (optional): {{{version = LATEST}}}
   ** Should fail the build ?: {{{checked}}}
