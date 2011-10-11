@@ -397,7 +397,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                     continue;
                 }
 
-                logger.info("Configure jenkins (create jobs, etc) '{}' - {}", teamIdentifier, deployit.getInstanceId());
+                logger.info("Configure deployit '{}' - {}", teamIdentifier, deployit.getInstanceId());
 
                 try {
                     AmazonAwsUtils.awaitForHttpAvailability(deployitUrl);
