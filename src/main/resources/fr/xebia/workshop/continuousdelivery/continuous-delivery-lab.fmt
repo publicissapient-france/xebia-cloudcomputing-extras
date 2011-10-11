@@ -356,7 +356,7 @@ project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem
 	editUrl="https://console.aws.amazon.com/ec2/home?region=eu-west-1"/>
 </code>
  # Go back to [${infrastructure.rundeckUrl} Rundeck web admin console], and let's have a look at all your nodes (servers) :
- # Click on the filter ("Name: localhost   Project: deploy-petclinic-on-tomcat-valid") and in the "name" filter, replace "localhost" with ".*" and click on "Filter". You should now see all 3 servers : the 2 tomcat servers, and the local rundeck server.
+ # Click on the filter ("Name: localhost   Project: deploy-petclinic-on-tomcat-valid") and in the "name" filter, replace "localhost" with "{{{.*}}}" and click on "Filter". You should now see all 3 servers : the 2 tomcat servers, and the local rundeck server.
  # You can test that everything works by executing a command on all 3 servers : type "whoami" in the command field, and click "Run"...
  # Now, we will create our first job : click on the "Jobs" tab on the top of the page, and then on "New job ..." (on the right)
   <img height="100" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-new-job-screenshot.png" />
