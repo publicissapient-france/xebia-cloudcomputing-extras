@@ -383,7 +383,7 @@ ssh -i ~/.aws/continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck
   * Click on *Create and Run*
    <img height="350" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-new-job-details-screenshot.png" />
   * While the script is running, follow the output...
-  * At the end, check your apps on both tomcat servers : [${infrastructure.validTomcat1Url}/xebia-petclinic/] and [${infrastructure.validTomcat2Url}/xebia-petclinic/]
+  * At the end, check your apps on both tomcat servers : [${infrastructure.validTomcat1Url}xebia-petclinic/] and [${infrastructure.validTomcat2Url}xebia-petclinic/]
 
 === Nexus integration (multiple versions) ===
 
