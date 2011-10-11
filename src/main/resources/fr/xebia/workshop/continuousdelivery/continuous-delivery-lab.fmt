@@ -391,7 +391,7 @@ If you have only 1 version in the list, it is the moment to do a release of the 
 
 We will now link Jenkins and Rundeck, so that each successfull build is followed by a deployment on the valid servers :
 
- * Go to the Jenkins configuration page [${infrastructure.jenkinsUrl}/configure], and configure the Rundeck connection parameters (in the bottom of the page) :
+ * Go to the Jenkins configuration page [${infrastructure.jenkinsUrl}/configure], and verify the pre-configured Rundeck connection parameters (in the bottom of the page) :
   ** URL: {{{http://${infrastructure.rundeck.publicDnsName}:4440/}}}
   ** Login: {{{admin}}}
   ** Password: {{{admin}}}
@@ -402,7 +402,6 @@ We will now link Jenkins and Rundeck, so that each successfull build is followed
  * Edit your Jenkins job at [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/configuration], and configure the Rundeck plugin (in the bottom of the page) with the following parameters :
   ** Rundeck job identifier: {{{deploy-petclinic-on-tomcat-valid:tomcat-deploy-petclinic}}}
   ** Job options (optional): {{{version = LATEST}}}
-  ** Wait for Rundeck job to finish ?: {{{checked}}}
   ** Should fail the build ?: {{{checked}}}
   <img height="140" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/jenkins-job-rundeck-configuration-screenshot.png" />
  * Save, trigger the build and verify it works
