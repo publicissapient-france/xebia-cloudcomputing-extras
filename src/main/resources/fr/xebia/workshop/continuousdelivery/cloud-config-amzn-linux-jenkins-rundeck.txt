@@ -47,6 +47,10 @@ runcmd:
  - [chown, -R, "rundeck:rundeck", /var/rundeck/.ssh]
  - [ sh, -xc, "echo '/var/rundeck/.ssh/continuous-delivery-workshop.pem provisioned'" ]
 
+ # create the rundeck project
+ - [rd-project, -a, 'create', -p, 'deploy-petclinic-on-tomcat-valid']
+ - [chown, -R, "rundeck:rundeck", /var/rundeck/projects] 
+
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins]
 
  # downloads additional Jenkins plugins
