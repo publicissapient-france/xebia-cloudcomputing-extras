@@ -411,7 +411,7 @@ We will now link Jenkins and Rundeck, so that each successfull build is followed
 
 You can now test your deployment chain by editing a file in the petclinic project, and committing/pushing it to github : Jenkins will pick up the change, build the WAR, deploy it to Nexus, and ask Rundeck to deploy the project on the tomcat valid servers.
 
-You can also do "on-demand" deploys : in the Jenkins job configuration page at [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/configuration], in the Rundeck plugin parameters, type "#deploy" in the "tag" field. Save and trigger a build : it won't be deploy on rundeck. But if you commit a file with a commit message containing "#deploy", it will be deployed. 
+You can also do "on-demand" deploys : in the Jenkins job configuration page at [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/configure], in the Rundeck plugin parameters, type "#deploy" in the "tag" field. Save and trigger a build : it won't be deploy on rundeck. But if you commit a file with a commit message containing "#deploy", it will be deployed. 
 
 ----
 
