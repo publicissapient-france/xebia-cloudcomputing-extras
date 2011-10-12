@@ -64,7 +64,7 @@ mvn package
 ${infrastructure.githubRepositoryName} > git commit -m "test" src/main/webapp/WEB-INF/jsp/welcome.jsp
 ${infrastructure.githubRepositoryName} > git push
 }}}
- # Verify that Jenkins detects the Git change and triggers a build : [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/]
+ # Verify that Jenkins detects the Git change and triggers a build : [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/] (it may take up to 1 minute).
  # Do a release of the application
   ## Add the Nexus credentials to your Maven settings.xml file :
    {{{
