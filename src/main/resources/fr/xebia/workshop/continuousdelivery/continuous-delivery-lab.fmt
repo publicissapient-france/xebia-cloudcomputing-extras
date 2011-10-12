@@ -119,7 +119,7 @@ http://localhost:8080/xebia-petclinic
  * Deploy the application on the dev instance of Tomcat
   ## As previously, go to the root directory of the project
 {{{
-~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/WEB-INF/jsp/welcome.jsp
+cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName} 
 }}}   
 
   ## Deploy the application to Tomcat Dev server. The Maven goal is *tomcat6:deploy*, the parameters needed for this Maven plugin are:
