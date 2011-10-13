@@ -35,7 +35,7 @@ runcmd:
  - [sh, -xc, "/etc/init.d/rundeckd restart"]
  - [sh, -xc, "echo $(date) ': Rundeck is restarted'"]
  # fix Rundeck config (public url)
- - [sh, -xc, "echo 'grails.serverURL=http://'\u0060curl -s http://queryip.net/url/\u0060':4440/' >> /etc/rundeck/rundeck-config.properties"]
+ - [sh, -xc, "echo 'grails.serverURL=http://'\u0060curl -s http://queryip.net/url/\u0060':4440' >> /etc/rundeck/rundeck-config.properties"]
  # fix project.properties template : add ssh private key
  - [sh, -xc, "echo 'project.ssh-keypath=/var/rundeck/.ssh/continuous-delivery-workshop.pem' >> /etc/rundeck/project.properties"]
 
