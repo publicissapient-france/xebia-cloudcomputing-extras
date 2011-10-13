@@ -279,7 +279,7 @@ public class ContinuousDeliveryInfrastructureCreator {
 
     public void buildGithubRepositories(WorkshopInfrastructure infra, Iterable<String> teamIdentifiers) {
         final GithubRepositoriesCreator creator = new GithubRepositoriesCreator()
-                .fromGithubRepository("git://github.com/xebia-france-training/xebia-petclinic.git")
+                .fromGithubRepository("http://github.com/xebia-france-training/xebia-petclinic.git")
                 .onAccountName(infra.getGithubGuestAccountName())
                 .withAccessType(GithubCreateRepositoryRequest.AccessType.HTTP)
                 .withGithubLoginPassword(infra.getGithubGuestAccountUsername(), infra.getGithubGuestAccountPassword());
