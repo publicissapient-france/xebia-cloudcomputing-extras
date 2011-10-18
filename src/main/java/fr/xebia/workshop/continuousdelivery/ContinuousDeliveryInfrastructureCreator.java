@@ -62,7 +62,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         Preconditions.checkState(keyFile != null, "File '" + KEY_PAIR_NAME + ".pem' NOT found in the classpath");
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
-        final Collection<String> teamIdentifiers = Lists.newArrayList("1", "2", "3");
+        
+        final Collection<String> teamIdentifiers = createIdentifiersForNumberOfTeams(1);
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
@@ -155,6 +156,14 @@ public class ContinuousDeliveryInfrastructureCreator {
         }
 
         System.exit(0);
+    }
+
+    private static Collection<String> createIdentifiersForNumberOfTeams(int teamCount) {
+        Collection<String> teamIdentifiers = new ArrayList<String>(teamCount);
+        for (int i = 1; i <= teamCount; i++) {
+            teamIdentifiers.add(String.valueOf(i));
+        }
+        return teamIdentifiers;
     }
 
     public void generateDocs(Collection<TeamInfrastructure> teamsInfrastructures, String baseWikiFolder) throws IOException {
@@ -279,14 +288,14 @@ public class ContinuousDeliveryInfrastructureCreator {
 
     public void buildGithubRepositories(WorkshopInfrastructure infra, Iterable<String> teamIdentifiers) {
         final GithubRepositoriesCreator creator = new GithubRepositoriesCreator()
-                .fromGithubRepository("http://github.com/xebia-france-training/xebia-petclinic.git")
+                .fromGithubRepository("http://github.com/xebia-france-training/xebia-petclinic-lite.git")
                 .onAccountName(infra.getGithubGuestAccountName())
                 .withAccessType(GithubCreateRepositoryRequest.AccessType.HTTP)
                 .withGithubLoginPassword(infra.getGithubGuestAccountUsername(), infra.getGithubGuestAccountPassword());
 
         for (String team : teamIdentifiers) {
             creator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
-                    .toRepositoryName("xebia-petclinic-" + team)
+                    .toRepositoryName("xebia-petclinic-lite-" + team)
                     .withGitRepositoryHandler(new UpdatePomFileAndCommit(team)));
         }
         creator.createRepositories();
@@ -297,7 +306,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withGithubLoginPassword(infra.getGithubGuestAccountUsername(), infra.getGithubGuestAccountPassword());
 
         for (String team : teamIdentifiers) {
-            deleter.githubRepositoryName("xebia-petclinic-" + team);
+            deleter.githubRepositoryName("xebia-petclinic-lite-" + team);
         }
         deleter.deleteRepositories();
     }

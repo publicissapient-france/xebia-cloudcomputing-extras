@@ -15,9 +15,8 @@
  */
 package fr.xebia.workshop.git;
 
-import static java.util.Arrays.asList;
-
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -61,11 +60,19 @@ public class GithubRepositoriesDeleter {
         final GithubRepositoriesDeleter deleter = new GithubRepositoriesDeleter()
                 .withGithubLoginPassword("xebia-guest", args[0]);
 
-        for (String team : asList("1", "2", "3")) {
-            deleter.githubRepositoryName("xebia-petclinic-" + team);
+        for (String team : createIdentifiersForNumberOfTeams(1)) {
+            deleter.githubRepositoryName("xebia-petclinic-lite-" + team);
 
         }
         deleter.deleteRepositories();
+    }
+    
+    private static Collection<String> createIdentifiersForNumberOfTeams(int teamCount) {
+        Collection<String> teamIdentifiers = new ArrayList<String>(teamCount);
+        for (int i = 1; i <= teamCount; i++) {
+            teamIdentifiers.add(String.valueOf(i));
+        }
+        return teamIdentifiers;
     }
 
     public GithubRepositoriesDeleter githubRepositoryName(String gitHubRepositoryName) {

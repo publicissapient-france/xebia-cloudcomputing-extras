@@ -18,7 +18,7 @@ public class PetclinicProjectInstance {
 
         this.accountName = accountName;
         groupId = "fr.xebia.demo.petclinic-" + teamId;
-        artifactId = "xebia-petclinic";
+        artifactId = "xebia-petclinic-lite";
         projectName = artifactId + "-" + teamId;
     }
 }

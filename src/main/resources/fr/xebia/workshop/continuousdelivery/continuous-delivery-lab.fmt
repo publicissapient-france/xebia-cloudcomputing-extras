@@ -58,10 +58,10 @@ cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
 mvn package
 }}}
  # Modify the welcome page and push the change
-  ## Modify {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/WEB-INF/jsp/welcome.jsp}}}
+  ## Modify {{{~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/welcome.jsp}}}
   ## Push the change
    {{{
-${infrastructure.githubRepositoryName} > git commit -m "test" src/main/webapp/WEB-INF/jsp/welcome.jsp
+${infrastructure.githubRepositoryName} > git commit -m "test" src/main/webapp/welcome.jsp
 ${infrastructure.githubRepositoryName} > git push
 }}}
  # Verify that Jenkins detects the Git change and triggers a build : [${infrastructure.jenkinsUrl}/job/${infrastructure.githubRepositoryName}/] (it may take up to 1 minute).
@@ -84,8 +84,8 @@ ${infrastructure.githubRepositoryName} > git push
   </servers>
 </settings>
 }}}
-  ## Execute {{{mvn release:prepare release:perform}}}
- # Verify that the new release is available in Nexus : [${infrastructure.nexusUrl}content/groups/public/fr/xebia/demo/petclinic-${infrastructure.identifier}/xebia-petclinic/]
+  ## Execute {{{mvn release:prepare -B release:perform}}}
+ # Verify that the new release is available in Nexus : [${infrastructure.nexusUrl}content/groups/public/fr/xebia/demo/petclinic-${infrastructure.identifier}/xebia-petclinic-lite/]
 ----
 
 = Lab : Tomcat Maven Plugin =
@@ -104,7 +104,7 @@ cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
 }}}
   ## Modify one more time the welcome.jsp. It's not needed to commit or push the modification on git.
 {{{
-~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/WEB-INF/jsp/welcome.jsp
+~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}/src/main/webapp/welcome.jsp
 }}}
   ## Launch the application thanks to the Tomcat6 Maven Plugin. 
 {{{
