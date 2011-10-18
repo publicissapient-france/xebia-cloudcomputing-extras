@@ -112,7 +112,7 @@ cd ~/continuous-delivery-workshop/${infrastructure.githubRepositoryName}
 }}}
   ## Connect to the application and check your modification
 {{{
-http://localhost:8080/xebia-petclinic
+http://localhost:8080/xebia-petclinic-lite
 }}}
 
 === Deploy the application to the remote Dev Instance of Tomcat ===
@@ -137,24 +137,24 @@ For further information, please go to [http://tomcat.apache.org/maven-plugin-2.0
 
   ## Connect to the application and check your modification
 {{{
-${infrastructure.devTomcatUrl}xebia-petclinic
+${infrastructure.devTomcatUrl}xebia-petclinic-lite
 }}}
 ----
 
 = Lab: 'Local' Scripted Tomcat Deployment =
 
-*Goal:* Develop a script to deploy a new version of '{{{xebia-petclinic.war}}}' on a tomcat server.
+*Goal:* Develop a script to deploy a new version of '{{{xebia-petclinic-lite.war}}}' on a tomcat server.
 
 == Script Specifications ==
 This script must:
  # Be installed under {{{$TOMCAT_HOME/bin/tomcat-deploy-petclinic}}} (use a [http://en.wikipedia.org/wiki/Shebang_(Unix) Unix Shebang] instead of suffixing your script by ".sh", ".py", etc)
  # Stop the Tomcat server if it is running
- # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic.war}}} file if exists,
- # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic}}} folder if exists,
- # Download latest version of {{{xebia-petclinic.war}}} (groupId=${infrastructure.projectMavenGroupId}, artifactId=${infrastructure.projectMavenArtifactId}) and copy it to {{{$TOMCAT_HOME/webapps/}}}
-  ** {{{xebia-petclinic.war}}} is deployed on [${infrastructure.nexusUrl}content/groups/public/] but it is more elegant to use Nexus REST API (see below)
+ # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic-lite.war}}} file if exists,
+ # Delete existing {{{$TOMCAT_HOME/webapps/xebia-petclinic-lite}}} folder if exists,
+ # Download latest version of {{{xebia-petclinic-lite.war}}} (groupId=${infrastructure.projectMavenGroupId}, artifactId=${infrastructure.projectMavenArtifactId}) and copy it to {{{$TOMCAT_HOME/webapps/}}}
+  ** {{{xebia-petclinic-lite.war}}} is deployed on [${infrastructure.nexusUrl}content/groups/public/] but it is more elegant to use Nexus REST API (see below)
  # Start Tomcat server
- # Go further in the lab: test that the URL http://localhost:8080/xebia-petclinic/ returns "200 OK"
+ # Go further in the lab: test that the URL http://localhost:8080/xebia-petclinic-lite/ returns "200 OK"
  
 Answer : [http://xebia-france.googlecode.com/svn/cloudcomputing/xebia-cloudcomputing-extras/trunk/src/main/scripts/fr/xebia/workshop/continuousdelivery/tomcat-deploy-petclinic tomcat-deploy-petclinic]
 
@@ -273,7 +273,7 @@ ssh -i ~/.aws/continuous-delivery-workshop.pem tomcat@${infrastructure.validTomc
 
 = Lab. Automated Tomcat Deployment with Jenkins SSH Plugin = 
 
-*Goal:* Deploy a new version of '{{{xebia-petclinic.war}}}' on the "Tomcat Dev server" at the end of your build with the "Jenkins SSH Plugin".
+*Goal:* Deploy a new version of '{{{xebia-petclinic-lite.war}}}' on the "Tomcat Dev server" at the end of your build with the "Jenkins SSH Plugin".
 
 == Architecture ==
 
@@ -368,7 +368,7 @@ ssh -i ~/.aws/continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck
    ** Default value: {{{LATEST}}}
    ** Remote URL:
      {{{
-  http://nexus.xebia-tech-event.info:8081/nexus/service/local/rundeck/options/version?g=${infrastructure.projectMavenGroupId}&a=xebia-petclinic&includeLatest=true
+  http://nexus.xebia-tech-event.info:8081/nexus/service/local/rundeck/options/version?g=${infrastructure.projectMavenGroupId}&a=xebia-petclinic-lite&includeLatest=true
 }}}
    ** Restrictions: {{{Enforced from Allowed Values}}}
    ** Click on the "save" button to save this option
@@ -383,7 +383,7 @@ ssh -i ~/.aws/continuous-delivery-workshop.pem ec2-user@${infrastructure.rundeck
   * Click on *Create and Run*
    <img height="350" src="http://xebia-france.googlecode.com/svn/wiki/cont-delivery-img/rundeck-new-job-details-screenshot.png" />
   * While the script is running, follow the output...
-  * At the end, check your apps on both tomcat servers : [${infrastructure.validTomcat1Url}xebia-petclinic/] and [${infrastructure.validTomcat2Url}xebia-petclinic/]
+  * At the end, check your apps on both tomcat servers : [${infrastructure.validTomcat1Url}xebia-petclinic-lite/] and [${infrastructure.validTomcat2Url}xebia-petclinic-lite/]
 
 === Nexus integration (multiple versions) ===
 
