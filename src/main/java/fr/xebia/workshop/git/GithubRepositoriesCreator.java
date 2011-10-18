@@ -83,14 +83,14 @@ public class GithubRepositoriesCreator {
             String passwd = args[1];
 
             final GithubRepositoriesCreator creator = new GithubRepositoriesCreator()
-                    .fromGithubRepository("git://github.com/xebia-france-training/xebia-petclinic.git")
+                    .fromGithubRepository("git://github.com/xebia-france-training/xebia-petclinic-lite.git")
                     .onAccountName("xebia-guest")
                     .withAccessType(GithubCreateRepositoryRequest.AccessType.HTTP)
                     .withGithubLoginPassword("xebia-guest", passwd);
 
             for (String team : teams) {
                 creator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
-                        .toRepositoryName("xebia-petclinic-" + team)
+                        .toRepositoryName("xebia-petclinic-lite-" + team)
                         .withGitRepositoryHandler(new UpdatePomFileAndCommit(team)));
             }
             creator.createRepositories();
@@ -100,14 +100,14 @@ public class GithubRepositoriesCreator {
             String token = args[1];
 
             final GithubRepositoriesCreator jobCreator = new GithubRepositoriesCreator()
-                    .fromGithubRepository("git@github.com:xebia-france-training/xebia-petclinic.git")
+                    .fromGithubRepository("git@github.com:xebia-france-training/xebia-petclinic-lite.git")
                     .onAccountName("xebia-guest")
                     .atHost("github-xebia-guest")
                     .withGithubOAuthToken(token);
 
             for (String team : teams) {
                 jobCreator.addGithubCreateRepositoryRequest(new GithubCreateRepositoryRequest()
-                        .toRepositoryName("xebia-petclinic-" + team)
+                        .toRepositoryName("xebia-petclinic-lite-" + team)
                         .withGitRepositoryHandler(new UpdatePomFileAndCommit(team)));
             }
             jobCreator.createRepositories();

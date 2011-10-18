@@ -251,7 +251,7 @@ public class TeamInfrastructure {
 
     @Nonnull
     public String getGithubRepositoryName() {
-        String repositoryName = "xebia-petclinic";
+        String repositoryName = "xebia-petclinic-lite";
         if (!Strings.isNullOrEmpty(identifier)) {
             repositoryName += "-" + identifier;
         }
