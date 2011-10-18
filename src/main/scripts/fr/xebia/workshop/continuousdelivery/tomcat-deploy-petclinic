@@ -8,28 +8,28 @@ fi
 
 GROUP_ID=$1
 VERSION=${2:-"LATEST"}
-ARTIFACT_ID="xebia-petclinic"
+ARTIFACT_ID="xebia-petclinic-lite"
 REPOSITORY="snapshots"
-HEALT_CHECK_URL="http://localhost:8080/xebia-petclinic/"
+HEALT_CHECK_URL="http://localhost:8080/xebia-petclinic-lite/"
 
 # shutdown tomcat
 /opt/tomcat/apache-tomcat-6/bin/catalina.sh stop
  
 # cleanup
-if [ -f /opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic.war ];
+if [ -f /opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic-lite.war ];
 then
-   rm -rf "/opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic.war"
+   rm -rf "/opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic-lite.war"
 fi
-if [ -d /opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic ];
+if [ -d /opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic-lite ];
 then
-   rm -rf "/opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic"
+   rm -rf "/opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic-lite"
 fi
 
 echo "petclinic removed from tomcat server"
 
 # download new war version
 echo "Download '$GROUP_ID:$ARTIFACT_ID:$VERSION' from '$REPOSITORY' repository"
-curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=$GROUP_ID&a=$ARTIFACT_ID&r=$REPOSITORY&v=$VERSION&e=war" --silent --show-error  --output "/opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic.war"
+curl "http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?g=$GROUP_ID&a=$ARTIFACT_ID&r=$REPOSITORY&v=$VERSION&e=war" --silent --show-error  --output "/opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic-lite.war"
 
 echo "petclinic downloaded from nexus server"
 
