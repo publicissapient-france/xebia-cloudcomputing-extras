@@ -15,18 +15,21 @@
  */
 package fr.xebia.cloud.amazon.aws.tools;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +58,8 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 
 public class AmazonAwsUtils {
 
@@ -301,6 +306,22 @@ public class AmazonAwsUtils {
     public static void terminateInstancesByRole(@Nonnull String role, @Nonnull AmazonEC2 ec2) {
         terminateInstancesByTagValue("Role", role, ec2);
     }
+    
+    /**
+     * Terminate all instances matching the given "Role" and "TeamIdentifier" tags
+     * 
+     * @param role
+     *            searched value of the "Role" tag
+     * @param teamIdentifier 
+     *            searched value of the "TeamIdentifier" tag
+     * @param ec2
+     */
+    public static void terminateInstancesByRoleAndTeam(@Nonnull String role,@Nonnull String teamIdentifier, @Nonnull AmazonEC2 ec2) {
+        List<Filter> filters = new ArrayList<Filter>();
+        filters.add(getFilter("Role", role));
+        filters.add(getFilter("TeamIdentifier",teamIdentifier));
+        terminateInstancesByFilter(ec2, filters);
+    }
 
     /**
      * Terminate all instances matching the given tag.
@@ -312,15 +333,18 @@ public class AmazonAwsUtils {
      * @param ec2
      */
     public static void terminateInstancesByTagValue(@Nonnull String tagName, @Nullable String tagValue, @Nonnull AmazonEC2 ec2) {
+        Filter filter = getFilter(tagName,tagValue);
+        terminateInstancesByFilter( ec2, Arrays.asList(filter));
+    }
 
-        Filter filter;
-        if (tagValue == null) {
-            filter = new Filter("tag:" + tagName);
-        } else {
-            filter = new Filter("tag:" + tagName, Arrays.asList(tagValue));
-        }
-        DescribeInstancesRequest describeInstancesWithRoleRequest = new DescribeInstancesRequest(). //
-                withFilters(filter);
+    /**
+     * Terminate EC2 instances matching all the filters given in parameters
+     * @param ec2 ec2 root object
+     * @param filters all filters to be matched by the searched instances
+     */
+	private static void terminateInstancesByFilter(AmazonEC2 ec2, List<Filter> filters) {
+		DescribeInstancesRequest describeInstancesWithRoleRequest = new DescribeInstancesRequest(). //
+                withFilters(filters);
         DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesWithRoleRequest);
 
         Iterable<Instance> exstingInstances = AmazonAwsUtils.toEc2Instances(describeInstancesResult.getReservations());
@@ -328,13 +352,29 @@ public class AmazonAwsUtils {
                 .newArrayList(Iterables.transform(exstingInstances, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID));
 
         if (instanceIds.isEmpty()) {
-            logger.debug("No server tagged with '{}'='{}' to terminate", tagName, tagValue);
+            logger.debug("No server tagged with filter '{}' to terminate", filters);
         } else {
-            logger.info("Terminate servers tagged with '{}'='{}': {}", new Object[] { tagName, tagValue, instanceIds });
+            logger.info("Terminate servers tagged with filter '{}'", filters);
 
             ec2.terminateInstances(new TerminateInstancesRequest(instanceIds));
         }
-    }
+	}
+
+    /**
+     * Give a filter over Tags attribute of EC2 instance with the given tag name and value
+     * @param tagName tag name to be searched
+     * @param tagValue value for the given tag name
+     * @return EC2 Filter
+     */
+	private static Filter getFilter(String tagName, String tagValue) {
+		Filter filter;
+        if (tagValue == null) {
+            filter = new Filter("tag:" + tagName);
+        } else {
+            filter = new Filter("tag:" + tagName, Arrays.asList(tagValue));
+        }
+		return filter;
+	}
 
     /**
      * Converts a collection of {@link Reservation} into a collection of their
