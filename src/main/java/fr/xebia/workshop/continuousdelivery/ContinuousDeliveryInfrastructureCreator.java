@@ -185,6 +185,8 @@ public class ContinuousDeliveryInfrastructureCreator {
         wikiBaseFolder.mkdirs();
 
         List<String> generatedWikiPageNames = Lists.newArrayList();
+        List<String> setupGeneratedWikiPageNames = Lists.newArrayList();
+        HashMap<TeamInfrastructure,List<String>> teamsPages = Maps.newHashMap();
         
 
         for (TeamInfrastructure infrastructure : teamsInfrastructures) {
@@ -222,11 +224,13 @@ public class ContinuousDeliveryInfrastructureCreator {
                 Files.write(page, wikiPageFile, Charsets.UTF_8);
                 
                 generatedWikiPageNames.add(wikiPageName);
+                setupGeneratedWikiPageNames.add(wikiPageName);
                 
                 logger.debug("Generated file {}", wikiPageFile);
             } catch (Exception e) {
                 logger.error("Exception generating doc for {}", infrastructure, e);
             }
+            teamsPages.put(infrastructure,generatedForTeam);
         }
         
         
@@ -235,9 +239,20 @@ public class ContinuousDeliveryInfrastructureCreator {
         PrintWriter indexPageWriter = new PrintWriter(indexPageStringWriter);
 
         indexPageWriter.println("= Labs Per Team =");
-        for (String wikiPage : generatedWikiPageNames) {
-            indexPageWriter.println(" * [" + wikiPage + "]");
+        List<TeamInfrastructure> teams = new ArrayList<TeamInfrastructure>(teamsPages.keySet());
+        Collections.sort(teams);
+        for(TeamInfrastructure teamInfrastructure : teams){
+            indexPageWriter.println(" # [ContinuousDeliveryWorkshopLab_"
+                    + teamInfrastructure.getIdentifier()+"_"+SETUP_TEMPLATE_NAME + "]");
+            for (String wikiPage : teamsPages.get(teamInfrastructure)) {
+                indexPageWriter.println("  * [" + wikiPage + "]");
+            }
         }
+        /*
+        for (String wikiPage : setupGeneratedWikiPageNames) {
+            indexPageWriter.println(" # [" + wikiPage + "]");
+        }
+        */
         String indexPageName = "ContinuousDeliveryWorkshopLab";
         Files.write(indexPageStringWriter.toString(), new File(baseWikiFolder, indexPageName + ".wiki"), Charsets.UTF_8);
 
