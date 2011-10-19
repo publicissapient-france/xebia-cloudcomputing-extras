@@ -6,10 +6,21 @@ then
    exit 1
 fi
 
+REPOSITORY_SNAPSHOT="snapshots"
+REPOSITORY_RELEASE="releases"
 GROUP_ID=$1
 VERSION=${2:-"LATEST"}
 ARTIFACT_ID="xebia-petclinic-lite"
 REPOSITORY="snapshots"
+
+# check if releases or snapshots
+if [[ $VERSION == "LATEST" || $VERSION =~ ^(.*)-SNAPSHOT$ ]]; then
+   REPOSITORY=$REPOSITORY_SNAPSHOT
+else
+   REPOSITORY=$REPOSITORY_RELEASE
+fi
+
+
 HEALT_CHECK_URL="http://localhost:8080/xebia-petclinic-lite/"
 
 # shutdown tomcat
