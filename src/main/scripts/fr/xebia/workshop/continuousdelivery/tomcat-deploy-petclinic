@@ -24,6 +24,7 @@ if [ -d /opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic-lite ];
 then
    rm -rf "/opt/tomcat/apache-tomcat-6/webapps/xebia-petclinic-lite"
 fi
+[ -d /opt/tomcat/apache-tomcat-6/work/Catalina/localhost/xebia-petclinic-lite/ ] && rm -rf /opt/tomcat/apache-tomcat-6/work/Catalina/localhost/xebia-petclinic-lite/
 
 echo "petclinic removed from tomcat server"
 
