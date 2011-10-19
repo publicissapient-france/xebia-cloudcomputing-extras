@@ -29,7 +29,7 @@ import java.util.Map;
  * Team infrastructure for the lab.
  * </p>
  */
-public class TeamInfrastructure {
+public class TeamInfrastructure implements Comparable{
 
     /**
      * The Jenkins server url (e.g. http://my-ec2-server:8080/) or
@@ -487,7 +487,32 @@ public class TeamInfrastructure {
                 .add("nexus", nexus) //
                 .toString();
     }
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TeamInfrastructure that = (TeamInfrastructure) o;
+
+        if (!identifier.equals(that.identifier)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return identifier.hashCode();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        if(o instanceof TeamInfrastructure){
+            return getIdentifier().compareTo(((TeamInfrastructure)o).getIdentifier());
+        }
+        return 0;
+    }
+
     // quick fix for to please FreeMarker
     public static class NullInstance extends Instance {
         @Override
