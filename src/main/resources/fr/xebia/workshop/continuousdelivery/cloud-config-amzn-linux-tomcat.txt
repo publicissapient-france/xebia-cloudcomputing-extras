@@ -24,7 +24,7 @@ runcmd:
  - [chown, -R, "tomcat:tomcat", "/opt/tomcat/.ssh"]
  
  # install tomcat
- - ["wget", "http://mirror.ibcp.fr/pub/apache/tomcat/tomcat-6/v6.0.33/bin/apache-tomcat-6.0.33.tar.gz", "--output-document", "/tmp/apache-tomcat-6.0.33.tar.gz"]
+ - ["wget",--no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/softs/apache-tomcat-6.0.33.tar.gz", "--output-document", "/tmp/apache-tomcat-6.0.33.tar.gz"]
  - ["tar", "-zxvf", "/tmp/apache-tomcat-6.0.33.tar.gz"]
  - ["mv", "apache-tomcat-6.0.33/", "/opt/tomcat/"]
  - ["chown", "-R", "tomcat:tomcat", "/opt/tomcat/apache-tomcat-6.0.33"]

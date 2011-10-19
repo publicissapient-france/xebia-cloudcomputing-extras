@@ -23,12 +23,12 @@ runcmd:
  - [ sh, -xc, "echo $(date) ': cloudinit runcmd begin'" ]
  # installs Maven
  - [cd, /opt]
- - [wget, "http://mirror.ibcp.fr/pub/apache//maven/binaries/apache-maven-2.2.1-bin.tar.gz"]  
+ - [wget,--no-check-certificate, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/softs/apache-maven-2.2.1-bin.tar.gz"]
  - [tar, xvzf, apache-maven-2.2.1-bin.tar.gz]
  - [ln, -s, /opt/apache-maven-2.2.1, /opt/maven]
 
  # installs Rundeck
- - [rpm, -U, -v, -h, "https://github.com/downloads/dtolabs/rundeck/rundeck-config-1.3.2-1.1.noarch.rpm", "https://github.com/downloads/dtolabs/rundeck/rundeck-1.3.2-1.1.noarch.rpm"]
+ - [rpm, -U, -v, -h, "https://s3-eu-west-1.amazonaws.com/continuous-delivery/softs/rundeck-config-1.3.2-1.1.noarch.rpm","https://s3-eu-west-1.amazonaws.com/continuous-delivery/softs/rundeck-1.3.2-1.1.noarch.rpm"]
  - [sh, -xc, "echo $(date) ': Rundeck is downloaded'"]
  - [yum, -y, install, rundeck]
  - [sh, -xc, "echo $(date) ': Rundeck is installed'"]
