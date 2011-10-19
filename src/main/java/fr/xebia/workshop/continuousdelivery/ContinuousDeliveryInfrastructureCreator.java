@@ -44,8 +44,9 @@ public class ContinuousDeliveryInfrastructureCreator {
     
     private static final String TEMPLATE_ROOT_PATH = "/fr/xebia/workshop/continuousdelivery/lab/";
     
-    private static final List<String> TEMPLATE_NAMES = Arrays.asList(
-    		"setup",
+    private static final String SETUP_TEMPLATE_NAME="setup";
+    
+    private static final List<String> TEMPLATE_LAB_NAMES = Arrays.asList(
     		"apache-tomcat-maven-plugin",
     		"jenkins-remote-ssh",
     		"rundeck",
@@ -58,8 +59,8 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withNexusDomainName("nexus.xebia-tech-event.info")
                 .build();
 
-        boolean createNexus = true;
-        boolean createRepositories = true;
+        boolean createNexus = false;
+        boolean createRepositories = false;
         boolean createJenkins = true;
         boolean createTomcatDev = true;
         boolean createTomcatValid = true;
@@ -72,7 +73,7 @@ public class ContinuousDeliveryInfrastructureCreator {
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         
-        final Collection<String> teamIdentifiers = createIdentifiersForNumberOfTeams(1);
+        final Collection<String> teamIdentifiers = Arrays.asList("9");
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
@@ -184,9 +185,11 @@ public class ContinuousDeliveryInfrastructureCreator {
         wikiBaseFolder.mkdirs();
 
         List<String> generatedWikiPageNames = Lists.newArrayList();
+        
 
         for (TeamInfrastructure infrastructure : teamsInfrastructures) {
-        	for(String template:TEMPLATE_NAMES){
+        	List<String> generatedForTeam = Lists.newArrayList();
+        	for(String template:TEMPLATE_LAB_NAMES){
         		try {
                     Map<String, Object> rootMap = Maps.newHashMap();
                     rootMap.put("infrastructure", infrastructure);
@@ -196,6 +199,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                     String wikiPageName = "ContinuousDeliveryWorkshopLab_" + infrastructure.getIdentifier()+"_"+template;
                     wikiPageName = wikiPageName.replace('-', '_');
                     generatedWikiPageNames.add(wikiPageName);
+                    generatedForTeam.add(wikiPageName);
                     File wikiPageFile = new File(wikiBaseFolder, wikiPageName + ".wiki");
                     Files.write(page, wikiPageFile, Charsets.UTF_8);
                     logger.debug("Generated file {}", wikiPageFile);
@@ -203,9 +207,30 @@ public class ContinuousDeliveryInfrastructureCreator {
                     logger.error("Exception generating doc for {}", infrastructure, e);
                 }	
         	}
-            
-
+        	//SETUP WITH LINKS TO DIFFERENT LABS WIKI PAGE
+        	try {
+                Map<String, Object> rootMap = Maps.newHashMap();
+                rootMap.put("infrastructure", infrastructure);
+                String templatePath = TEMPLATE_ROOT_PATH+ SETUP_TEMPLATE_NAME+".fmt";
+                rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}' with template '{{{" + templatePath + "}}}' on the " + new DateTime());
+                rootMap.put("generatedWikiPageNames",generatedForTeam);
+                String page = FreemarkerUtils.generate(rootMap, templatePath);
+                String wikiPageName = "ContinuousDeliveryWorkshopLab_" + infrastructure.getIdentifier()+"_"+SETUP_TEMPLATE_NAME;
+                wikiPageName = wikiPageName.replace('-', '_');
+                
+                File wikiPageFile = new File(wikiBaseFolder, wikiPageName + ".wiki");
+                Files.write(page, wikiPageFile, Charsets.UTF_8);
+                
+                generatedWikiPageNames.add(wikiPageName);
+                
+                logger.debug("Generated file {}", wikiPageFile);
+            } catch (Exception e) {
+                logger.error("Exception generating doc for {}", infrastructure, e);
+            }
         }
+        
+        
+        
         StringWriter indexPageStringWriter = new StringWriter();
         PrintWriter indexPageWriter = new PrintWriter(indexPageStringWriter);
 
