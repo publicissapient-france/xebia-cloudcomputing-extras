@@ -41,6 +41,15 @@ import fr.xebia.workshop.git.*;
 public class ContinuousDeliveryInfrastructureCreator {
 
     private static final String KEY_PAIR_NAME = "continuous-delivery-workshop";
+    
+    private static final String TEMPLATE_ROOT_PATH = "/fr/xebia/workshop/continuousdelivery/lab/";
+    
+    private static final List<String> TEMPLATE_NAMES = Arrays.asList(
+    		"setup",
+    		"apache-tomcat-maven-plugin",
+    		"jenkins-remote-ssh",
+    		"rundeck",
+    		"deployit");
 
     public static void main(String[] args) {
         final WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
@@ -177,21 +186,24 @@ public class ContinuousDeliveryInfrastructureCreator {
         List<String> generatedWikiPageNames = Lists.newArrayList();
 
         for (TeamInfrastructure infrastructure : teamsInfrastructures) {
-            try {
-                Map<String, Object> rootMap = Maps.newHashMap();
-                rootMap.put("infrastructure", infrastructure);
-                String templatePath = "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt";
-                rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}' with template '{{{" + templatePath + "}}}' on the " + new DateTime());
-                String page = FreemarkerUtils.generate(rootMap, templatePath);
-                String wikiPageName = "ContinuousDeliveryWorkshopLab_" + infrastructure.getIdentifier();
-                wikiPageName = wikiPageName.replace('-', '_');
-                generatedWikiPageNames.add(wikiPageName);
-                File wikiPageFile = new File(wikiBaseFolder, wikiPageName + ".wiki");
-                Files.write(page, wikiPageFile, Charsets.UTF_8);
-                logger.debug("Generated file {}", wikiPageFile);
-            } catch (Exception e) {
-                logger.error("Exception generating doc for {}", infrastructure, e);
-            }
+        	for(String template:TEMPLATE_NAMES){
+        		try {
+                    Map<String, Object> rootMap = Maps.newHashMap();
+                    rootMap.put("infrastructure", infrastructure);
+                    String templatePath = TEMPLATE_ROOT_PATH+ template+".fmt";
+                    rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}' with template '{{{" + templatePath + "}}}' on the " + new DateTime());
+                    String page = FreemarkerUtils.generate(rootMap, templatePath);
+                    String wikiPageName = "ContinuousDeliveryWorkshopLab_" + infrastructure.getIdentifier()+"_"+template;
+                    wikiPageName = wikiPageName.replace('-', '_');
+                    generatedWikiPageNames.add(wikiPageName);
+                    File wikiPageFile = new File(wikiBaseFolder, wikiPageName + ".wiki");
+                    Files.write(page, wikiPageFile, Charsets.UTF_8);
+                    logger.debug("Generated file {}", wikiPageFile);
+                } catch (Exception e) {
+                    logger.error("Exception generating doc for {}", infrastructure, e);
+                }	
+        	}
+            
 
         }
         StringWriter indexPageStringWriter = new StringWriter();
@@ -318,7 +330,9 @@ public class ContinuousDeliveryInfrastructureCreator {
     public Map<String, Instance> buildJenkins(WorkshopInfrastructure workshopInfrastructure, Collection<String> teamsIdentifiers) {
         logger.info("CREATE JENKINS/RUNDECK SERVERS");
 
-        AmazonAwsUtils.terminateInstancesByRole(TeamInfrastructure.ROLE_JENKINS_RUNDECK, ec2);
+        for(String teamIdentifier:teamsIdentifiers){
+        	AmazonAwsUtils.terminateInstancesByRoleAndTeam(TeamInfrastructure.ROLE_JENKINS_RUNDECK,teamIdentifier, ec2);	
+        }
 
         // CLOUD CONFIG
         String cloudConfigFilePath = "fr/xebia/workshop/continuousdelivery/cloud-config-amzn-linux-jenkins-rundeck.txt";
@@ -512,7 +526,10 @@ public class ContinuousDeliveryInfrastructureCreator {
         logger.info("CREATE TOMCAT '{}' SERVERS", environment);
 
         String role = TeamInfrastructure.ROLE_TOMCAT + "-" + environment;
-        AmazonAwsUtils.terminateInstancesByRole(role, ec2);
+        for(String teamIdentifier:teamIdentifiers){
+        	AmazonAwsUtils.terminateInstancesByRoleAndTeam(role,teamIdentifier, ec2);	
+        }
+        
 
         // CLOUD CONFIG
         String cloudConfigFilePath = "fr/xebia/workshop/continuousdelivery/cloud-config-amzn-linux-tomcat.txt";
