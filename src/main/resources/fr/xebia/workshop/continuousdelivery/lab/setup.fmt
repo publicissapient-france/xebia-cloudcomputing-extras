@@ -87,4 +87,10 @@ ${infrastructure.githubRepositoryName} > git push
   ## Execute {{{mvn release:prepare -B release:perform}}}
  # Verify that the new release is available in Nexus : [${infrastructure.nexusUrl}content/groups/public/fr/xebia/demo/petclinic-${infrastructure.identifier}/xebia-petclinic-lite/]
 ----
+
+Links to the different labs :
+<#list generatedWikiPageNames as x>
+ * [${x}]
+</#list>  
+
 _${generator}_
