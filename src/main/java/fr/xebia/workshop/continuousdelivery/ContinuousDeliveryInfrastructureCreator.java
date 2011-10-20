@@ -59,8 +59,8 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withNexusDomainName("nexus.xebia-tech-event.info")
                 .build();
 
-        boolean createNexus = false;
-        boolean createRepositories = false;
+        boolean createNexus = true;
+        boolean createRepositories = true;
         boolean createJenkins = true;
         boolean createTomcatDev = true;
         boolean createTomcatValid = true;
@@ -73,7 +73,7 @@ public class ContinuousDeliveryInfrastructureCreator {
 
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         
-        final Collection<String> teamIdentifiers = Arrays.asList("9");
+        final Collection<String> teamIdentifiers = createIdentifiersForNumberOfTeams(10);
 
         Callable<Instance> createNexusTask = new Callable<Instance>() {
 
