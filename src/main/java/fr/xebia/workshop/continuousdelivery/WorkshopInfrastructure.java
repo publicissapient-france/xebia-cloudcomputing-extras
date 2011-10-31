@@ -1,18 +1,39 @@
 package fr.xebia.workshop.continuousdelivery;
 
+import static com.google.common.collect.Lists.newArrayList;
+
+import java.util.Collection;
+import java.util.List;
+
 public class WorkshopInfrastructure {
 
+    private final List<String> teamIdentifiers = newArrayList();
     private String githubAccount;
     private String githubUsername;
     private String githubPassword;
+    private String githubRepositoryPrefix;
+    private String githubSourceRepository;
     private String nexusDomainName;
     private String nexusPublicIp;
+    private String keyPairName;
 
     private WorkshopInfrastructure() {
     }
 
     public static Builder create() {
         return new Builder();
+    }
+
+    public List<String> getTeamIdentifiers() {
+        return teamIdentifiers;
+    }
+
+    public int getTeamCount() {
+        return teamIdentifiers.size();
+    }
+
+    public String getKeyPairName() {
+        return keyPairName;
     }
 
     public String getGithubGuestAccountName() {
@@ -29,6 +50,14 @@ public class WorkshopInfrastructure {
 
     public String getGithubGuestAccountUsername() {
         return githubUsername;
+    }
+
+    public String getGithubRepositoryNameForTeam(String team) {
+        return githubRepositoryPrefix + team;
+    }
+
+    public String getGithubSourceRepository() {
+        return githubSourceRepository;
     }
 
     public String getNexusUrlWithDomainName() {
@@ -65,6 +94,26 @@ public class WorkshopInfrastructure {
 
         public Builder withNexusPublicIp(String ip) {
             infra.nexusPublicIp = ip;
+            return this;
+        }
+
+        public Builder withTeamIdentifiers(Collection<String> teamIdentifiers) {
+            infra.teamIdentifiers.addAll(teamIdentifiers);
+            return this;
+        }
+
+        public Builder withGithubRepositoryPrefix(String prefix) {
+            infra.githubRepositoryPrefix = prefix;
+            return this;
+        }
+
+        public Builder withGithubSourceRepository(String sourceRepo) {
+            infra.githubSourceRepository = sourceRepo;
+            return this;
+        }
+
+        public Builder withKeyPairName(String keyPairName) {
+            infra.keyPairName = keyPairName;
             return this;
         }
     }

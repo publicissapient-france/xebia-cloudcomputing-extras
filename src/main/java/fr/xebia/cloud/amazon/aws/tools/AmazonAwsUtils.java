@@ -22,10 +22,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -321,6 +320,21 @@ public class AmazonAwsUtils {
         filters.add(getFilter("Role", role));
         filters.add(getFilter("TeamIdentifier",teamIdentifier));
         terminateInstancesByFilter(ec2, filters);
+    }
+    
+    /**
+     * Terminate all instances matching the given "Role" and "TeamIdentifier" tags
+     * 
+     * @param role
+     *            searched value of the "Role" tag
+     * @param teamIdentifiers
+     *            searched values of the "TeamIdentifier" tag
+     * @param ec2
+     */
+    public static void terminateInstancesByRoleAndTeam(@Nonnull String role, @Nonnull Collection<String> teamIdentifiers, @Nonnull AmazonEC2 ec2) {
+        for (String teamIdentifier : teamIdentifiers) {
+            terminateInstancesByRoleAndTeam(role, teamIdentifier, ec2);
+        }
     }
 
     /**
