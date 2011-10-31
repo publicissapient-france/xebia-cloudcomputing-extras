@@ -1,8 +1,9 @@
 package fr.xebia.workshop.continuousdelivery;
 
-import static com.google.common.base.Preconditions.*;
-import static com.google.common.collect.Maps.*;
-import static com.google.common.collect.Sets.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.collect.Sets.newHashSet;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -43,15 +44,15 @@ public class PetclinicJenkinsJobCreator {
         checkArgument(jenkinsUrl.startsWith("http://"), "Invalid URL provided for Jenkins server: " + jenkinsUrl);
     }
 
-    public PostCreationActions create(@Nonnull PetclinicProjectInstance project) {
+    public PostCreationActions create(@Nonnull PetclinicJobInstance project) {
         checkNotNull(project);
 
-        HttpPost post = new HttpPost(jenkinsUrl + "/createItem?name=" + project.projectName);
+        HttpPost post = new HttpPost(jenkinsUrl + "/createItem?name=" + project.getProjectName());
         Map<String, Object> parameters = newHashMap();
-        parameters.put("accountName", project.accountName);
-        parameters.put("projectName", project.projectName);
-        parameters.put("groupId", project.groupId);
-        parameters.put("artifactId", project.artifactId);
+        parameters.put("githubAccountName", project.getGithubAccountName());
+        parameters.put("projectName", project.getProjectName());
+        parameters.put("groupId", project.getGroupId());
+        parameters.put("artifactId", project.getArtifactId());
         String jobConfig = FreemarkerUtils.generate(parameters, "/fr/xebia/workshop/continuousdelivery/petclinic-jenkins-job-config.xml.fmt");
 
         HttpEntity httpEntity;
@@ -62,7 +63,7 @@ public class PetclinicJenkinsJobCreator {
         }
         post.setEntity(httpEntity);
 
-        logger.info("Creating job {}: {}", project.projectName, post.getURI());
+        logger.info("Creating job {}: {}", project.getProjectName(), post.getURI());
         new Client().post(post);
         return new PostCreationActions(jenkinsUrl, project);
     }
@@ -113,9 +114,9 @@ public class PetclinicJenkinsJobCreator {
     public static class PostCreationActions {
 
         private final String jenkinsUrl;
-        private final PetclinicProjectInstance project;
+        private final PetclinicJobInstance project;
 
-        public PostCreationActions(String jenkinsUrl, PetclinicProjectInstance project) {
+        public PostCreationActions(String jenkinsUrl, PetclinicJobInstance project) {
             this.jenkinsUrl = jenkinsUrl;
             this.project = project;
         }
@@ -124,8 +125,8 @@ public class PetclinicJenkinsJobCreator {
          * Triggers a build so that dependencies are loaded.
          */
         public void triggerBuild() {
-            logger.info("Trigger build of {}", project.projectName);
-            new Client().post(new HttpPost(String.format("%s/job/%s/build", jenkinsUrl, project.projectName)));
+            logger.info("Trigger build of {}", project.getProjectName());
+            new Client().post(new HttpPost(String.format("%s/job/%s/build", jenkinsUrl, project.getProjectName())));
         }
     }
 }

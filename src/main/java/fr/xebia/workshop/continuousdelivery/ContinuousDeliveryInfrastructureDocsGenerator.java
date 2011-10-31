@@ -15,22 +15,21 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
-import java.io.IOException;
-import java.util.Collection;
+import com.amazonaws.services.ec2.AmazonEC2;
 
 public class ContinuousDeliveryInfrastructureDocsGenerator {
 
     public static void main(String[] args) {
-        final WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
-                .withGithubGuestInfo("xebia-guest", "xebia-guest", "xxx")
+        AmazonEC2 ec2 = new AmazonEC2Factory().createClient();
+
+        WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
+                .withGithubGuestInfo("xebia-guest", "xebia-guest", "xebia42.*")
                 .withNexusDomainName("nexus.xebia-tech-event.info")
                 .build();
 
         try {
-            ContinuousDeliveryInfrastructureCreator creator = new ContinuousDeliveryInfrastructureCreator();
-            Collection<TeamInfrastructure> teamInfrastructures = creator.discoverInfrastructureTopology(workshopInfrastructure);
-            creator.generateDocs(teamInfrastructures, "/tmp/continuous-delivery/");
-        } catch (IOException e) {
+            new CreateDocumentation().infrastructureCreated(ec2, workshopInfrastructure);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

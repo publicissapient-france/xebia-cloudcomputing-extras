@@ -15,6 +15,8 @@
  */
 package fr.xebia.workshop.continuousdelivery;
 
+import static java.util.Arrays.asList;
+
 import java.util.Map;
 
 import org.junit.Test;
@@ -66,7 +68,8 @@ public class LabWikiPageGeneratorTest {
         Map<String, Object> rootMap = Maps.newHashMap();
         rootMap.put("infrastructure", infrastructure);
         rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}'");
-        String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/continuous-delivery-lab.fmt");
+        rootMap.put("generatedWikiPageNames", asList("page1", "page2"));
+        String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/lab/setup.fmt");
         System.out.println(page);
     }
 }
