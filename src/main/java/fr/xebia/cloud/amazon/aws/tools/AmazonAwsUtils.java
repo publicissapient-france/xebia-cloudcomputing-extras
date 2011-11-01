@@ -29,6 +29,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import fr.xebia.workshop.monitoring.InfrastructureCreationStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public class AmazonAwsUtils {
      * <p>
      * Max retry count: 3.
      * </p>
-     * 
+     *
      * @param runInstancesRequest
      * @param ec2
      * @return list of "Running" created instances. List size is greater or
@@ -113,11 +114,15 @@ public class AmazonAwsUtils {
             }
 
             //Check for SSH availability
-            for(Iterator<Instance> itInstance = result.iterator();itInstance.hasNext();){
+            for (Iterator<Instance> itInstance = result.iterator(); itInstance.hasNext(); ) {
                 Instance instance = itInstance.next();
-                try{
-                    awaitForSshAvailability(instance);
-                }catch (IllegalStateException e){
+                try {
+                    if (instance.getImageId().equals(InfrastructureCreationStep.GRAPHITE_IMAGE_ID)) {
+                        awaitForSshAvailability(instance, "root");
+                    } else {
+                        awaitForSshAvailability(instance, "ec2-user");
+                    }
+                } catch (IllegalStateException e) {
                     //Not available => terminate instance
                     ec2.terminateInstances(new TerminateInstancesRequest(Lists.newArrayList(instance.getInstanceId())));
                     itInstance.remove();
@@ -180,7 +185,7 @@ public class AmazonAwsUtils {
      * {@link AmazonEC2#describeInstances(DescribeInstancesRequest)} as long as
      * the instance is not "running" (e.g. {@link Instance#getPublicDnsName()}).
      * </p>
-     * 
+     *
      * @param instances
      * @return up to date instances
      */
@@ -206,7 +211,7 @@ public class AmazonAwsUtils {
      * {@link AmazonEC2#describeInstances(DescribeInstancesRequest)} as long as
      * the instance is not "running" (e.g. {@link Instance#getPublicDnsName()}).
      * </p>
-     * 
+     *
      * @param instance
      * @return up to date instances or <code>null</code> if the instance crashed
      *         at startup.
@@ -237,12 +242,12 @@ public class AmazonAwsUtils {
         if (InstanceStateName.ShuttingDown.equals(instance.getState()) || InstanceStateName.Terminated.equals(instance.getState())) {
             // typically a "Server.InternalError: Internal error on launch"
             logger.warn("Terminate and skip dying instance {} (stateReason={}, stateTransitionReason={}): {}",
-                    new Object[] { instance.getInstanceId(), instance.getStateReason(), instance.getStateTransitionReason(), instance });
+                    new Object[]{instance.getInstanceId(), instance.getStateReason(), instance.getStateTransitionReason(), instance});
             try {
                 ec2.terminateInstances(new TerminateInstancesRequest(Lists.newArrayList(instance.getInstanceId())));
             } catch (Exception e) {
-                logger.warn("Silently ignore exception terminating dying instance {}: {}", new Object[] { instance.getInstanceId(),
-                        instance, e });
+                logger.warn("Silently ignore exception terminating dying instance {}: {}", new Object[]{instance.getInstanceId(),
+                        instance, e});
             }
 
             return null;
@@ -256,11 +261,10 @@ public class AmazonAwsUtils {
      * Awaits for the given healthcheck url to return 200/OK. If the url did not
      * return 200/OK within 240 secs, an {@link IllegalStateException} is
      * raised.
-     * 
+     *
      * @param healthCheckUrl
-     * @throws IllegalStateException
-     *             if the healthCheckUrl did not return 200/OK within 240
-     *             seconds.
+     * @throws IllegalStateException if the healthCheckUrl did not return 200/OK within 240
+     *                               seconds.
      */
     public static void awaitForHttpAvailability(@Nonnull String healthCheckUrl) throws IllegalStateException {
 
@@ -297,38 +301,33 @@ public class AmazonAwsUtils {
 
     /**
      * Terminate all instances matching the given "Role" tag.
-     * 
-     * @param role
-     *            searched value of the "Role" tag
+     *
+     * @param role searched value of the "Role" tag
      * @param ec2
      */
     public static void terminateInstancesByRole(@Nonnull String role, @Nonnull AmazonEC2 ec2) {
         terminateInstancesByTagValue("Role", role, ec2);
     }
-    
+
     /**
      * Terminate all instances matching the given "Role" and "TeamIdentifier" tags
-     * 
-     * @param role
-     *            searched value of the "Role" tag
-     * @param teamIdentifier 
-     *            searched value of the "TeamIdentifier" tag
+     *
+     * @param role           searched value of the "Role" tag
+     * @param teamIdentifier searched value of the "TeamIdentifier" tag
      * @param ec2
      */
-    public static void terminateInstancesByRoleAndTeam(@Nonnull String role,@Nonnull String teamIdentifier, @Nonnull AmazonEC2 ec2) {
+    public static void terminateInstancesByRoleAndTeam(@Nonnull String role, @Nonnull String teamIdentifier, @Nonnull AmazonEC2 ec2) {
         List<Filter> filters = new ArrayList<Filter>();
         filters.add(getFilter("Role", role));
-        filters.add(getFilter("TeamIdentifier",teamIdentifier));
+        filters.add(getFilter("TeamIdentifier", teamIdentifier));
         terminateInstancesByFilter(ec2, filters);
     }
-    
+
     /**
      * Terminate all instances matching the given "Role" and "TeamIdentifier" tags
-     * 
-     * @param role
-     *            searched value of the "Role" tag
-     * @param teamIdentifiers
-     *            searched values of the "TeamIdentifier" tag
+     *
+     * @param role            searched value of the "Role" tag
+     * @param teamIdentifiers searched values of the "TeamIdentifier" tag
      * @param ec2
      */
     public static void terminateInstancesByRoleAndTeam(@Nonnull String role, @Nonnull Collection<String> teamIdentifiers, @Nonnull AmazonEC2 ec2) {
@@ -339,25 +338,25 @@ public class AmazonAwsUtils {
 
     /**
      * Terminate all instances matching the given tag.
-     * 
+     *
      * @param tagName
-     * @param tagValue
-     *            if <code>null</code>, terminate all the instances having the
-     *            given tag defined.
+     * @param tagValue if <code>null</code>, terminate all the instances having the
+     *                 given tag defined.
      * @param ec2
      */
     public static void terminateInstancesByTagValue(@Nonnull String tagName, @Nullable String tagValue, @Nonnull AmazonEC2 ec2) {
-        Filter filter = getFilter(tagName,tagValue);
-        terminateInstancesByFilter( ec2, Arrays.asList(filter));
+        Filter filter = getFilter(tagName, tagValue);
+        terminateInstancesByFilter(ec2, Arrays.asList(filter));
     }
 
     /**
      * Terminate EC2 instances matching all the filters given in parameters
-     * @param ec2 ec2 root object
+     *
+     * @param ec2     ec2 root object
      * @param filters all filters to be matched by the searched instances
      */
-	private static void terminateInstancesByFilter(AmazonEC2 ec2, List<Filter> filters) {
-		DescribeInstancesRequest describeInstancesWithRoleRequest = new DescribeInstancesRequest(). //
+    private static void terminateInstancesByFilter(AmazonEC2 ec2, List<Filter> filters) {
+        DescribeInstancesRequest describeInstancesWithRoleRequest = new DescribeInstancesRequest(). //
                 withFilters(filters);
         DescribeInstancesResult describeInstancesResult = ec2.describeInstances(describeInstancesWithRoleRequest);
 
@@ -372,28 +371,29 @@ public class AmazonAwsUtils {
 
             ec2.terminateInstances(new TerminateInstancesRequest(instanceIds));
         }
-	}
+    }
 
     /**
      * Give a filter over Tags attribute of EC2 instance with the given tag name and value
-     * @param tagName tag name to be searched
+     *
+     * @param tagName  tag name to be searched
      * @param tagValue value for the given tag name
      * @return EC2 Filter
      */
-	private static Filter getFilter(String tagName, String tagValue) {
-		Filter filter;
+    private static Filter getFilter(String tagName, String tagValue) {
+        Filter filter;
         if (tagValue == null) {
             filter = new Filter("tag:" + tagName);
         } else {
             filter = new Filter("tag:" + tagName, Arrays.asList(tagValue));
         }
-		return filter;
-	}
+        return filter;
+    }
 
     /**
      * Converts a collection of {@link Reservation} into a collection of their
      * underlying
-     * 
+     *
      * @param reservations
      * @return
      */
@@ -422,13 +422,12 @@ public class AmazonAwsUtils {
      * as the instance is "creating" rather than "available" (e.g.
      * {@link DBInstance#getEndpoint()} that holds the ip address).
      * </p>
-     * 
+     *
      * @param dbInstance
      * @param rds
      * @return up to date 'available' dbInstance
-     * @throws DBInstanceNotFoundException
-     *             the given <code>dbInstance</code> no longer exists (e.g. it
-     *             has been destroyed, etc).
+     * @throws DBInstanceNotFoundException the given <code>dbInstance</code> no longer exists (e.g. it
+     *                                     has been destroyed, etc).
      */
     @Nonnull
     public static DBInstance awaitForDbInstanceCreation(@Nonnull DBInstance dbInstance, @Nonnull AmazonRDS rds)
@@ -469,19 +468,19 @@ public class AmazonAwsUtils {
      * See {@link JSch#addIdentity(String, byte[], byte[], byte[])} with the
      * priv key as bytes.
      * </p>
-     * 
+     *
      * @param instance The ec2 instance to test
+     * @param username
      * @see JSch#addIdentity(String, byte[], byte[], byte[])
      */
-    public static void awaitForSshAvailability(Instance instance) {
+    public static void awaitForSshAvailability(Instance instance, String username) {
         try {
-            final String username = "ec2-user";
             final String ip = instance.getPublicIpAddress();
             final String host = instance.getPublicDnsName();
 
             //Read key file
-            InputStream keyFile = Thread.currentThread().getContextClassLoader().getResourceAsStream(instance.getKeyName()+".pem");
-            byte[] keyAsByte= new byte[keyFile.available()];
+            InputStream keyFile = Thread.currentThread().getContextClassLoader().getResourceAsStream(instance.getKeyName() + ".pem");
+            byte[] keyAsByte = new byte[keyFile.available()];
             keyFile.read(keyAsByte);
 
             JSch jSch = new JSch();
@@ -492,13 +491,13 @@ public class AmazonAwsUtils {
             Session session = jSch.getSession(username, ip);
             session.setConfig(config);
 
-            jSch.addIdentity(username,keyAsByte,null,new byte[0]);
-            for(int i =0; i < 60; i++){
-                try{
+            jSch.addIdentity(username, keyAsByte, null, new byte[0]);
+            for (int i = 0; i < 60; i++) {
+                try {
                     session.connect(5000);
-                    logger.info("Instance "+host+" is valid");
+                    logger.info("Instance " + host + " is valid");
                     return;
-                }catch(JSchException jsche){
+                } catch (JSchException jsche) {
                     logger.debug("Instance not (yet ?) ready (" + host + ") : " + jsche.getMessage());
                     try {
                         Thread.sleep(5000);
