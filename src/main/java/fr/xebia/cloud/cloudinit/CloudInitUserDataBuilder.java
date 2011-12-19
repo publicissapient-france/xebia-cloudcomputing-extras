@@ -1,5 +1,3 @@
-package fr.xebia.cloud.cloudinit;
-
 /*
  * Copyright 2008-2010 Xebia and the original author or authors.
  *
@@ -15,6 +13,7 @@ package fr.xebia.cloud.cloudinit;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package fr.xebia.cloud.cloudinit;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
