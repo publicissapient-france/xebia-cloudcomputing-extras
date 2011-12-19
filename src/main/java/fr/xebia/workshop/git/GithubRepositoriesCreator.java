@@ -36,16 +36,16 @@ import com.github.api.v2.services.RepositoryService;
 /**
  * Creates github repositories. You can specify a source github repository and a GitRepositoryHandler to modify the
  * repository before to push it.
- *
- *
- * If you use HTTP way, you have to use a login/password access
+ * <p/>
+ * 
+ * If you use HTTP way, you have to use a login/password access.<p/>
  * If you use SSH way, you can use oauth token for github access and you have to configure a private key which has
- * access to the target account.
- * To configure ssh key :
- * http://help.github.com/linux-set-up-git/
- * http://help.github.com/ssh-issues/
- * http://help.github.com/multiple-ssh-keys/
- *
+ * access to the target account.<p/>
+ * To configure ssh key :<br/>
+ * http://help.github.com/linux-set-up-git/<br/>
+ * http://help.github.com/ssh-issues/<br/>
+ * http://help.github.com/multiple-ssh-keys/<br/>
+ * 
  */
 public class GithubRepositoriesCreator {
 
