@@ -92,6 +92,9 @@ public class TeamInfrastructure implements Comparable{
      */
     @Nullable
     public static String getRundeckUrl(Instance rundeck) {
+        if (rundeck == null) {
+            return null;
+        }
         Preconditions.checkState(rundeck.getPublicDnsName() != null, "Given rundeck is not yet initialized, it publicDnsNAme is null: %s",
                 rundeck);
         return "http://" + rundeck.getPublicDnsName() + ":4440/";
