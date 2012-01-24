@@ -44,7 +44,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withGithubRepositoryPrefix("xebia-petclinic-lite-")
                 .withGithubSourceRepository("http://github.com/xebia-france-training/xebia-petclinic-lite.git")
                 //
-                .withNexusPublicIp("46.137.168.248")
+                .withNexusPublicIp("176.34.185.30")
                 .withNexusDomainName("nexus.xebia-tech-event.info")
                 .build();
 
