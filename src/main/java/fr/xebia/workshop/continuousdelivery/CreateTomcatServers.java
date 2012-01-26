@@ -107,4 +107,8 @@ public class CreateTomcatServers extends InfrastructureCreationStep {
         return instances;
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s(%s, %s)", CreateTomcatServers.class.getSimpleName(), environment, numberOfInstances);
+    }
 }

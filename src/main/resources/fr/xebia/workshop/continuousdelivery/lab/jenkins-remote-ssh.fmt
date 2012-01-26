@@ -91,7 +91,7 @@ $tomcat> /opt/tomcat/apache-tomcat-6/bin/catalina.sh stop
  * Nexus REST API [https://repository.sonatype.org/nexus-core-documentation-plugin/core/docs/rest.artifact.maven.content.html /artifact/maven/content]:
   ** Pseudo code:
    {{{
-http://nexus.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?
+http://nexus.aws.xebia-tech-event.info:8081/nexus/service/local/artifact/maven/content?
    g=$GROUP_ID&
    a=$ARTIFACT_ID&
    r=$REPOSITORY&

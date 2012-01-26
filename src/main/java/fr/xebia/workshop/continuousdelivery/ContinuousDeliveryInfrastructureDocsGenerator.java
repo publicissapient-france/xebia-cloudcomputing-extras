@@ -24,7 +24,7 @@ public class ContinuousDeliveryInfrastructureDocsGenerator {
 
         WorkshopInfrastructure workshopInfrastructure = WorkshopInfrastructure.create()
                 .withGithubGuestInfo("xebia-guest", "xebia-guest", "xebia42.*")
-                .withNexusDomainName("nexus.xebia-tech-event.info")
+                .withNexusDomainName("nexus.aws.xebia-tech-event.info")
                 .build();
 
         try {

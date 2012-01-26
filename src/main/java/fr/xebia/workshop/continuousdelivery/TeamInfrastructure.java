@@ -192,9 +192,6 @@ public class TeamInfrastructure implements Comparable{
         }
     }
 
-    /**
-     * Constant: "http://nexus.xebia-tech-event.info:8081/nexus/"
-     */
     public String getNexusUrl() {
         return workshopInfrastructure.getNexusUrlWithDomainName();
     }

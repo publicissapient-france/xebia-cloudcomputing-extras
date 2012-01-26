@@ -71,15 +71,6 @@ runcmd:
  - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.ssh]
  - [ sh, -xc, "echo '/var/lib/jenkins/.ssh/continuous-delivery-workshop.pem provisioned'" ]
 
- # add ssh config to github authentication
- - [sh, -xc, "echo \"# Github ssh config\" >> /var/lib/jenkins/.ssh/config"]
- - [sh, -xc, "echo \"Host github.com\" >> /var/lib/jenkins/.ssh/config"]
- - [sh, -xc, "echo \"HostName github.com\" >> /var/lib/jenkins/.ssh/config"]
- - [sh, -xc, "echo \"User git\" >> /var/lib/jenkins/.ssh/config"]
- - [sh, -xc, "echo \"StrictHostKeyChecking no\" >> /var/lib/jenkins/.ssh/config"]
- - [sh, -xc, "echo \"IdentityFile /var/lib/jenkins/.ssh/continuous-delivery-workshop.pem\" >> /var/lib/jenkins/.ssh/config"]
- - [chown, -R, "jenkins:jenkins", /var/lib/jenkins/.ssh/config]
-
  # tells Jenkins where to find Rundeck
  - [sh, -xc, "echo \"<?xml version='1.0' encoding='UTF-8'?>\" >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
  - [sh, -xc, "echo '<org.jenkinsci.plugins.rundeck.RundeckNotifier_-RundeckDescriptor>' >> /var/lib/jenkins/org.jenkinsci.plugins.rundeck.RundeckNotifier.xml"]
