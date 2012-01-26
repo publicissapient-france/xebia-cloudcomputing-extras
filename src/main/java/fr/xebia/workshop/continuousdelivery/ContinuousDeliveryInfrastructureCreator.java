@@ -45,7 +45,7 @@ public class ContinuousDeliveryInfrastructureCreator {
                 .withGithubSourceRepository("http://github.com/xebia-france-training/xebia-petclinic-lite.git")
                 //
                 .withNexusPublicIp("176.34.185.30")
-                .withNexusDomainName("nexus.xebia-tech-event.info")
+                .withNexusDomainName("nexus.aws.xebia-tech-event.info")
                 .build();
 
         // checks for Key in classpath: prevents launching instances if not present
