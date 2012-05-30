@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -38,6 +39,7 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.security.auth.x500.X500Principal;
 
+import com.google.common.base.*;
 import org.apache.commons.lang.RandomStringUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
@@ -77,7 +79,7 @@ import com.amazonaws.services.identitymanagement.model.SigningCertificate;
 import com.amazonaws.services.identitymanagement.model.UploadSigningCertificateRequest;
 import com.amazonaws.services.identitymanagement.model.UploadSigningCertificateResult;
 import com.amazonaws.services.identitymanagement.model.User;
-import com.amazonaws.services.identitymanagement.model.statusType;
+import com.amazonaws.services.identitymanagement.model.StatusType;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.amazonaws.services.simpleemail.model.Body;
@@ -86,10 +88,6 @@ import com.amazonaws.services.simpleemail.model.Destination;
 import com.amazonaws.services.simpleemail.model.Message;
 import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.amazonaws.services.simpleemail.model.SendEmailResult;
-import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -101,10 +99,23 @@ import fr.xebia.cloud.cloudinit.FreemarkerUtils;
 
 /**
  * Create Amazon IAM accounts.
- * 
+ *
  * @author <a href="mailto:cyrille@cyrilleleclerc.com">Cyrille Le Clerc</a>
  */
 public class AmazonAwsIamAccountCreator {
+
+    enum Environment {
+        PRODUCTION("production"), TRAINING("training");
+        private final String identifier;
+
+        Environment(String identifier) {
+            this.identifier = identifier;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+    }
 
     private static final String BOUNCY_CASTLE_PROVIDER_NAME = "BC";
 
@@ -115,12 +126,14 @@ public class AmazonAwsIamAccountCreator {
 
     public static void main(String[] args) throws Exception {
         try {
-            AmazonAwsIamAccountCreator amazonAwsIamAccountCreator = new AmazonAwsIamAccountCreator();
+            AmazonAwsIamAccountCreator amazonAwsIamAccountCreator = new AmazonAwsIamAccountCreator(Environment.PRODUCTION);
             amazonAwsIamAccountCreator.createUsers("Admins");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    protected final Environment environment;
 
     protected AmazonEC2 ec2;
 
@@ -137,14 +150,16 @@ public class AmazonAwsIamAccountCreator {
 
     protected AmazonSimpleEmailService ses;
 
-    public AmazonAwsIamAccountCreator() {
+    public AmazonAwsIamAccountCreator(Environment environment) {
+        this.environment = Preconditions.checkNotNull(environment);
         try {
             keyPairGenerator = KeyPairGenerator.getInstance("RSA", BOUNCY_CASTLE_PROVIDER_NAME);
             keyPairGenerator.initialize(1024, new SecureRandom());
 
+            String credentialsFileName = "AwsCredentials-" + environment.getIdentifier() + ".properties";
             InputStream credentialsAsStream = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream("AwsCredentials.properties");
-            Preconditions.checkNotNull(credentialsAsStream, "File '/AwsCredentials.properties' NOT found in the classpath");
+                    .getResourceAsStream(credentialsFileName);
+            Preconditions.checkNotNull(credentialsAsStream, "File '/" + credentialsFileName + "' NOT found in the classpath");
             AWSCredentials awsCredentials = new PropertiesCredentials(credentialsAsStream);
             iam = new AmazonIdentityManagementClient(awsCredentials);
 
@@ -189,9 +204,8 @@ public class AmazonAwsIamAccountCreator {
      * <li>accesskey if none is active,</li>
      * <li></li>
      * </ul>
-     * 
-     * @param userName
-     *            valid email used as userName of the created account.
+     *
+     * @param userName valid email used as userName of the created account.
      */
     public void createUser(@Nonnull final String userName, GetGroupResult groupDescriptor) throws Exception {
         Preconditions.checkNotNull(userName, "Given userName can NOT be null");
@@ -237,7 +251,9 @@ public class AmazonAwsIamAccountCreator {
         boolean isUserInGroup = Iterables.any(groupMembers, new Predicate<User>() {
             public boolean apply(User groupMember) {
                 return userName.equals(groupMember.getUserName());
-            };
+            }
+
+            ;
         });
 
         if (!isUserInGroup) {
@@ -251,8 +267,8 @@ public class AmazonAwsIamAccountCreator {
         boolean activeAccessKeyExists = false;
         ListAccessKeysResult listAccessKeysResult = iam.listAccessKeys(new ListAccessKeysRequest().withUserName(user.getUserName()));
         for (AccessKeyMetadata accessKeyMetadata : listAccessKeysResult.getAccessKeyMetadata()) {
-            statusType status = statusType.fromValue(accessKeyMetadata.getStatus());
-            if (statusType.Active.equals(status)) {
+            StatusType status = StatusType.fromValue(accessKeyMetadata.getStatus());
+            if (StatusType.Active.equals(status)) {
                 logger.info("Access key {} ({}) is already active, don't create another one.", accessKeyMetadata.getAccessKeyId(),
                         accessKeyMetadata.getCreateDate());
                 activeAccessKeyExists = true;
@@ -323,7 +339,7 @@ public class AmazonAwsIamAccountCreator {
         certificates = Collections2.filter(certificates, new Predicate<SigningCertificate>() {
             @Override
             public boolean apply(SigningCertificate signingCertificate) {
-                return statusType.Active.equals(statusType.fromValue(signingCertificate.getStatus()));
+                return StatusType.Active.equals(StatusType.fromValue(signingCertificate.getStatus()));
             }
         });
 
@@ -379,6 +395,12 @@ public class AmazonAwsIamAccountCreator {
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
+        userNames = Collections2.filter(userNames, new Predicate<String>() {
+            @Override
+            public boolean apply(@Nullable String s) {
+                return !Strings.isNullOrEmpty(s);
+            }
+        });
         for (String userName : userNames) {
             try {
                 createUser(userName, groupDescriptor);
@@ -398,12 +420,10 @@ public class AmazonAwsIamAccountCreator {
     /**
      * Generates a self signed x509 certificate identified by the given
      * <code>userName</code> and the given <code>keyPair</code>.
-     * 
-     * @param userName
-     *            common name of {@link X500Principal} ("CN={userName}") used as
-     *            subjectDN and issuerDN.
-     * @param keyPair
-     *            used for the certificate public and private key
+     *
+     * @param userName common name of {@link X500Principal} ("CN={userName}") used as
+     *                 subjectDN and issuerDN.
+     * @param keyPair  used for the certificate public and private key
      * @return self signed X509 certificate
      */
     @SuppressWarnings("deprecation")
@@ -432,14 +452,7 @@ public class AmazonAwsIamAccountCreator {
         }
     }
 
-    /**
-     * 
-     * @param subject
-     * @param htmlBody
-     * @param toAddress
-     * @throws MessagingException
-     */
-    public void sendEmail(Map<String, String> templatesParams, List<BodyPart> attachments, String toAddress) throws MessagingException {
+    private void sendEmail(Map<String, String> templatesParams, List<BodyPart> attachments, String toAddress) throws MessagingException {
 
         MimeBodyPart htmlAndPlainTextAlternativeBody = new MimeBodyPart();
 
@@ -448,14 +461,14 @@ public class AmazonAwsIamAccountCreator {
         htmlAndPlainTextAlternativeBody.setContent(cover);
         BodyPart textHtmlBodyPart = new MimeBodyPart();
         String textHtmlBody = FreemarkerUtils.generate(templatesParams,
-                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email.html.fmt");
+                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email-" + environment.getIdentifier() + ".html.fmt");
         textHtmlBodyPart.setContent(textHtmlBody, "text/html");
         cover.addBodyPart(textHtmlBodyPart);
 
         BodyPart textPlainBodyPart = new MimeBodyPart();
         cover.addBodyPart(textPlainBodyPart);
         String textPlainBody = FreemarkerUtils.generate(templatesParams,
-                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email.txt.fmt");
+                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email-" + environment.getIdentifier() + ".txt.fmt");
         textPlainBodyPart.setContent(textPlainBody, "text/plain");
 
         MimeMultipart content = new MimeMultipart("related");
@@ -472,7 +485,9 @@ public class AmazonAwsIamAccountCreator {
         msg.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress));
         msg.addRecipient(javax.mail.Message.RecipientType.CC, mailFrom);
 
-        msg.setSubject("[Xebia Amazon AWS Workshop] Credentials");
+        String subject = "[Xebia Amazon AWS " + environment.getIdentifier() + "] Credentials";
+
+        msg.setSubject(subject);
         msg.setContent(content);
 
         mailTransport.sendMessage(msg, msg.getAllRecipients());
@@ -481,15 +496,15 @@ public class AmazonAwsIamAccountCreator {
     /**
      * Send email with Amazon Simple Email Service.
      * <p/>
-     * 
+     * <p/>
      * Please note that the sender (ie 'from') must be a verified address (see
      * {@link AmazonSimpleEmailService#verifyEmailAddress(com.amazonaws.services.simpleemail.model.VerifyEmailAddressRequest)}
      * ).
      * <p/>
-     * 
+     * <p/>
      * Please note that the sender is a CC of the meail to ease support.
      * <p/>
-     * 
+     *
      * @param subject
      * @param body
      * @param from

@@ -20,15 +20,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalk;
+import com.amazonaws.services.elasticbeanstalk.model.*;
+import com.google.common.collect.Sets;
 import fr.xebia.workshop.monitoring.InfrastructureCreationStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -514,6 +513,50 @@ public class AmazonAwsUtils {
             Throwables.propagate(e);
         } catch (JSchException e) {
             Throwables.propagate(e);
+        }
+    }
+
+    /**
+     * Delete given application and wait for its removal.
+     *
+     * @param applicationName
+     * @param beanstalk
+     */
+    public static void deleteBeanstalkApplicationIfExists(@Nonnull String applicationName, @Nonnull AWSElasticBeanstalk beanstalk) {
+        ApplicationDescription application = Iterables.getFirst(beanstalk.describeApplications(new DescribeApplicationsRequest().withApplicationNames(applicationName)).getApplications(), null);
+        if (application == null) {
+            logger.debug("No application named '{}' found", applicationName);
+            return;
+        }
+
+        List<EnvironmentDescription> environments = beanstalk.describeEnvironments(new DescribeEnvironmentsRequest().withApplicationName(application.getApplicationName())).getEnvironments();
+        Set<String> statusToTerminate = Sets.newHashSet("Launching", "Updating", "Ready");
+        for (EnvironmentDescription environment : environments) {
+            if (statusToTerminate.contains(environment.getStatus())) {
+                TerminateEnvironmentResult terminateEnvironmentResult = beanstalk.terminateEnvironment(new TerminateEnvironmentRequest().withEnvironmentId(environment.getEnvironmentId()));
+                logger.debug("Environment terminated {}", terminateEnvironmentResult);
+            } else {
+                logger.debug("Skip termination of not running environment {}", environment);
+            }
+        }
+
+        beanstalk.deleteApplication(new DeleteApplicationRequest().withApplicationName(applicationName));
+        logger.info("Existing application {} deleted", applicationName);
+
+        int counter = 0;
+        while (application != null && counter < 2 * 60) {
+            logger.debug("Wait for deletion of application {}", application);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw Throwables.propagate(e);
+            }
+            application = Iterables.getFirst(beanstalk.describeApplications(new DescribeApplicationsRequest().withApplicationNames(applicationName)).getApplications(), null);
+        }
+        if (application == null) {
+            logger.info("Application {} successfully deleted", applicationName);
+        } else {
+            logger.warn("Failure to delete application {}", applicationName);
         }
     }
 }

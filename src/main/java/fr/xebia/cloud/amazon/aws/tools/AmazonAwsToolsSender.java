@@ -32,6 +32,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import com.amazonaws.services.identitymanagement.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,12 +42,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
-import com.amazonaws.services.identitymanagement.model.GetUserRequest;
-import com.amazonaws.services.identitymanagement.model.ListSigningCertificatesRequest;
-import com.amazonaws.services.identitymanagement.model.NoSuchEntityException;
-import com.amazonaws.services.identitymanagement.model.SigningCertificate;
-import com.amazonaws.services.identitymanagement.model.User;
-import com.amazonaws.services.identitymanagement.model.statusType;
+import com.amazonaws.services.identitymanagement.model.StatusType;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.google.common.base.Charsets;
@@ -165,7 +161,7 @@ public class AmazonAwsToolsSender {
         certificates = Collections2.filter(certificates, new Predicate<SigningCertificate>() {
             @Override
             public boolean apply(SigningCertificate signingCertificate) {
-                return statusType.Active.equals(statusType.fromValue(signingCertificate.getStatus()));
+                return StatusType.Active.equals(StatusType.fromValue(signingCertificate.getStatus()));
             }
         });
 
@@ -202,9 +198,7 @@ public class AmazonAwsToolsSender {
     }
 
     /**
-     * 
-     * @param subject
-     * @param htmlBody
+     *
      * @param toAddress
      * @throws MessagingException
      */

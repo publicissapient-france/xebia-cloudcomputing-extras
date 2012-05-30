@@ -25,14 +25,14 @@ public class AmazonAwsIamAccountCreatorTest {
     @Ignore
     @Test
     public void testCreateUser() throws IOException {
-        new AmazonAwsIamAccountCreator().createUsers("cleclerc@xebia.com");
+        new AmazonAwsIamAccountCreator(AmazonAwsIamAccountCreator.Environment.TRAINING).createUsers("cleclerc@xebia.com");
     }
     
     @Ignore
     @Test
     public void send_email_with_amazon_simple_email_service() throws IOException {
         
-        new AmazonAwsIamAccountCreator().sendEmail("Xebia France Amazon EC2 Credentials", "my ses message", "cyrille@cyrilleleclerc.com",
+        new AmazonAwsIamAccountCreator(AmazonAwsIamAccountCreator.Environment.TRAINING).sendEmail("Xebia France Amazon EC2 Credentials", "my ses message", "cyrille@cyrilleleclerc.com",
                 "cleclerc@xebia.com");
     }
 
