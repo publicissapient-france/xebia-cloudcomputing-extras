@@ -9,4 +9,4 @@ packages:
 
 runcmd:
  - [service, httpd, start]
- - [service, varnishd, start]
+ - [service, varnish, start]
