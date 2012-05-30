@@ -15,28 +15,51 @@
  */
 package fr.xebia.workshop.caching;
 
-import static com.google.common.collect.Lists.newArrayList;
+import com.google.common.collect.Lists;
 
 import java.util.Collection;
 import java.util.List;
 
+import static com.google.common.collect.Lists.*;
+
 public class WorkshopInfrastructure {
 
-    private final List<String> teamIdentifiers = newArrayList();
-    private String githubAccount;
-    private String githubUsername;
-    private String githubPassword;
-    private String githubRepositoryPrefix;
-    private String githubSourceRepository;
-    private String nexusDomainName;
-    private String nexusPublicIp;
+    private List<String> teamIdentifiers = newArrayList();
+
     private String keyPairName;
 
-    private WorkshopInfrastructure() {
+    private String awsAccessKeyId;
+
+    public String getAwsSecretKey() {
+        return awsSecretKey;
     }
 
-    public static Builder create() {
-        return new Builder();
+    public void setAwsSecretKey(String awsSecretKey) {
+        this.awsSecretKey = awsSecretKey;
+    }
+
+    public WorkshopInfrastructure withAwsSecretKey(String awsSecretKey) {
+        this.awsSecretKey = awsSecretKey;
+        return this;
+    }
+
+    private String awsSecretKey;
+
+    public WorkshopInfrastructure() {
+    }
+
+    public String getAwsAccessKeyId() {
+        return awsAccessKeyId;
+    }
+
+
+    public void setAwsAccessKeyId(String awsAccessKeyId) {
+        this.awsAccessKeyId = awsAccessKeyId;
+    }
+
+    public WorkshopInfrastructure withAwsAccessKeyId(String awsAccessKeyId) {
+        this.awsAccessKeyId = awsAccessKeyId;
+        return this;
     }
 
     public List<String> getTeamIdentifiers() {
@@ -51,85 +74,37 @@ public class WorkshopInfrastructure {
         return keyPairName;
     }
 
-    public String getGithubGuestAccountName() {
-        return githubAccount;
+    public WorkshopInfrastructure withKeyPairName(String keyPairName) {
+        this.keyPairName = keyPairName;
+        return this;
     }
 
-    public String getGithubGuestAccountPassword() {
-        return githubPassword;
+    public WorkshopInfrastructure withTeamIdentifiers(String... teamIdentifiers) {
+        this.teamIdentifiers = Lists.newArrayList(teamIdentifiers);
+        return this;
     }
 
-    public String getGithubGuestAccountUrl() {
-        return "https://github.com/" + githubAccount + "/";
+    public WorkshopInfrastructure withTeamIdentifiers(Collection<String> teamIdentifiers) {
+        this.teamIdentifiers = Lists.newArrayList(teamIdentifiers);
+        return this;
     }
 
-    public String getGithubGuestAccountUsername() {
-        return githubUsername;
+    public void setBeanstalkNotificationEmail(String beanstalkNotificationEmail) {
+        this.beanstalkNotificationEmail = beanstalkNotificationEmail;
     }
 
-    public String getGithubRepositoryNameForTeam(String team) {
-        return githubRepositoryPrefix + team;
+    public WorkshopInfrastructure withBeanstalkNotificationEmail(String beanstalkNotificationEmail) {
+        this.beanstalkNotificationEmail = beanstalkNotificationEmail;
+        return this;
     }
 
-    public String getGithubSourceRepository() {
-        return githubSourceRepository;
+    public void setKeyPairName(String keyPairName) {
+        this.keyPairName = keyPairName;
     }
 
-    public String getNexusUrlWithDomainName() {
-        return "http://" + nexusDomainName + ":8081/nexus/";
-    }
+    String beanstalkNotificationEmail;
 
-    public String getNexusPublicIp() {
-        return nexusPublicIp;
-    }
-
-    public String getNexusUrlWithIp() {
-        return "http://" + nexusPublicIp + ":8081/nexus/";
-    }
-
-    public static class Builder {
-
-        private WorkshopInfrastructure infra = new WorkshopInfrastructure();
-
-        public WorkshopInfrastructure build() {
-            return infra;
-        }
-
-        public Builder withGithubGuestInfo(String account, String username, String password) {
-            infra.githubAccount = account;
-            infra.githubUsername = username;
-            infra.githubPassword = password;
-            return this;
-        }
-
-        public Builder withNexusDomainName(String domainName) {
-            infra.nexusDomainName = domainName;
-            return this;
-        }
-
-        public Builder withNexusPublicIp(String ip) {
-            infra.nexusPublicIp = ip;
-            return this;
-        }
-
-        public Builder withTeamIdentifiers(Collection<String> teamIdentifiers) {
-            infra.teamIdentifiers.addAll(teamIdentifiers);
-            return this;
-        }
-
-        public Builder withGithubRepositoryPrefix(String prefix) {
-            infra.githubRepositoryPrefix = prefix;
-            return this;
-        }
-
-        public Builder withGithubSourceRepository(String sourceRepo) {
-            infra.githubSourceRepository = sourceRepo;
-            return this;
-        }
-
-        public Builder withKeyPairName(String keyPairName) {
-            infra.keyPairName = keyPairName;
-            return this;
-        }
+    public String getBeanstalkNotificationEmail() {
+        return beanstalkNotificationEmail;
     }
 }
