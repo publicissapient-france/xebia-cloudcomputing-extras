@@ -18,6 +18,11 @@ package fr.xebia.demo.amazon.aws;
 import java.util.Collection;
 import java.util.List;
 
+import com.amazonaws.services.route53.AmazonRoute53;
+import com.amazonaws.services.route53.AmazonRoute53Client;
+import com.amazonaws.services.route53.model.GetHostedZoneRequest;
+import com.amazonaws.services.route53.model.HostedZone;
+import com.google.common.collect.Lists;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -77,6 +82,14 @@ public class AmazonAwsUtilsTest {
         ec2.terminateInstances(new TerminateInstancesRequest().withInstanceIds(runningInstanceIds));
     }
 
-    ;
+    @Test
+    public void test_delete_cname_if_exists(){
+        AWSCredentials credentials = AmazonAwsUtils.loadAwsCredentials();
+        AmazonRoute53 route53 = new AmazonRoute53Client(credentials);
+        HostedZone hostedZone = route53.getHostedZone(new GetHostedZoneRequest("Z28O5PDK1WPCSR")).getHostedZone();
+
+        AmazonAwsUtils.deleteCnameIfExist(Lists.newArrayList("www-cocktail-1.aws.xebiatechevent.info.", "www-cocktail-2.aws.xebiatechevent.info.", "www-cocktail-3.aws.xebiatechevent.info."), hostedZone, route53);
+    }
+
 
 }

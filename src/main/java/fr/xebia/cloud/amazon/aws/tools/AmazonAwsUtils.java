@@ -25,9 +25,14 @@ import java.util.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.ec2.model.*;
+import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalk;
 import com.amazonaws.services.elasticbeanstalk.model.*;
-import com.google.common.collect.Sets;
+import com.amazonaws.services.route53.AmazonRoute53;
+import com.amazonaws.services.route53.model.*;
+import com.google.common.collect.*;
 import fr.xebia.workshop.monitoring.InfrastructureCreationStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +40,6 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Filter;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.InstanceStateName;
-import com.amazonaws.services.ec2.model.Reservation;
-import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBInstanceNotFoundException;
@@ -53,9 +50,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -158,6 +152,9 @@ public class AmazonAwsUtils {
 
     public final static String AMI_AMZN_LINUX_EU_WEST = "ami-47cefa33";
 
+    public final static String AMI_AMZN_LINUX_EU_WEST_2012_03 = "ami-f9231b8d";
+
+
     /**
      * Load {@link AWSCredentials} from '<code>AwsCredentials.properties</code>
      * '.
@@ -217,6 +214,16 @@ public class AmazonAwsUtils {
      */
     @Nullable
     public static Instance awaitForEc2Instance(@Nonnull Instance instance, @Nonnull AmazonEC2 ec2) {
+        logger.trace("Wait for startup of {}: {}", instance.getInstanceId(), instance);
+
+        try {
+            // initially wait for 3 secs to prevent "InvalidInstanceID.NotFound, AWS Error Message: The instance ID 'i-2f79c967' does not exist"
+            Thread.sleep(3 * 1000);
+        } catch (InterruptedException e) {
+            throw Throwables.propagate(e);
+        }
+
+
         int counter = 0;
         while (InstanceStateName.Pending.equals(instance.getState()) || (instance.getPublicIpAddress() == null)
                 || (instance.getPublicDnsName() == null)) {
@@ -307,6 +314,17 @@ public class AmazonAwsUtils {
     public static void terminateInstancesByRole(@Nonnull String role, @Nonnull AmazonEC2 ec2) {
         terminateInstancesByTagValue("Role", role, ec2);
     }
+
+    /**
+     * Terminate all instances matching the given "Workshop" tag.
+     *
+     * @param workshop searched value of the "Workshop" tag
+     * @param ec2
+     */
+    public static void terminateInstancesByWorkshop(@Nonnull String workshop, @Nonnull AmazonEC2 ec2) {
+        terminateInstancesByTagValue("Workshop", workshop, ec2);
+    }
+
 
     /**
      * Terminate all instances matching the given "Role" and "TeamIdentifier" tags
@@ -494,10 +512,11 @@ public class AmazonAwsUtils {
             for (int i = 0; i < 60; i++) {
                 try {
                     session.connect(5000);
-                    logger.info("Instance " + host + " is valid");
+                    session.disconnect();
+                    logger.info("Instance " + host + " is valid: 'ssh -i " + instance.getKeyName() + ".pem" + " ec2-user@" + instance.getPublicIpAddress() + "' SUCCESSFUL");
                     return;
                 } catch (JSchException jsche) {
-                    logger.debug("Instance not (yet ?) ready (" + host + ") : " + jsche.getMessage());
+                    logger.debug("SSH Test - Instance not (yet) ready (" + host + ") : " + jsche.getMessage());
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
@@ -529,25 +548,16 @@ public class AmazonAwsUtils {
             return;
         }
 
-        List<EnvironmentDescription> environments = beanstalk.describeEnvironments(new DescribeEnvironmentsRequest().withApplicationName(application.getApplicationName())).getEnvironments();
-        Set<String> statusToTerminate = Sets.newHashSet("Launching", "Updating", "Ready");
-        for (EnvironmentDescription environment : environments) {
-            if (statusToTerminate.contains(environment.getStatus())) {
-                TerminateEnvironmentResult terminateEnvironmentResult = beanstalk.terminateEnvironment(new TerminateEnvironmentRequest().withEnvironmentId(environment.getEnvironmentId()));
-                logger.debug("Environment terminated {}", terminateEnvironmentResult);
-            } else {
-                logger.debug("Skip termination of not running environment {}", environment);
-            }
-        }
+        synchronousTerminateEnvironments(applicationName, beanstalk);
 
         beanstalk.deleteApplication(new DeleteApplicationRequest().withApplicationName(applicationName));
         logger.info("Existing application {} deleted", applicationName);
 
         int counter = 0;
-        while (application != null && counter < 2 * 60) {
+        while (application != null && counter < 1 * 60) {
             logger.debug("Wait for deletion of application {}", application);
             try {
-                Thread.sleep(500);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 throw Throwables.propagate(e);
             }
@@ -559,4 +569,150 @@ public class AmazonAwsUtils {
             logger.warn("Failure to delete application {}", applicationName);
         }
     }
+
+    public static void synchronousTerminateEnvironments(@Nonnull String applicationName, @Nonnull AWSElasticBeanstalk beanstalk) {
+        List<EnvironmentDescription> environments = beanstalk.describeEnvironments(new DescribeEnvironmentsRequest().withApplicationName(applicationName)).getEnvironments();
+        Set<String> statusToTerminate = Sets.newHashSet("Launching", "Updating", "Ready");
+        Set<String> statusTerminating = Sets.newHashSet("Terminating");
+
+        List<EnvironmentDescription> environmentsToWaitFor = environments;
+        int counter = 0;
+
+        while (!environmentsToWaitFor.isEmpty() && counter < 1 * 60) {
+            environmentsToWaitFor = Lists.newArrayList();
+            for (EnvironmentDescription environment : environments) {
+                if (statusToTerminate.contains(environment.getStatus())) {
+                    TerminateEnvironmentResult terminateEnvironmentResult = beanstalk.terminateEnvironment(new TerminateEnvironmentRequest().withEnvironmentId(environment.getEnvironmentId()));
+                    logger.debug("Terminate environment {}, status:{} - ", new Object[]{environment.getEnvironmentName(), environment.getStatus(), terminateEnvironmentResult});
+                    environmentsToWaitFor.add(environment);
+                } else if (statusTerminating.contains(environment.getStatus())) {
+                    environmentsToWaitFor.add(environment);
+                    logger.debug("Skip termination of not running environment {}", environment);
+                } else {
+                    logger.trace("skip terminated environment {}", environment);
+                }
+            }
+            if (!environmentsToWaitFor.isEmpty()) {
+                try {
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    throw Throwables.propagate(e);
+                }
+            }
+        }
+
+        if (!environmentsToWaitFor.isEmpty()) {
+            logger.warn("Failure to terminate {}", environmentsToWaitFor);
+        }
+    }
+
+    public static void createTags(Instance instance, CreateTagsRequest createTagsRequest, AmazonEC2 ec2) {
+        // "AWS Error Code: InvalidInstanceID.NotFound, AWS Error Message: The instance ID 'i-d1638198' does not exist"
+        AmazonAwsUtils.awaitForEc2Instance(instance, ec2);
+
+        try {
+            ec2.createTags(createTagsRequest);
+        } catch (AmazonServiceException e) {
+            // retries 5s later
+            try {
+                Thread.sleep(5 * 1000);
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
+            ec2.createTags(createTagsRequest);
+        }
+    }
+
+    public static void deleteCnameIfExist(Iterable<String> cnames, HostedZone hostedZone, AmazonRoute53 route53) {
+        // List all
+        ListResourceRecordSetsRequest listResourceRecordSetsRequest = new ListResourceRecordSetsRequest()
+                // .withStartRecordType(RRType.CNAME)
+                .withHostedZoneId(hostedZone.getId());
+        ListResourceRecordSetsResult listResourceRecordSetsResult = route53.listResourceRecordSets(listResourceRecordSetsRequest);
+
+        if (listResourceRecordSetsResult.isTruncated()) {
+            logger.warn("truncated result");
+        }
+
+        Function<ResourceRecordSet, String> cnameExtractor = new Function<ResourceRecordSet, String>() {
+            @Override
+            public String apply(@Nullable ResourceRecordSet resourceRecordSet) {
+                if (resourceRecordSet == null) {
+                    return null;
+                }
+                if (!RRType.CNAME.equals(RRType.fromValue(resourceRecordSet.getType()))) {
+                    return null;
+                }
+                return resourceRecordSet.getName();
+            }
+        };
+
+        Iterable<ResourceRecordSet> existingCnamesAsResourceRecordSet = Iterables.filter(listResourceRecordSetsResult.getResourceRecordSets(), new Predicate<ResourceRecordSet>() {
+            @Override
+            public boolean apply(@Nullable ResourceRecordSet resourceRecordSet) {
+                return RRType.CNAME.equals(RRType.fromValue(resourceRecordSet.getType()));
+            }
+        });
+
+        final ImmutableMap<String, ResourceRecordSet> existingCnames = Maps.uniqueIndex(existingCnamesAsResourceRecordSet, cnameExtractor);
+
+
+        Sets.SetView<String> cnamesToDelete = Sets.intersection(Sets.newHashSet(cnames), existingCnames.keySet());
+
+        Function<String, Change> cnameToDeleteCnameChange = new Function<String, Change>() {
+            @Override
+            public Change apply(@Nullable String cname) {
+                ResourceRecordSet existingResourceRecordSet = existingCnames.get(cname);
+
+                return new Change()
+                        .withAction(ChangeAction.DELETE)
+                        .withResourceRecordSet(new ResourceRecordSet()
+                                .withType(RRType.CNAME)
+                                .withName(cname)
+                                .withTTL(existingResourceRecordSet.getTTL())
+                                .withResourceRecords(existingResourceRecordSet.getResourceRecords()));
+            }
+        };
+
+        List<Change> changes = Lists.newArrayList(Iterables.transform(cnamesToDelete, cnameToDeleteCnameChange));
+        if (changes.isEmpty()) {
+            logger.debug("No CNAME to delete");
+            return;
+        }
+
+        logger.info("Delete CNAME changes {}", changes);
+        ChangeResourceRecordSetsRequest changeResourceRecordSetsRequest = new ChangeResourceRecordSetsRequest()
+                .withHostedZoneId(hostedZone.getId())
+                .withChangeBatch(new ChangeBatch().withChanges(changes));
+        route53.changeResourceRecordSets(changeResourceRecordSetsRequest);
+    }
+
+    public static void createCnamesForInstances(Map<String, Instance> cnameToInstances, HostedZone hostedZone, AmazonRoute53 route53) {
+        Function<Map.Entry<String, Instance>, Change> cnameAndInstanceToChange = new Function<Map.Entry<String, Instance>, Change>() {
+            @Override
+            public Change apply(@Nullable Map.Entry<String, Instance> entry) {
+                String cname = entry.getKey();
+                Instance instance = entry.getValue();
+                return new Change()
+                        .withAction(ChangeAction.CREATE)
+                        .withResourceRecordSet(new ResourceRecordSet()
+                                .withType(RRType.CNAME)
+                                .withName(cname)
+                                .withTTL(300L)
+                                .withResourceRecords(new ResourceRecord(instance.getPublicDnsName())));
+            }
+        };
+        List<Change> changes = Lists.newArrayList(Iterables.transform(cnameToInstances.entrySet(), cnameAndInstanceToChange));
+
+        logger.debug("Create CNAME {}", changes);
+
+        ChangeResourceRecordSetsRequest changeResourceRecordSetsRequest = new ChangeResourceRecordSetsRequest()
+                .withHostedZoneId(hostedZone.getId())
+                .withChangeBatch(new ChangeBatch().withChanges(changes));
+        route53.changeResourceRecordSets(changeResourceRecordSetsRequest);
+
+
+    }
+
+
 }

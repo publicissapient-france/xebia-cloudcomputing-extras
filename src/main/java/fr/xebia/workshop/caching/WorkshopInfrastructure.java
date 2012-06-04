@@ -16,6 +16,7 @@
 package fr.xebia.workshop.caching;
 
 import com.google.common.collect.Lists;
+import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 
 import java.util.Collection;
 import java.util.List;

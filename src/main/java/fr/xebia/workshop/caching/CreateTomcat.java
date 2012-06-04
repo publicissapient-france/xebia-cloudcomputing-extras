@@ -23,6 +23,9 @@ import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.concurrent.Callable;
+
 /**
  * @author <a href="mailto:cleclerc@xebia.fr">Cyrille Le Clerc</a>
  */
@@ -42,7 +45,7 @@ public class CreateTomcat {
         beanstalk.setEndpoint("elasticbeanstalk.eu-west-1.amazonaws.com");
 
         WorkshopInfrastructure workshopInfrastructure = new WorkshopInfrastructure()
-                .withTeamIdentifiers("clc"/*, "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"*/)
+                .withTeamIdentifiers("1", "2", "3"/*, "4", "5", "6", "7", "8", "9", "10", "11"*/)
                 .withAwsAccessKeyId(awsCredentials.getAWSAccessKeyId())
                 .withAwsSecretKey(awsCredentials.getAWSSecretKey())
                 .withKeyPairName("web-caching-workshop")
@@ -72,18 +75,19 @@ public class CreateTomcat {
         logger.debug("Application {} created", applicationDescription.getApplicationName());
 
         // CREATE APPLICATION VERSION
-        CreateApplicationVersionRequest createApplicationVersionRequest = new CreateApplicationVersionRequest()
+        CreateApplicationVersionRequest createApplicationVersion1Request = new CreateApplicationVersionRequest()
                 .withApplicationName(applicationDescription.getApplicationName())
                 .withVersionLabel("1.0.0")
                 .withSourceBundle(new S3Location("xfr-workshop-caching", "cocktail-app-1.0.0-SNAPSHOT.war"));
-        ApplicationVersionDescription applicationVersionDescription = beanstalk.createApplicationVersion(createApplicationVersionRequest).getApplicationVersion();
-        logger.debug("Application version {}:{} created", applicationVersionDescription.getApplicationName(), applicationVersionDescription.getVersionLabel());
+        ApplicationVersionDescription applicationVersion1Description = beanstalk.createApplicationVersion(createApplicationVersion1Request).getApplicationVersion();
+        logger.debug("Application version {}:{} created", applicationVersion1Description.getApplicationName(), applicationVersion1Description.getVersionLabel());
+        CreateApplicationVersionRequest createApplicationVersion11Request = new CreateApplicationVersionRequest()
+                .withApplicationName(applicationDescription.getApplicationName())
+                .withVersionLabel("1.1.0")
+                .withSourceBundle(new S3Location("xfr-workshop-caching", "cocktail-app-1.1.0-SNAPSHOT.war"));
+        ApplicationVersionDescription applicationVersion11Description = beanstalk.createApplicationVersion(createApplicationVersion11Request).getApplicationVersion();
+        logger.debug("Application version {}:{} created", applicationVersion11Description.getApplicationName(), applicationVersion11Description.getVersionLabel());
 
-        /*
-          {"Namespace": "",
-   "OptionName": "",
-   "Value": "someone@example.com"}
-         */
         // CREATE CONFIGURATION TEMPLATE
         CreateConfigurationTemplateRequest createConfigurationTemplateRequest = new CreateConfigurationTemplateRequest()
                 .withApplicationName(applicationDescription.getApplicationName())
@@ -96,9 +100,7 @@ public class CreateTomcat {
                         new ConfigurationOptionSetting("aws:elasticbeanstalk:sns:topics", "Notification Endpoint", workshopInfrastructure.getBeanstalkNotificationEmail()),
 
                         new ConfigurationOptionSetting("aws:elasticbeanstalk:application:environment", "AWS_ACCESS_KEY_ID", workshopInfrastructure.getAwsAccessKeyId()),
-                        new ConfigurationOptionSetting("aws:elasticbeanstalk:application:environment", "AWS_SECRET_KEY", workshopInfrastructure.getAwsSecretKey()),
-                        new ConfigurationOptionSetting("aws:elasticbeanstalk:application:environment", "aws_access_key", workshopInfrastructure.getAwsAccessKeyId()),
-                        new ConfigurationOptionSetting("aws:elasticbeanstalk:application:environment", "aws_secret_key", workshopInfrastructure.getAwsSecretKey())
+                        new ConfigurationOptionSetting("aws:elasticbeanstalk:application:environment", "AWS_SECRET_KEY", workshopInfrastructure.getAwsSecretKey())
                 );
         CreateConfigurationTemplateResult configurationTemplateResult = beanstalk.createConfigurationTemplate(createConfigurationTemplateRequest);
         logger.debug("Configuration {}:{} created", new Object[]{configurationTemplateResult.getApplicationName(), configurationTemplateResult.getTemplateName(), configurationTemplateResult});
@@ -108,7 +110,7 @@ public class CreateTomcat {
             CreateEnvironmentRequest createEnvironmentRequest = new CreateEnvironmentRequest()
                     .withEnvironmentName(applicationDescription.getApplicationName() + "-" + teamIdentifier)
                     .withApplicationName(applicationDescription.getApplicationName())
-                    .withVersionLabel(applicationVersionDescription.getVersionLabel())
+                    .withVersionLabel(applicationVersion1Description.getVersionLabel())
                     .withCNAMEPrefix(applicationDescription.getApplicationName() + "-" + teamIdentifier)
                     .withTemplateName(configurationTemplateResult.getTemplateName());
 
