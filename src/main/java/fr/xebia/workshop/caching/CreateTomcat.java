@@ -20,6 +20,7 @@ import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalk;
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClient;
 import com.amazonaws.services.elasticbeanstalk.model.*;
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,7 @@ public class CreateTomcat {
         AmazonAwsUtils.deleteBeanstalkApplicationIfExists(applicationName, beanstalk);
         CreateApplicationRequest createApplicationRequest = new CreateApplicationRequest()
                 .withApplicationName(applicationName)
-                .withDescription("xfr-cocktail app");
+                .withDescription("xfr-cocktail app created at " + new DateTime());
 
         ApplicationDescription applicationDescription = beanstalk.createApplication(createApplicationRequest).getApplication();
         logger.debug("Application {} created", applicationDescription.getApplicationName());
