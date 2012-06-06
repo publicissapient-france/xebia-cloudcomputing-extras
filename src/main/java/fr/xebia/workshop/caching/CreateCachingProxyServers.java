@@ -66,14 +66,6 @@ public class CreateCachingProxyServers implements Runnable {
 
         CreateCachingProxyServers job = new CreateCachingProxyServers(ec2, route53, workshopInfrastructure);
         job.run();
-        /*
-        List<Reservation> reservations = ec2.describeInstances(new DescribeInstancesRequest().withInstanceIds("i-7741eb3f")).getReservations();
-        Instance instance = Iterables.getOnlyElement(Iterables.getOnlyElement(reservations).getInstances());
-
-        Map<String, Instance> instancesByTeamId = Collections.singletonMap("clc", instance);
-
-        job.bindInstancesToDnsCnames(instancesByTeamId, route53);
-*/
 
     }
 
