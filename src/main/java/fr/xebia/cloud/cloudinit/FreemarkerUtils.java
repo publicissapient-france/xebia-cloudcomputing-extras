@@ -40,7 +40,7 @@ public class FreemarkerUtils {
      * @param rootMap
      *            root node of the freemarker datamodel.
      * @param templatePath
-     *            classpath classpath path of the template (e.g. "/my-template.fmt")
+     *            classpath classpath path of the template (e.g. "/my-template.ftl")
      * @return generated file
      */
     @SuppressWarnings("unchecked")

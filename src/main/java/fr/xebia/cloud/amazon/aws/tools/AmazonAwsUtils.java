@@ -571,14 +571,14 @@ public class AmazonAwsUtils {
     }
 
     public static void synchronousTerminateEnvironments(@Nonnull String applicationName, @Nonnull AWSElasticBeanstalk beanstalk) {
-        List<EnvironmentDescription> environments = beanstalk.describeEnvironments(new DescribeEnvironmentsRequest().withApplicationName(applicationName)).getEnvironments();
         Set<String> statusToTerminate = Sets.newHashSet("Launching", "Updating", "Ready");
         Set<String> statusTerminating = Sets.newHashSet("Terminating");
 
-        List<EnvironmentDescription> environmentsToWaitFor = environments;
-        int counter = 0;
+        List<EnvironmentDescription> environments = beanstalk.describeEnvironments(new DescribeEnvironmentsRequest().withApplicationName(applicationName)).getEnvironments();
+        List<EnvironmentDescription> environmentsToWaitFor = Collections.emptyList();
 
-        while (!environmentsToWaitFor.isEmpty() && counter < 1 * 60) {
+        int counter = 0;
+        while (counter < 1 * 60) {
             environmentsToWaitFor = Lists.newArrayList();
             for (EnvironmentDescription environment : environments) {
                 if (statusToTerminate.contains(environment.getStatus())) {
@@ -592,12 +592,15 @@ public class AmazonAwsUtils {
                     logger.trace("skip terminated environment {}", environment);
                 }
             }
-            if (!environmentsToWaitFor.isEmpty()) {
+            if(environmentsToWaitFor .isEmpty()) {
+                break;
+            } else  {
                 try {
                     Thread.sleep(500);
                 } catch (Exception e) {
                     throw Throwables.propagate(e);
                 }
+                environments = beanstalk.describeEnvironments(new DescribeEnvironmentsRequest().withApplicationName(applicationName)).getEnvironments();
             }
         }
 

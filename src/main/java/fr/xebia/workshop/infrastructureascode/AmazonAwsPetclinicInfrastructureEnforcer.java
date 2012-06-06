@@ -420,7 +420,7 @@ public class AmazonAwsPetclinicInfrastructureEnforcer {
         systemProperties.put("jdbc.username", jdbcUsername);
         systemProperties.put("jdbc.password", jdbcPassword);
 
-        String shellScript = FreemarkerUtils.generate(rootMap, "/provision_tomcat.py.fmt");
+        String shellScript = FreemarkerUtils.generate(rootMap, "/provision_tomcat.py.ftl");
 
         // CLOUD CONFIG
         InputStream cloudConfigAsStream = Thread.currentThread().getContextClassLoader()

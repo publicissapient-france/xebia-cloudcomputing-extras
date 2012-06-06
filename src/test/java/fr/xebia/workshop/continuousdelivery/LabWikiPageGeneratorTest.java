@@ -69,7 +69,7 @@ public class LabWikiPageGeneratorTest {
         rootMap.put("infrastructure", infrastructure);
         rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}'");
         rootMap.put("generatedWikiPageNames", asList("page1", "page2"));
-        String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/lab/setup.fmt");
+        String page = FreemarkerUtils.generate(rootMap, "/fr/xebia/workshop/continuousdelivery/lab/setup.ftl");
         System.out.println(page);
     }
 }

@@ -68,7 +68,7 @@ public class PetclinicJenkinsJobCreator {
         parameters.put("projectName", project.getProjectName());
         parameters.put("groupId", project.getGroupId());
         parameters.put("artifactId", project.getArtifactId());
-        String jobConfig = FreemarkerUtils.generate(parameters, "/fr/xebia/workshop/continuousdelivery/petclinic-jenkins-job-config.xml.fmt");
+        String jobConfig = FreemarkerUtils.generate(parameters, "/fr/xebia/workshop/continuousdelivery/petclinic-jenkins-job-config.xml.ftl");
 
         HttpEntity httpEntity;
         try {

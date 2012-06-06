@@ -126,7 +126,7 @@ public class AmazonAwsIamAccountCreator {
 
     public static void main(String[] args) throws Exception {
         try {
-            AmazonAwsIamAccountCreator amazonAwsIamAccountCreator = new AmazonAwsIamAccountCreator(Environment.PRODUCTION);
+            AmazonAwsIamAccountCreator amazonAwsIamAccountCreator = new AmazonAwsIamAccountCreator(Environment.TRAINING);
             amazonAwsIamAccountCreator.createUsers("Admins");
         } catch (Exception e) {
             e.printStackTrace();
@@ -236,7 +236,7 @@ public class AmazonAwsIamAccountCreator {
 
             logger.info("Login profile already exists {}", loginProfile);
         } catch (NoSuchEntityException e) {
-            String password = RandomStringUtils.randomAlphanumeric(8);
+            String password = RandomStringUtils.randomAlphanumeric(10);
             LoginProfile loginProfile = iam.createLoginProfile(new CreateLoginProfileRequest(user.getUserName(), password))
                     .getLoginProfile();
             userAccountChanges.add("Create user.login");
@@ -291,7 +291,7 @@ public class AmazonAwsIamAccountCreator {
                 BodyPart awsCredentialsBodyPart = new MimeBodyPart();
                 awsCredentialsBodyPart.setFileName("aws-credentials.txt");
                 templatesParams.put("attachedCredentialsFileName", awsCredentialsBodyPart.getFileName());
-                String awsCredentials = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/iam/aws-credentials.txt.fmt");
+                String awsCredentials = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/iam/aws-credentials.txt.ftl");
                 awsCredentialsBodyPart.setContent(awsCredentials, "text/plain");
                 attachments.add(awsCredentialsBodyPart);
             }
@@ -461,14 +461,14 @@ public class AmazonAwsIamAccountCreator {
         htmlAndPlainTextAlternativeBody.setContent(cover);
         BodyPart textHtmlBodyPart = new MimeBodyPart();
         String textHtmlBody = FreemarkerUtils.generate(templatesParams,
-                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email-" + environment.getIdentifier() + ".html.fmt");
+                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email-" + environment.getIdentifier() + ".html.ftl");
         textHtmlBodyPart.setContent(textHtmlBody, "text/html");
         cover.addBodyPart(textHtmlBodyPart);
 
         BodyPart textPlainBodyPart = new MimeBodyPart();
         cover.addBodyPart(textPlainBodyPart);
         String textPlainBody = FreemarkerUtils.generate(templatesParams,
-                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email-" + environment.getIdentifier() + ".txt.fmt");
+                "/fr/xebia/cloud/amazon/aws/iam/amazon-aws-iam-credentials-email-" + environment.getIdentifier() + ".txt.ftl");
         textPlainBodyPart.setContent(textPlainBody, "text/plain");
 
         MimeMultipart content = new MimeMultipart("related");
