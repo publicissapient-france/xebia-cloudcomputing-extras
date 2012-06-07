@@ -147,7 +147,6 @@ public class CreateCachingProxyServers implements Runnable {
 
         bindInstancesToDnsCnames(instancesByTeamId, route53);
 
-
     }
 
     protected void bindInstancesToDnsCnames(Map<String, Instance> instancesByTeamId, AmazonRoute53 route53) {

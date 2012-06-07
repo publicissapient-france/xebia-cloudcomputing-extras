@@ -30,7 +30,7 @@ import java.util.concurrent.Callable;
 /**
  * @author <a href="mailto:cleclerc@xebia.fr">Cyrille Le Clerc</a>
  */
-public class CreateTomcat {
+public class CreateTomcat implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -58,6 +58,10 @@ public class CreateTomcat {
     public CreateTomcat(AWSElasticBeanstalk beanstalk, WorkshopInfrastructure workshopInfrastructure) {
         this.beanstalk = beanstalk;
         this.workshopInfrastructure = workshopInfrastructure;
+    }
+
+    public void run(){
+        createServers();
     }
 
     public void createServers() {
