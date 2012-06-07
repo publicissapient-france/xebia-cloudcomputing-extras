@@ -1,3 +1,9 @@
+# TODO List
+
+* Document usage of Amazon S3
+
+* For each step, ask the attendees to look at the page before the step
+
 # Lab Pre Requisite
 
 * [Maven](http://maven.apache.org) 3.0.x
