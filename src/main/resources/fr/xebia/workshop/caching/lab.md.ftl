@@ -184,7 +184,7 @@ Docs available at [Google Code - Xebia France > ExpiresFilter](http://code.googl
 
         mvn package
 
-3. Deploy the new version named of your application on your Amazon Elastic Beanstalk environment `xfr-cocktail-${teamIdentifier}` with `Version Label: 1.1.0-team-1`
+3. Deploy the new version named of your application on your Amazon Elastic Beanstalk environment `xfr-cocktail-${teamIdentifier}` with `Version Label: 1.1.0-team-${teamIdentifier}`
  
      1. Connect to <https://console.aws.amazon.com/elasticbeanstalk/home?region=eu-west-1>
      
@@ -234,9 +234,9 @@ Sample of of `httpd.conf`
     	chmod 400 web-caching-workshop.pem
     	echo "Certificate 'web-caching-workshop.pem' installed under `pwd`"
 
-1. Connect to your proxy server `www-cocktail-1.aws.xebiatechevent.info`
+1. Connect to your proxy server `www-cocktail-${teamIdentifier}.aws.xebiatechevent.info`
 
-    	ssh -i web-caching-workshop.pem ec2-user@www-cocktail-1.aws.xebiatechevent.info
+    	ssh -i web-caching-workshop.pem ec2-user@www-cocktail-${teamIdentifier}.aws.xebiatechevent.info
 
 1. Configure Apache `mod_proxy` 
 
@@ -254,7 +254,7 @@ Sample of of `httpd.conf`
 	
         sudo service httpd restart
 	
-1. Verify opening in your browser <http://www-cocktail-1.aws.xebiatechevent.info/cocktail/>
+1. Verify opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/cocktail/>
 	
 <div style="color:red;font-weight:bold;font-size:100%" markdown="1">WARNING: a production ready `mod_proxy` configuration is more complex.</div>
 
@@ -263,9 +263,9 @@ Sample of of `httpd.conf`
 
 See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](http://httpd.apache.org/docs/2.2/mod/mod_cache.html)
 
-1. Connect to your proxy server `www-cocktail-1.aws.xebiatechevent.info`
+1. Connect to your proxy server `www-cocktail-${teamIdentifier}.aws.xebiatechevent.info`
 
-    	ssh -i web-caching-workshop.pem ec2-user@www-cocktail-1.aws.xebiatechevent.info
+    	ssh -i web-caching-workshop.pem ec2-user@www-cocktail-${teamIdentifier}.aws.xebiatechevent.info
 
 1. Enabled mod_disk_cache in `httpd.conf`
 
@@ -284,7 +284,7 @@ See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](h
 	
 	    sudo service httpd restart
 
-1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-1.aws.xebiatechevent.info/cocktail/>
+1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/cocktail/>
 
 <div style="color:red;font-weight:bold;font-size:100%" markdown="1">WARNING: a production ready `mod_disk_cache` configuration is more complex, you must schedule a disk cleaner (TODO add hyperlink to disk cleaner).</div>
 
@@ -295,10 +295,12 @@ Apache Httpd 2.2 does not add a `X-Cache-Detail` header to the HTTP response in 
 
 This `X-Cache-Detail` header has been introduced in Apache Httpd 2.4 with the [`CacheDetailHeader` directive](http://httpd.apache.org/docs/2.4/mod/mod_cache.html#cachedetailheader).
 
-As of Apache 2.2, you can check that a resource has been served by mod_cache rather than by Tomcat checking the existence of  
+As of Apache 2.2, you can check that a resource has been served by mod_cache rather than by Tomcat checking the existence of the `Age` header.
 
-	curl -v http://www-cocktail-1.aws.xebiatechevent.info/css/bootstrap.min.css | more
-	curl -v http://www-cocktail-1.aws.xebiatechevent.info/css/bootstrap.min.css | more
+**Query twice the URL to load the resource in the caching resource.**
+
+	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css | more
+	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css | more
 	
 ### Sample of response without caching
 
@@ -342,7 +344,7 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 
 ## Connect via SSH to the varnish server
 
-    ssh -i web-caching-workshop.pem ec2-user@www-cocktail-1.aws.xebiatechevent.info
+    ssh -i web-caching-workshop.pem ec2-user@www-cocktail-${teamIdentifier}.aws.xebiatechevent.info
 
 
 ## Setup Backend server
@@ -363,7 +365,7 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 
     	sudo service varnish restart
 
-1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-1.aws.xebiatechevent.info:6081/cocktail/>
+1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/cocktail/>
 
 
 
@@ -413,7 +415,7 @@ By default Varnish does not inform us about its execution, let's set up some con
 	
 1. Verify the existence of the 
 
-        curl -v http://www-cocktail-1.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
+        curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
 
 Now you should see the X-Cache header indicating wether the cache hit or miss, X-Cacheable will display wether the resource was cacheable or not and why.
 
@@ -465,7 +467,7 @@ Add vcl_recv routine in `/etc/varnish/default.vcl`:
 	    if (req.restarts == 0) {
 	        if (req.http.x-forwarded-for) {
 	            set req.http.X-Forwarded-For =
-	                req.http.X-Forwarded-For + ", " + client.ip;
+	                req.http.X-Forwarded-For ", " client.ip;
 	        } else {
 	            set req.http.X-Forwarded-For = client.ip;
 	        }
@@ -498,7 +500,7 @@ Restart Varnish and check access:
 	sudo service varnish restart
 	
 	
-	curl -v http://www-cocktail-1.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
+	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
 
 With this setup, Varnish will cache resources even if a session Cookie is present in the request.
 
