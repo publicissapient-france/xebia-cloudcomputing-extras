@@ -22,10 +22,7 @@ import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -146,9 +143,12 @@ public class AmazonAwsIamAccountCreator {
     protected Session mailSession;
 
     protected Transport mailTransport;
+
     protected InternetAddress mailFrom;
 
     protected AmazonSimpleEmailService ses;
+
+    protected final Random random = new Random();
 
     public AmazonAwsIamAccountCreator(Environment environment) {
         this.environment = Preconditions.checkNotNull(environment);
@@ -236,7 +236,8 @@ public class AmazonAwsIamAccountCreator {
 
             logger.info("Login profile already exists {}", loginProfile);
         } catch (NoSuchEntityException e) {
-            String password = RandomStringUtils.randomAlphanumeric(10);
+            // manually add a number to ensure amazon policy is respected
+            String password = RandomStringUtils.randomAlphanumeric(10) + random.nextInt(10);
             LoginProfile loginProfile = iam.createLoginProfile(new CreateLoginProfileRequest(user.getUserName(), password))
                     .getLoginProfile();
             userAccountChanges.add("Create user.login");
