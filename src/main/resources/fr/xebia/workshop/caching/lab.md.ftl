@@ -371,13 +371,17 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 
     	sudo service varnish restart
 
-1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/cocktail/>
+1. Verify that the Varnish Cache successfully restarted opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/cocktail/>
 
 
 
-## Add X-Cache and X-Cacheable header
+## Add `X-Cache` and `X-Cacheable` HTTP headers
 
-By default Varnish does not inform us about its execution, let's set up some configuration to keep informed about cache usage per request. X-Cache header will get HIT when resource was found in cache or MISS if not in cache. 
+By default Varnish does not inform us about its execution, let's set up some configuration to keep informed about cache usage per request thanks to HTTP headers:
+
+* `X-Cache`: `HIT when resource was found in cache or `MISS` if not in cache,
+
+* `X-Cacheable`
 
 1. Edit `default.vcl`
 
@@ -419,8 +423,9 @@ By default Varnish does not inform us about its execution, let's set up some con
 
         sudo service varnish restart
 	
-1. Verify the existence of the 
+1. Verify the existence of the `X-Cache: HIT` header. Query the ressource twice to load it in Varnish.
 
+        curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
         curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
 
 Now you should see the X-Cache header indicating wether the cache hit or miss, X-Cacheable will display wether the resource was cacheable or not and why.
