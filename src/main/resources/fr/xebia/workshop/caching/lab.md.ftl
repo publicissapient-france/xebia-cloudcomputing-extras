@@ -48,7 +48,7 @@ This will serve as an example for our projects files and resources.
 
 ![Web Caching Workshop Architecture - Amazon CloudFront CDN](workshop-amazon-cloudfront.png)
 
-# 1. Connect to your Cokctail App
+# 1. Connect to your Cocktail App
 
 Connect to your application <http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/cocktail/>.
 
@@ -418,13 +418,13 @@ By default Varnish does not inform us about its execution, let's set up some con
         sub vcl_fetch {
         
             # Varnish determined the object was not cacheable
-            if (!beresp.cacheable) {
+            if (beresp.ttl == 0s) {
                 set beresp.http.X-Cacheable = "NO:Not Cacheable";
         
             # You are respecting the Cache-Control=private header from the backend
             } elsif (beresp.http.Cache-Control ~ "private") {
                 set beresp.http.X-Cacheable = "NO:Cache-Control=private";
-                return(pass);
+                return(hit_for_pass);
             
             # You are extending the lifetime of the object artificially
             }  else {
@@ -504,7 +504,7 @@ Add vcl_recv routine in `/etc/varnish/default.vcl`:
 	    if (req.restarts == 0) {
 	        if (req.http.x-forwarded-for) {
 	            set req.http.X-Forwarded-For =
-	                req.http.X-Forwarded-For ", " client.ip;
+	                req.http.X-Forwarded-For + ", " + client.ip;
 	        } else {
 	            set req.http.X-Forwarded-For = client.ip;
 	        }
