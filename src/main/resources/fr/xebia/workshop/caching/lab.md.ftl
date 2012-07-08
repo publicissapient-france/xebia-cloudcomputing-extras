@@ -23,6 +23,15 @@
 
 ![Web Caching Workshop Initial Architecture](workshop-initial-architecture.png)
 
+
+## Use JS and CSS Content Delivery Networks (CDN) for JQuery, Bootstrap, etc
+
+Famous CSS and JS libraries like JQuery or Twitter Bootstrap are available on large CDN like [ajax.googleapis.com](http://ajax.googleapis.com/) or [cdnjs](http://cdnjs.com).
+
+This will serve as an example for our projects files and resources.
+
+![Web Caching Workshop Architecture - Add Expire Headers](workshop-cdn-js-css.png)
+ 
 ## Add Expire Headers
 
 ![Web Caching Workshop Architecture - Add Expire Headers](workshop-expires-header.png)
@@ -62,7 +71,7 @@ Build the application with Maven
 
 # 4. Create your CDN Distribution with Amazon CloudFront
 
-<div style="color:blue;font-weight:bold;font-size:150%">Note: as the creation of a CDN distribution takes several minutes with Amazon CloudFront, we create it at the beginning of the lab and we will use it later.</div>
+**Note: as the creation of a CDN distribution takes several minutes with Amazon CloudFront, we create it at the beginning of the lab and we will use it later.**
 
 1. Connect to Amazon AWS Console: <https://xebia-france.signin.aws.amazon.com/console>
 1. Open `Services > CloudFront tab`
@@ -97,10 +106,10 @@ Build the application with Maven
 
    ![Cloudfront Create Cistribution ](cloudfront-create-distribution-6.png)
    
-<div style="color:green;font-weight:bold;font-size:150%">Congratulations, you have created your CDN Distribution!</div>
+**Congratulations, you have created your CDN Distribution!**
 
 
-<div style="color:blue;font-weight:bold;font-size:150%">Note: Don't wait for the completion of this creation, go to the next exercice.</div>
+**Note: Don't wait for the completion of this creation, go to the next exercice.**
 
 # 5. Find Web Caching Issues with YSlow
 
@@ -116,6 +125,23 @@ During this lab, we will focus on two YSlow recommandations:
 
     ![YSlow Add Expires Headers](cocktail-1-yslow-cdn.png)
 
+
+# 6. Use JS and CSS Content Delivery Networks (CDN) for JQuery, Bootstrap, etc
+
+![Web Caching Workshop Architecture - Add Expire Headers](workshop-cdn-js-css.png)
+
+Instead of shipping your own version of widely used JS and CSS frameworks and libs like JQuery or Twitter Bootstrap, you can reference versions deployed on CDNs. Benefits:
+
+ * Decreased Latency: CDN have Point of Presence (PoPs) near you visitors
+ * Better Caching: many web sites use these JS and CSS files, they may already be cached in the web browser of your visitors
+ * Decreased load on your data center: spare network bandwidth and server CPU. 
+ 
+HTML sample referencing Google CDN and Boostrap CDN ([view.jsp](https://github.com/xebia-france/workshop-web-caching-cocktail/blob/304f646cc6ab9884ddc6e1adac5acc5e3965327f/src/main/webapp/WEB-INF/views/cocktail/view.jsp#L19))
+
+![CDN for JS and CSS](web-page-cdn-js-css.png)
+
+
+
 # 6. Add Expires Headers
 
 See docs:
@@ -126,7 +152,7 @@ See docs:
 
 ## Info: Adding Expires Headers programmatically according to the business logic
 
-<div style="color:green;font-weight:normal;font-size:100%">This step is purely informational, the next exercise is 'Adding Expires Headers With a Servlet Filter'.</div>
+**This step is purely informational, the next exercise is 'Adding Expires Headers With a Servlet Filter'.**
 
 You can define the caching policy according to the business logic. For example, an RSS feed could be cached for 5 minutes.
 
@@ -136,7 +162,7 @@ See [CocktailManager.java](https://github.com/xebia-france/workshop-web-caching-
 
 ![Java Code Sample - Expires Header](java-code-sample-expires-header.png)
 
-### Behavior
+### Behavio
 
 1. Query the `/rss` URL:
 
@@ -206,14 +232,14 @@ Docs available at [Google Code - Xebia France > ExpiresFilter](http://code.googl
      
      1. Verify with YSlow that your expiration headers appeared: <http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/cocktail/>
      
-<div style="color:blue;font-weight:bold;font-size:100%" markdown="1">Cheat sheet: deploy version `1.1.0` if you have a problem deploying your own patched version.</div>
+**Cheat sheet: deploy version `1.1.0` if you have a problem deploying your own patched version.**
  
-<div style="color:green;font-weight:bold;font-size:150%">Congratulations!!! You fixed the first YSlow recommandation to add Expires Headers</div>
+**Congratulations!!! You fixed the first YSlow recommandation to add Expires Headers****
 
 
 ### Adding Expires Headers with Apache Httpd mod_expires
 
-<div style="color:green;font-weight:normal;font-size:100%">This step is purely informational, the next exercise is 'Add a Caching Proxy with Apache mod_cache in front of the Tomcat Server'.</div>
+**This step is purely informational, the next exercise is 'Add a Caching Proxy with Apache mod_cache in front of the Tomcat Server'.**
 
 [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_expires](http://httpd.apache.org/docs/2.2/mod/mod_expires.html)
 
@@ -262,7 +288,7 @@ Sample of of `httpd.conf`
 	
 1. Verify opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/cocktail/>
 	
-<div style="color:red;font-weight:bold;font-size:100%" markdown="1">WARNING: a production ready `mod_proxy` configuration is more complex.</div>
+**WARNING: a production ready `mod_proxy` configuration is more complex.**
 
 	
 ## Enable mod_cache
@@ -292,7 +318,7 @@ See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](h
 
 1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/cocktail/>
 
-<div style="color:red;font-weight:bold;font-size:100%" markdown="1">WARNING: a production ready `mod_disk_cache` configuration is more complex, you must schedule a disk cleaner (TODO add hyperlink to disk cleaner).</div>
+**WARNING: a production ready `mod_disk_cache` configuration is more complex, you must schedule a disk cleaner (TODO add hyperlink to disk cleaner).**
 
 
 ## Check response caching with Apache Httpd mod_cache 
