@@ -318,7 +318,7 @@ See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](h
 
 1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/cocktail/>
 
-**WARNING: a production ready `mod_disk_cache` configuration is more complex, you must schedule a disk cleaner (TODO add hyperlink to disk cleaner).**
+**WARNING: a production ready `mod_disk_cache` configuration is more complex, you must schedule a disk cleaner using [htcacheclean](http://httpd.apache.org/docs/2.2/programs/htcacheclean.html).**
 
 
 ## Check response caching with Apache Httpd mod_cache 
@@ -405,7 +405,7 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 
 By default Varnish does not inform us about its execution, let's set up some configuration to keep informed about cache usage per request thanks to HTTP headers:
 
-* `X-Cache`: `HIT when resource was found in cache or `MISS` if not in cache,
+* `X-Cache`: `HIT` when resource was found in cache or `MISS` if not in cache
 
 * `X-Cacheable`
 
@@ -532,10 +532,11 @@ Add vcl_recv routine in `/etc/varnish/default.vcl`:
 	}
 
 
-Restart Varnish and check access:
+Restart Varnish:
 
 	sudo service varnish restart
-	
+
+And check access:
 	
 	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
 
@@ -543,7 +544,7 @@ With this setup, Varnish will cache resources even if a session Cookie is presen
 
 ## Configure Backend probe
 
-Backend probes will monitor backend health wich allows to use grace mode to keep delivering resources while backend server is down.
+Backend probes will monitor backend health which allows to use grace mode to keep delivering resources while backend server is down.
 
 Update the `backend default` directive in `default.vcl`:
 
@@ -571,6 +572,10 @@ Add req.grace timeout in vcl_recv and vcl_fetch routines `/etc/varnish/default.v
 	    set beresp.grace = 120m;
 	    # ....
 	}
+
+Restart Varnish:
+
+    sudo service varnish restart
 
 Now if the backend goes down, Varnish will keep resources and deliver them during grace timeout.
 
