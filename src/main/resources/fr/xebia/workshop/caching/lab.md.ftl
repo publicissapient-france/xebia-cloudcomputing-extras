@@ -31,7 +31,16 @@ Famous CSS and JS libraries like JQuery or Twitter Bootstrap are available on la
 This will serve as an example for our projects files and resources.
 
 ![Web Caching Workshop Architecture - Add Expire Headers](workshop-cdn-js-css.png)
- 
+
+## Use Amazon S3 as a _"media database"_
+
+Amazon S3 is a great storage for media like user avatars, cocktails pictures, etc
+
+It is much more efficient than database blob stores and offer a very efficient bandwith for internet users.
+
+![Web Caching Workshop Architecture - Add Expire Headers](workshop-amazon-s3.png)
+
+
 ## Add Expire Headers
 
 ![Web Caching Workshop Architecture - Add Expire Headers](workshop-expires-header.png)
@@ -67,7 +76,7 @@ Get the Cocktail App on Github (download it or clone it) : <https://github.com/x
 Build the application with Maven
 
 	mvn package
-	
+
 
 # 4. Create your CDN Distribution with Amazon CloudFront
 
@@ -89,11 +98,11 @@ Build the application with Maven
 1. Enter `Origin Domain Name: xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com` and `Origin Protocol Policy: Match Viewer`
 
    ![Cloudfront Create Cistribution ](cloudfront-create-distribution-2.png)
-   
+
 1. Keep default cache behaviors
-   
+
    ![Cloudfront Create Cistribution ](cloudfront-create-distribution-3.png)
-   
+
 1. Keep default Distribution details
 
    ![Cloudfront Create Cistribution ](cloudfront-create-distribution-4.png)
@@ -105,7 +114,7 @@ Build the application with Maven
 1. Verify that your distribution is being created
 
    ![Cloudfront Create Cistribution ](cloudfront-create-distribution-6.png)
-   
+
 **Congratulations, you have created your CDN Distribution!**
 
 
@@ -115,7 +124,7 @@ Build the application with Maven
 
 Analyse with YSlow the web page <http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/cocktail/>.
 
-During this lab, we will focus on two YSlow recommandations: 
+During this lab, we will focus on two YSlow recommandations:
 
 * `Add Expires Headers`
 
@@ -134,15 +143,27 @@ Instead of shipping your own version of widely used JS and CSS frameworks and li
 
  * Decreased Latency: CDN have Point of Presence (PoPs) near you visitors
  * Better Caching: many web sites use these JS and CSS files, they may already be cached in the web browser of your visitors
- * Decreased load on your data center: spare network bandwidth and server CPU. 
- 
+ * Decreased load on your data center: spare network bandwidth and server CPU.
+
 HTML sample referencing Google CDN and Boostrap CDN ([view.jsp](https://github.com/xebia-france/workshop-web-caching-cocktail/blob/304f646cc6ab9884ddc6e1adac5acc5e3965327f/src/main/webapp/WEB-INF/views/cocktail/view.jsp#L19))
 
 ![CDN for JS and CSS](web-page-cdn-js-css.png)
 
 
+# 7. Use Amazon S3 as a _"media database"_
 
-# 6. Add Expires Headers
+**This step is purely informational, the next exercise is below.**
+
+![Web Caching Workshop Architecture - Add Expire Headers](workshop-amazon-s3.png)
+
+Storing files in Amazon S3 instead of a standard file system requires little changes to your code and many FTP clients also support Amazon S3 APIs.
+
+Sample with [Amazon SDK for Java](http://aws.amazon.com/sdkforjava/):
+
+![Amazon S3 Java Code Sample](java-code-amazon-s3.png)
+
+
+# 8. Add Expires Headers
 
 See docs:
 
@@ -162,7 +183,7 @@ See [CocktailManager.java](https://github.com/xebia-france/workshop-web-caching-
 
 ![Java Code Sample - Expires Header](java-code-sample-expires-header.png)
 
-### Behavio
+### Behavior
 
 1. Query the `/rss` URL:
 
@@ -171,11 +192,11 @@ See [CocktailManager.java](https://github.com/xebia-france/workshop-web-caching-
 1. Look at the `Cache-Control` and `Expires` header in the response
 
         < HTTP/1.1 200 OK
-        < Cache-Control: public, max-age=300
+        < Cache-Control: public, max-age=300        <===== CACHE-CONTROL MAX-AGE HEADER
         < Content-Language: en-US
         < Content-Type: application/rss+xml;charset=ISO-8859-1
         < Date: Wed, 06 Jun 2012 18:40:16 GMT
-        < Expires: Wed, 06 Jun 2012 18:45:16 GMT
+        < Expires: Wed, 06 Jun 2012 18:45:16 GMT    <===== EXPIRES HEADER
         < Server: Apache-Coyote/1.1
         < transfer-encoding: chunked
         < Connection: keep-alive
@@ -186,6 +207,10 @@ See [CocktailManager.java](https://github.com/xebia-france/workshop-web-caching-
 ![Web Caching Workshop Architecture - Add Expire Headers](workshop-expires-header.png)
 
 Docs available at [Google Code - Xebia France > ExpiresFilter](http://code.google.com/p/xebia-france/wiki/ExpiresFilter).
+
+1. Verify with YSlow and `curl` that expiration headers are missing: <http://xfr-cocktail-1.elasticbeanstalk.com/cocktail/>
+
+        curl -v http://xfr-cocktail-1.elasticbeanstalk.com/cocktail/
 
 1. Modify `src/main/webapp/WEB-INF/web.xml`([source](https://github.com/xebia-france/workshop-web-caching-cocktail/blob/f9258173f9ed2222ae6e62ed48e7b4f17e48edd1/src/main/webapp/WEB-INF/web.xml#L45)) to add an `ExpiresFilter`:
 
@@ -212,29 +237,29 @@ Docs available at [Google Code - Xebia France > ExpiresFilter](http://code.googl
         	   <dispatcher>REQUEST</dispatcher>
         	</filter-mapping>
 
-2. Repackage your application
+1. Repackage your application
 
         mvn package
 
-3. Deploy the new version named of your application on your Amazon Elastic Beanstalk environment `xfr-cocktail-${teamIdentifier}` with `Version Label: 1.1.0-team-${teamIdentifier}`
- 
+1. Deploy the new version named of your application on your Amazon Elastic Beanstalk environment `xfr-cocktail-${teamIdentifier}` with `Version Label: 1.1.0-team-${teamIdentifier}`
+
      1. Connect to <https://console.aws.amazon.com/elasticbeanstalk/home?region=eu-west-1>
-     
+
      1. Select your environment `xfr-cocktail-${teamIdentifier}` and click on `Deploy a Different Version`:
-     
+
        ![Beanstalk Update Version 1](beanstalk-update-version-1.png)
-     
+
      1. Select `Upload and deploy a new version` and enter `Version Label: 1.1.0-team-${teamIdentifier}`
-    
+
        ![Beanstalk Update Version 2](beanstalk-update-version-2.png)
-       
+
      1. Click on `Deploy Version` and wait for the deployment
-     
+
      1. Verify with YSlow that your expiration headers appeared: <http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/cocktail/>
-     
+
 **Cheat sheet: deploy version `1.1.0` if you have a problem deploying your own patched version.**
- 
-**Congratulations!!! You fixed the first YSlow recommandation to add Expires Headers****
+
+**Congratulations!!! You fixed the first YSlow recommandation to add Expires Headers and you deployed a WAR on Amazon Beanstalk!**
 
 
 ### Adding Expires Headers with Apache Httpd mod_expires
@@ -252,12 +277,12 @@ Sample of of `httpd.conf`
 # 7. Add a Caching Proxy with Apache mod_cache in front of the Tomcat Server
 
 ![Web Caching Workshop Architecture - Apache Httpd as a Caching Proxy](workshop-apache-mod-cache.png)
- 
+
 ## Enable mod_proxy between Apache and Tomcat
 
 [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_proxy](http://httpd.apache.org/docs/2.2/mod/mod_proxy.html)
 
-1. Download the `web-caching-workshop.pem` SSH private key
+1. Download the [`web-caching-workshop.pem`](http://xfr-workshop-caching.s3-website-eu-west-1.amazonaws.com/web-caching-workshop.pem) SSH private key
 
     	cd
     	mkdir .aws
@@ -270,7 +295,7 @@ Sample of of `httpd.conf`
 
     	ssh -i web-caching-workshop.pem ec2-user@www-cocktail-${teamIdentifier}.aws.xebiatechevent.info
 
-1. Configure Apache `mod_proxy` 
+1. Configure Apache `mod_proxy`
 
     1. Create a `conf.d/cocktail.conf` configuration fragment to configure `mod_proxy`
 
@@ -282,18 +307,22 @@ Sample of of `httpd.conf`
             ProxyPass / http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/
 
 
-1. Restart Apache	
-	
+1. Restart Apache
+
         sudo service httpd restart
-	
+
 1. Verify opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/cocktail/>
-	
+
 **WARNING: a production ready `mod_proxy` configuration is more complex.**
 
-	
+
 ## Enable mod_cache
 
 See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](http://httpd.apache.org/docs/2.2/mod/mod_cache.html)
+
+1. Verify `curl` that `Age` headers is missing (`Age` header can be used with Apache 2.2 to check that `mod_cache` is active, more details below): <http://xfr-cocktail-1.elasticbeanstalk.com/cocktail/>
+
+        curl -v http://www-cocktail-1.aws.xebiatechevent.info/css/bootstrap.min.css | more
 
 1. Connect to your proxy server `www-cocktail-${teamIdentifier}.aws.xebiatechevent.info`
 
@@ -305,15 +334,15 @@ See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](h
 
             sudo vi /etc/httpd/conf/httpd.conf
 
-    1. Unncoment 
+    1. Unncoment
 
             <IfModule mod_disk_cache.c>
                 CacheEnable disk /
                 CacheRoot "/var/cache/mod_proxy"
             </IfModule>
-	
-1. Restart Apache	
-	
+
+1. Restart Apache
+
 	    sudo service httpd restart
 
 1. Verify that the Httpd Server successfully restarted opening in your browser <http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/cocktail/>
@@ -321,7 +350,7 @@ See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](h
 **WARNING: a production ready `mod_disk_cache` configuration is more complex, you must schedule a disk cleaner using [htcacheclean](http://httpd.apache.org/docs/2.2/programs/htcacheclean.html).**
 
 
-## Check response caching with Apache Httpd mod_cache 
+## Check response caching with Apache Httpd mod_cache
 
 Apache Httpd 2.2 does not add a `X-Cache-Detail` header to the HTTP response in order to ease debugging of page caching.
 
@@ -333,7 +362,7 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 
 	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css | more
 	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css | more
-	
+
 ### Sample of response without caching
 
 
@@ -346,7 +375,7 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 	< Last-Modified: Sun, 01 Apr 2012 14:07:28 GMT
 	< Content-Length: 81150
 	< Connection: close
-	
+
 
 ### Sample of response with caching
 
@@ -360,14 +389,14 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 	< Content-Length: 81150
 	< Connection: close
 	< Content-Type: text/css
-	
+
 
 
 [W3C > RFC 2616 -  Hypertext Transfer Protocol - HTTP/1.1 > 14 Header Field Definitions > Age](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.6)
 
 > The Age response-header field conveys the sender's estimate of the amount of time since the response (or its revalidation) was generated at the origin server. A cached response is "fresh" if its age does not exceed its freshness lifetime.
 
-# 8. Configure Varnish
+# 10. Configure Varnish
 
 ![Web Caching Workshop Architecture - Varnish Caching Proxy](workshop-varnish.png)
 
@@ -384,7 +413,7 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 1. Edit `default.vcl` and setup your backend server:
 
         sudo vi /etc/varnish/default.vcl
-    
+
 1. Update `backend default`:
 
         backend default {
@@ -412,30 +441,30 @@ By default Varnish does not inform us about its execution, let's set up some con
 1. Edit `default.vcl`
 
         sudo vi /etc/varnish/default.vcl
-	
+
 1. Add `vcl_fetch` and `vcl_deliver` routines in `default.vcl` (after `backend default` directive):
 
         sub vcl_fetch {
-        
+
             # Varnish determined the object was not cacheable
             if (beresp.ttl == 0s) {
                 set beresp.http.X-Cacheable = "NO:Not Cacheable";
-        
+
             # You are respecting the Cache-Control=private header from the backend
             } elsif (beresp.http.Cache-Control ~ "private") {
                 set beresp.http.X-Cacheable = "NO:Cache-Control=private";
                 return(hit_for_pass);
-            
+
             # You are extending the lifetime of the object artificially
             }  else {
                 set beresp.http.X-Cacheable = "YES";
             }
-            
+
             # ....
-            
+
             return(deliver);
         }
-        
+
         sub vcl_deliver {
             if (obj.hits > 0) {
                 set resp.http.X-Cache = "HIT";
@@ -448,7 +477,7 @@ By default Varnish does not inform us about its execution, let's set up some con
 1. Restart Varnish:
 
         sudo service varnish restart
-	
+
 1. Verify the existence of the `X-Cache: HIT` header. Query the ressource twice to load it in Varnish.
 
         curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
@@ -537,7 +566,7 @@ Restart Varnish:
 	sudo service varnish restart
 
 And check access:
-	
+
 	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
 
 With this setup, Varnish will cache resources even if a session Cookie is present in the request.
@@ -579,7 +608,7 @@ Restart Varnish:
 
 Now if the backend goes down, Varnish will keep resources and deliver them during grace timeout.
 
-# 9. Use Amazon CloudFront as a CDN to Deliver the Cacheable Content
+# 11. Use Amazon CloudFront as a CDN to Deliver the Cacheable Content
 
 ![Web Caching Workshop Architecture - Amazon CloudFront CDN](workshop-amazon-cloudfront.png)
 
@@ -588,7 +617,7 @@ Now if the backend goes down, Varnish will keep resources and deliver them durin
 1. Go to `CloudFront tab`
 
    ![Cloudfront Create Cistribution ](cloudfront-create-distribution-0.png)
-   
+
 1. Get the base URL of your distribution
 
    The hostname of the distribution looks like `d1mm4v4zybjqbh.cloudfront.net`
@@ -608,7 +637,7 @@ Here is a technique to use switchable CDN URLs in your application. Other techni
 Look at the use of `${r"${cdnUrl}"}` in `view.jsp` ([source](https://github.com/xebia-france/workshop-web-caching-cocktail/blob/9393f3f2d34edd29dcede18691c195020082f820/src/main/webapp/WEB-INF/views/cocktail/view.jsp#L11)):
 
 	<link rel="shortcut icon" href="${r"${cdnUrl}${pageContext.request.contextPath}"}/img/favicon.ico">
-	... 
+	...
 	<link href="${r"${cdnUrl}${pageContext.request.contextPath}"}/css/bootstrap.min.css" media="screen" rel="stylesheet" type="text/css" />
 	...
 	<script src="${r"${cdnUrl}${pageContext.request.contextPath}"}/js/bootstrap.min.js" type="text/javascript"></script>
@@ -617,7 +646,7 @@ And the injection of `cdn_url` System Property as `cdnUrl` variable in JSP Expre
 
 	<!-- source 'cdn_url' from the system-properties -->
 	<context:property-placeholder system-properties-mode="OVERRIDE" />
-	
+
 	<!-- inject 'cdn_url' as "cdnUrl" in JSP EL variables -->
 	<bean class="org.springframework.web.context.support.ServletContextAttributeExporter">
 	    <property name="attributes">
@@ -639,7 +668,7 @@ And the injection of `cdn_url` System Property as `cdnUrl` variable in JSP Expre
 
 1. Once your application is restarted, reopen in your browser <http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/>
 
-1. Verify in the HTML source code that the CloudFront CDN Distribution servers 
+1. Verify in the HTML source code that the CloudFront CDN Distribution servers
 
     ![Cocktail App with cdn_url Source Code](cloudfront-cdn-url-in-html.png)
 
@@ -647,11 +676,28 @@ And the injection of `cdn_url` System Property as `cdnUrl` variable in JSP Expre
 
 # 10. CONCLUSION
 
-You learned in this workshop how to:
+## Initial Architecture
+
+![Web Caching Workshop Initial Architecture](workshop-initial-architecture.png)
+
+
+## Final Architecture
+
+![Web Caching Workshop Initial Architecture](workshop-final-architecture.png)
+
+
+## You learned in this workshop how to:
 
 * Add expiration headers to a Java web application
-* Use Apache Httpd as a Caching Proxy
-* Configure Varnish Caching Proxy
-* Use the Content Delivery Network Amazon CloudFront 
+* Use Bootstrap CDN and Google CDN
+* Use a web server auch as Apache Httpd as a Caching Proxy
+* Use a Caching Proxy such as Varnish Cache
+* Use a Content Delivery Network such as Amazon CloudFront 
 * Integrate CDN based URLs in a web application 
+
+
+
+# Thanks!
+
+![That's all Folks!](thats-all-folks.jpeg)
 
