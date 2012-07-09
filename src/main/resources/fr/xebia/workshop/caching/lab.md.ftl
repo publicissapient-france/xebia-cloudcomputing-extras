@@ -1,9 +1,3 @@
-# TODO List
-
-* Document usage of Amazon S3
-
-* For each step, ask the attendees to look at the page before the step
-
 # Lab Pre Requisite
 
 * [Maven](http://maven.apache.org) 3.0.x
@@ -681,10 +675,11 @@ And the injection of `cdn_url` System Property as `cdnUrl` variable in JSP Expre
 ![Web Caching Workshop Initial Architecture](workshop-initial-architecture.png)
 
 
-## Final Architecture
+## *"Ideal"* Architecture
 
 ![Web Caching Workshop Initial Architecture](workshop-final-architecture.png)
 
+**Note:** our *"ideal"* architecture connects the CloudFront CDN to the Varnish layer even if the lab simplified this directly connecting the CloudFront CDN to the Tomcat Layer.  
 
 ## You learned in this workshop how to:
 
