@@ -1,3 +1,6 @@
+.idea
+target
+*.iml
 src/main/resources/AwsCredentials-training.properties
 src/main/resources/AwsCredentials.properties
 src/main/resources/AwsCredentials-production.properties
