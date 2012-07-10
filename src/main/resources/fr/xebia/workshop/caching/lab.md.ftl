@@ -131,6 +131,8 @@ During this lab, we will focus on two YSlow recommandations:
 
 # 6. Use JS and CSS Content Delivery Networks (CDN) for JQuery, Bootstrap, etc
 
+**This step is purely informational, the next exercise is below.**
+
 ![Web Caching Workshop Architecture - Add Expire Headers](workshop-cdn-js-css.png)
 
 Instead of shipping your own version of widely used JS and CSS frameworks and libs like JQuery or Twitter Bootstrap, you can reference versions deployed on CDNs. Benefits:
@@ -316,7 +318,7 @@ See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](h
 
 1. Verify `curl` that `Age` headers is missing (`Age` header can be used with Apache 2.2 to check that `mod_cache` is active, more details below): <http://xfr-cocktail-1.elasticbeanstalk.com/cocktail/>
 
-        curl -v http://www-cocktail-1.aws.xebiatechevent.info/css/bootstrap.min.css | more
+        curl -v http://www-cocktail-1.aws.xebiatechevent.info/css/bootstrap.min.css > /dev/null
 
 1. Connect to your proxy server `www-cocktail-${teamIdentifier}.aws.xebiatechevent.info`
 
@@ -354,8 +356,8 @@ As of Apache 2.2, you can check that a resource has been served by mod_cache rat
 
 **Query twice the URL to load the resource in the caching resource.**
 
-	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css | more
-	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css | more
+	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css > /dev/null
+	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css > /dev/null
 
 ### Sample of response without caching
 
@@ -474,8 +476,8 @@ By default Varnish does not inform us about its execution, let's set up some con
 
 1. Verify the existence of the `X-Cache: HIT` header. Query the ressource twice to load it in Varnish.
 
-        curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
-        curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
+        curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css > /dev/null
+        curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css > /dev/null
 
 Now you should see the X-Cache header indicating wether the cache hit or miss, X-Cacheable will display wether the resource was cacheable or not and why.
 
@@ -561,7 +563,7 @@ Restart Varnish:
 
 And check access:
 
-	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css | more
+	curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info:6081/css/bootstrap.min.css > /dev/null
 
 With this setup, Varnish will cache resources even if a session Cookie is present in the request.
 
@@ -601,6 +603,9 @@ Restart Varnish:
     sudo service varnish restart
 
 Now if the backend goes down, Varnish will keep resources and deliver them during grace timeout.
+
+**Please note that it is not possible to pause your Amazon Elastic Beanstalk environment, you can only restart or terminate it.
+Once this lab is completed, you are free to terminate it in order to test the Varnish grace mode.**
 
 # 11. Use Amazon CloudFront as a CDN to Deliver the Cacheable Content
 
