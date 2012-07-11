@@ -2,9 +2,11 @@
 
 * [Maven](http://maven.apache.org) 3.0.x
 
-* [YSlow](http://developer.yahoo.com/yslow/) Plugin installed on your favorite browser ( [chrome](https://chrome.google.com/webstore/detail/ninejjcohidippngpapiilnmkgllmakh), [firefox](https://addons.mozilla.org/en-US/firefox/addon/yslow/))
+* [YSlow](http://developer.yahoo.com/yslow/) Plugin installed on your favorite browser ([chrome](https://chrome.google.com/webstore/detail/ninejjcohidippngpapiilnmkgllmakh), [firefox](https://addons.mozilla.org/en-US/firefox/addon/yslow/))
 
 * Google PageSpeed extension for Chrome or Firefox
+
+* [Cygwin](http://www.cygwin.com/) if you are using Windows
 
 
 # Lab Agenda
