@@ -124,7 +124,12 @@ public class AmazonAwsIamAccountCreator {
     public static void main(String[] args) throws Exception {
         try {
             AmazonAwsIamAccountCreator amazonAwsIamAccountCreator = new AmazonAwsIamAccountCreator(Environment.TRAINING);
+
+            // Create users with their own ssh key
             amazonAwsIamAccountCreator.createUsers("Admins");
+
+            // Create users with a specific ssh key (won't create individual keys)
+            //amazonAwsIamAccountCreator.createUsers("Admins", "web-caching-workshop");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -207,7 +212,7 @@ public class AmazonAwsIamAccountCreator {
      *
      * @param userName valid email used as userName of the created account.
      */
-    public void createUser(@Nonnull final String userName, GetGroupResult groupDescriptor) throws Exception {
+    public void createUser(@Nonnull final String userName, GetGroupResult groupDescriptor, String keyPairName) throws Exception {
         Preconditions.checkNotNull(userName, "Given userName can NOT be null");
         logger.info("Process user {}", userName);
 
@@ -300,11 +305,12 @@ public class AmazonAwsIamAccountCreator {
         }
 
         // SSH KEY PAIR
-        String keyPairName;
-        if (userName.endsWith("@xebia.fr") || userName.endsWith("@xebia.com")) {
-            keyPairName = userName.substring(0, userName.indexOf("@xebia."));
-        } else {
-            keyPairName = userName.replace("@", "_at_").replace(".", "_dot_").replace("+", "_plus_");
+        if (keyPairName == null) { // If keyPairName is null, generate it from the username
+            if (userName.endsWith("@xebia.fr") || userName.endsWith("@xebia.com")) {
+                keyPairName = userName.substring(0, userName.indexOf("@xebia."));
+            } else {
+                keyPairName = userName.replace("@", "_at_").replace(".", "_dot_").replace("+", "_plus_");
+            }
         }
 
         try {
@@ -313,6 +319,21 @@ public class AmazonAwsIamAccountCreator {
             logger.info("SSH key {} already exists. Don't overwrite it.", keyPairInfo.getKeyName());
             templatesParams.put("sshKeyName", keyPairInfo.getKeyName());
             templatesParams.put("sshKeyFingerprint", keyPairInfo.getKeyFingerprint());
+
+            String sshKeyFileName = keyPairName + ".pem";
+            URL sshKeyFileURL = Thread.currentThread().getContextClassLoader().getResource(sshKeyFileName);
+            if (sshKeyFileURL != null) {
+                logger.info("SSH Key file {} found.", sshKeyFileName);
+
+                BodyPart keyPairBodyPart = new MimeBodyPart();
+                keyPairBodyPart.setFileName(sshKeyFileName);
+                templatesParams.put("attachedSshKeyFileName", keyPairBodyPart.getFileName());
+                keyPairBodyPart.setContent(Resources.toString(sshKeyFileURL, Charsets.ISO_8859_1), "application/x-x509-ca-cert");
+                attachments.add(keyPairBodyPart);
+            } else {
+                logger.info("SSH Key file {} NOT found.", sshKeyFileName);
+            }
+
         } catch (AmazonServiceException e) {
             if ("InvalidKeyPair.NotFound".equals(e.getErrorCode())) {
                 // ssh key does not exist, create it
@@ -385,6 +406,10 @@ public class AmazonAwsIamAccountCreator {
     }
 
     public void createUsers(String groupName) {
+        createUsers(groupName, null);
+    }
+
+    public void createUsers(String groupName, String keyPairName) {
 
         GetGroupResult groupDescriptor = iam.getGroup(new GetGroupRequest(groupName));
 
@@ -404,7 +429,7 @@ public class AmazonAwsIamAccountCreator {
         });
         for (String userName : userNames) {
             try {
-                createUser(userName, groupDescriptor);
+                createUser(userName, groupDescriptor, keyPairName);
             } catch (Exception e) {
                 logger.error("Failure to create user '{}'", userName, e);
             }
