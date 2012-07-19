@@ -147,6 +147,10 @@ HTML sample referencing Google CDN and Boostrap CDN ([view.jsp](https://github.c
 
 ![CDN for JS and CSS](web-page-cdn-js-css.png)
 
+Note that as per [RFC 3986 (section 5.2)](http://tools.ietf.org/html/rfc3986#section-5.2), it is valid to omit the scheme of the URI.
+> If the scheme component is defined, indicating that the reference starts with a scheme name, then the reference is interpreted
+as an absolute URI and we are done. **Otherwise, the reference URI's scheme is inherited from the base URI's scheme component.**
+
 
 # 7. Use Amazon S3 as a _"media database"_
 
@@ -185,7 +189,7 @@ See [CocktailManager.java](https://github.com/xebia-france/workshop-web-caching-
 
 1. Query the `/rss` URL:
 
-        curl -v http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/rss
+        curl -v http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/rss > /dev/null
 
 1. Look at the `Cache-Control` and `Expires` header in the response
 
@@ -206,9 +210,9 @@ See [CocktailManager.java](https://github.com/xebia-france/workshop-web-caching-
 
 Docs available at [Google Code - Xebia France > ExpiresFilter](http://code.google.com/p/xebia-france/wiki/ExpiresFilter).
 
-1. Verify with YSlow and `curl` that expiration headers are missing: <http://xfr-cocktail-1.elasticbeanstalk.com/cocktail/>
+1. Verify with YSlow and `curl` that expiration headers are missing: <http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/cocktail/css/bootstrap.min.css>
 
-        curl -v http://xfr-cocktail-1.elasticbeanstalk.com/cocktail/
+        curl -v http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/css/bootstrap.min.css > /dev/null
 
 1. Modify `src/main/webapp/WEB-INF/web.xml`([source](https://github.com/xebia-france/workshop-web-caching-cocktail/blob/f9258173f9ed2222ae6e62ed48e7b4f17e48edd1/src/main/webapp/WEB-INF/web.xml#L45)) to add an `ExpiresFilter`:
 
@@ -318,9 +322,9 @@ Sample of of `httpd.conf`
 
 See [Apache > HTTP Server > Documentation > Version 2.2 > Modules > mod_cache](http://httpd.apache.org/docs/2.2/mod/mod_cache.html)
 
-1. Verify `curl` that `Age` headers is missing (`Age` header can be used with Apache 2.2 to check that `mod_cache` is active, more details below): <http://xfr-cocktail-1.elasticbeanstalk.com/cocktail/>
+1. Verify `curl` that `Age` headers is missing (`Age` header can be used with Apache 2.2 to check that `mod_cache` is active, more details below): <http://xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com/cocktail/>
 
-        curl -v http://www-cocktail-1.aws.xebiatechevent.info/css/bootstrap.min.css > /dev/null
+        curl -v http://www-cocktail-${teamIdentifier}.aws.xebiatechevent.info/css/bootstrap.min.css > /dev/null
 
 1. Connect to your proxy server `www-cocktail-${teamIdentifier}.aws.xebiatechevent.info`
 
