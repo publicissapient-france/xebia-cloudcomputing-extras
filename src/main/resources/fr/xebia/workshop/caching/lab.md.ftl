@@ -580,7 +580,7 @@ Backend probes will monitor backend health which allows to use grace mode to kee
 Update the `backend default` directive in `default.vcl`:
 
 	backend default {
-	    .host = "xfr-cocktail-clc.elasticbeanstalk.com";
+	    .host = "xfr-cocktail-${teamIdentifier}.elasticbeanstalk.com";
 	    .port = "80";
 	    .probe = {
 	        .url = "/";
