@@ -40,7 +40,7 @@ public class CreateHadoopServers extends CreateServers {
 
 	@Override
 	protected String getCnamePrefix() {
-		return "flume-hadoop-teamId";
+		return "flume-hadoop-teamid";
 	}
 
 }

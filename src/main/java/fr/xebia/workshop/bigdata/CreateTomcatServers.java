@@ -24,7 +24,7 @@ public class CreateTomcatServers extends CreateServers {
 	protected static final String AMI_HADOOP_DEVOXX_FINAL_2 = "ami-a56f54d1";
 
 	public String getCnamePrefix() {
-		return "tomcat-syslog-teamId";
+		return "tomcat-syslog-teamid";
 	}
 
 	public CreateTomcatServers(AmazonEC2 ec2, AmazonRoute53 route53,
