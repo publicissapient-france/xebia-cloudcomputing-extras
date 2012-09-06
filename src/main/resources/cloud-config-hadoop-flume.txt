@@ -1,0 +1,11 @@
+#cloud-config
+
+runcmd:
+ - [sh, -xc, "echo $(date) ': cloudinit runcmd begin'"]
+ 
+# Set hostname
+ - [sh, -xc, "hostname $hostname"]
+
+# Replace namenode host and jobtracker host
+ - [sed 's/%%NAMENODE_HOST%%/$namenode/g' /etc/hadoop/conf/core-site.xml.template > /etc/hadoop/conf/core-site.xml"]
+ - [sed 's/%%NAMENODE_HOST%%/$namenode/g' /etc/hadoop/conf/hdfs-site.xml.template > /etc/hadoop/conf/hdfs-site.xml"]
