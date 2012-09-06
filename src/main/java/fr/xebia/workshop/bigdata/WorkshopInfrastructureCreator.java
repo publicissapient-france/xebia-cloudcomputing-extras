@@ -47,7 +47,7 @@ public class WorkshopInfrastructureCreator {
 		AmazonRoute53 route53 = new AmazonRoute53Client(awsCredentials);
 
 		WorkshopInfrastructure workshopInfrastructure = new WorkshopInfrastructure()
-				.withTeamIdentifiers("1", "2"/*
+				.withTeamIdentifiers("1", "2" /*
 											 * , "3", "4", "5", "6", "7", "8",
 											 * "9", "10", "11"
 											 */)
@@ -58,21 +58,25 @@ public class WorkshopInfrastructureCreator {
 		// checks for Key in classpath: prevents launching instances if not
 		// present
 		checkKeyFile(workshopInfrastructure);
+		
+		AmazonAwsUtils.terminateInstancesByWorkshop("flume-hadoop", ec2);
 
-		ExecutorService executor = Executors.newFixedThreadPool(2);
+		ExecutorService executor = Executors.newFixedThreadPool(3);
 
 		executor.execute(new CreateTomcatServers(ec2, route53,
 				workshopInfrastructure));
 
-		executor.execute(new CreateHadoopServers(ec2, route53,
-				workshopInfrastructure));
+		executor.execute(new CreateHadoopMasterNode(ec2, route53, workshopInfrastructure));
 
+		executor.execute(new CreateHadoopSlaveNode(ec2, route53, workshopInfrastructure));
+				
 		executor.shutdown();
 
 		try {
 			executor.awaitTermination(10, TimeUnit.MINUTES);
+			executor.shutdownNow();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e.getMessage());
 		}
 
 		logger.info("Workshop infrastructure created");
