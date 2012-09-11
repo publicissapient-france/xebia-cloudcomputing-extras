@@ -186,11 +186,11 @@ public abstract class CreateHadoopServers implements Runnable {
 	
 
 	private String getCnameSlaveHadoop(String teamId) {
-		return "flume-Hadoop-Slave-" + teamId +  "."+ hostedZoneId.getName();
+		return CreateHadoopSlaveNode.FLUME_HADOOP_SLAVE_TEAM + teamId +  "."+ hostedZoneId.getName();
 	}
 
 	private String getCnameMasterHadoop(String teamId) {
-		return "flume-Hadoop-Master-"+teamId+ "."+ hostedZoneId.getName();
+		return CreateHadoopMasterNode.FLUME_HADOOP_MASTER_TEAM+teamId+ "."+ hostedZoneId.getName();
 	}
 
 	private String generateCloudInit(String cname, String masterNameNode) {

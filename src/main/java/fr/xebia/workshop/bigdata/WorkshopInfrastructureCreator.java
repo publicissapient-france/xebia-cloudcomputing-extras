@@ -35,58 +35,58 @@ import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 
 public class WorkshopInfrastructureCreator {
 
-	private static final Logger logger = LoggerFactory
-			.getLogger(WorkshopInfrastructureCreator.class);
+    private static final Logger logger = LoggerFactory
+            .getLogger(WorkshopInfrastructureCreator.class);
 
-	public static void main(String args[]) {
+    public static void main(String args[]) {
 
-		AWSCredentials awsCredentials = AmazonAwsUtils.loadAwsCredentials();
-		AmazonEC2 ec2 = new AmazonEC2Client(awsCredentials);
-		ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
+        AWSCredentials awsCredentials = AmazonAwsUtils.loadAwsCredentials();
+        AmazonEC2 ec2 = new AmazonEC2Client(awsCredentials);
+        ec2.setEndpoint("ec2.eu-west-1.amazonaws.com");
 
-		AmazonRoute53 route53 = new AmazonRoute53Client(awsCredentials);
+        AmazonRoute53 route53 = new AmazonRoute53Client(awsCredentials);
 
-		WorkshopInfrastructure workshopInfrastructure = new WorkshopInfrastructure()
-				.withTeamIdentifiers("1", "2" /*
+        WorkshopInfrastructure workshopInfrastructure = new WorkshopInfrastructure()
+                .withTeamIdentifiers("1" /* ,"2"
 											 * , "3", "4", "5", "6", "7", "8",
 											 * "9", "10", "11"
 											 */)
-				.withAwsAccessKeyId(awsCredentials.getAWSAccessKeyId())
-				.withAwsSecretKey(awsCredentials.getAWSSecretKey())
-				.withKeyPairName("flume-hadoop-workshop");
+                .withAwsAccessKeyId(awsCredentials.getAWSAccessKeyId())
+                .withAwsSecretKey(awsCredentials.getAWSSecretKey())
+                .withKeyPairName("xte-flume");
 
-		// checks for Key in classpath: prevents launching instances if not
-		// present
-		checkKeyFile(workshopInfrastructure);
-		
-		AmazonAwsUtils.terminateInstancesByWorkshop("flume-hadoop", ec2);
+        // checks for Key in classpath: prevents launching instances if not
+        // present
+        checkKeyFile(workshopInfrastructure);
 
-		ExecutorService executor = Executors.newFixedThreadPool(3);
+        AmazonAwsUtils.terminateInstancesByWorkshop("flume-hadoop", ec2);
 
-		executor.execute(new CreateTomcatServers(ec2, route53,
-				workshopInfrastructure));
+        ExecutorService executor = Executors.newFixedThreadPool(3);
 
-		executor.execute(new CreateHadoopMasterNode(ec2, route53, workshopInfrastructure));
+        executor.execute(new CreateTomcatServers(ec2, route53,
+                workshopInfrastructure));
 
-		executor.execute(new CreateHadoopSlaveNode(ec2, route53, workshopInfrastructure));
-				
-		executor.shutdown();
+        executor.execute(new CreateHadoopMasterNode(ec2, route53, workshopInfrastructure));
 
-		try {
-			executor.awaitTermination(10, TimeUnit.MINUTES);
-			executor.shutdownNow();
-		} catch (Exception e) {
-			logger.error(e.getMessage());
-		}
+        executor.execute(new CreateHadoopSlaveNode(ec2, route53, workshopInfrastructure));
 
-		logger.info("Workshop infrastructure created");
+        executor.shutdown();
 
-	}
+        try {
+            executor.awaitTermination(10, TimeUnit.MINUTES);
+            executor.shutdownNow();
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }
 
-	protected static void checkKeyFile(final WorkshopInfrastructure infra) {
-		InputStream keyFile = Thread.currentThread().getContextClassLoader()
-				.getResourceAsStream(infra.getKeyPairName() + ".pem");
-		checkState(keyFile != null, "File '" + infra.getKeyPairName()
-				+ ".pem' NOT found in the classpath");
-	}
+        logger.info("Workshop infrastructure created");
+
+    }
+
+    protected static void checkKeyFile(final WorkshopInfrastructure infra) {
+        InputStream keyFile = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(infra.getKeyPairName() + ".pem");
+        checkState(keyFile != null, "File '" + infra.getKeyPairName()
+                + ".pem' NOT found in the classpath");
+    }
 }
