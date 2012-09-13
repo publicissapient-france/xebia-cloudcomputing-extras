@@ -17,6 +17,7 @@ package fr.xebia.workshop.bigdata;
 
 import static com.google.common.collect.Maps.newHashMap;
 
+import java.io.*;
 import java.util.List;
 import java.util.Map;
 
@@ -39,169 +40,188 @@ import fr.xebia.cloud.cloudinit.CloudInitUserDataBuilder;
 
 public abstract class CreateHadoopServers implements Runnable {
 
-    private static final String CLOUD_CONFIG_HADOOP_FLUME = "fr/xebia/workshop/bigdata/cloud-config-hadoop-flume.txt";
+    private static final String CLOUD_CONFIG_HADOOP_FLUME = "src/main/resources/fr/xebia/workshop/bigdata/cloud-config-hadoop-flume.txt";
 
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	protected AmazonEC2 ec2;
+    protected AmazonEC2 ec2;
 
-	protected AmazonRoute53 route53;
+    protected AmazonRoute53 route53;
 
-	protected HostedZone hostedZoneId;
+    protected HostedZone hostedZoneId;
 
-	protected WorkshopInfrastructure workshopInfrastructure;
+    protected WorkshopInfrastructure workshopInfrastructure;
 
-	public static final String XEBIA_TECH_EVENT_INFO_DOMAIN_NAME = "Z28O5PDK1WPCSR";
+    public static final String XEBIA_TECH_EVENT_INFO_DOMAIN_NAME = "Z28O5PDK1WPCSR";
 
-	protected CreateHadoopServers(AmazonEC2 ec2, AmazonRoute53 route53,
-			WorkshopInfrastructure workshopInfrastructure) {
-		this.ec2 = ec2;
-		this.route53 = route53;
-		this.workshopInfrastructure = workshopInfrastructure;
-		this.hostedZoneId = route53.getHostedZone(
-				new GetHostedZoneRequest(XEBIA_TECH_EVENT_INFO_DOMAIN_NAME))
-				.getHostedZone();
-	}
+    protected CreateHadoopServers(AmazonEC2 ec2, AmazonRoute53 route53,
+                                  WorkshopInfrastructure workshopInfrastructure) {
+        this.ec2 = ec2;
+        this.route53 = route53;
+        this.workshopInfrastructure = workshopInfrastructure;
+        this.hostedZoneId = route53.getHostedZone(
+                new GetHostedZoneRequest(XEBIA_TECH_EVENT_INFO_DOMAIN_NAME))
+                .getHostedZone();
+    }
 
-	protected abstract String getAMI();
+    protected abstract String getAMI();
 
-	protected abstract String getTagRole();
+    protected abstract String getTagRole();
 
-	protected abstract String getCnamePrefix();
-
-
-	private void tagInstance(String teamId, Instance instance, String cname) {
-
-		String serverName = getCnamePrefix() + teamId;
-		logger.info("Tagging {} - {}", serverName, instance.getInstanceId());
-
-		CreateTagsRequest createTagsRequest = new CreateTagsRequest() //
-				.withResources(instance.getInstanceId()) //
-				.withTags(
-				//
-						new Tag("Name", serverName), //
-						new Tag("TeamIdentifier", teamId), //
-						new Tag("Workshop", "flume-hadoop"), //
-						new Tag("Role", getTagRole()), //
-						new Tag("CNAME", cname)//
-				);
-
-		AmazonAwsUtils.createTags(instance, createTagsRequest, ec2);
-		
-	}
+    protected abstract String getCnamePrefix();
 
 
-	private void bindInstancesToDnsCnames(
-			Map<String,Instance> instancesByCname) {
+    private void tagInstance(String teamId, Instance instance, String cname) {
 
-		logger.info("Process {}", hostedZoneId);
+        String serverName = getCnamePrefix() + teamId;
+        logger.info("Tagging {} - {}", serverName, instance.getInstanceId());
 
-		AmazonAwsUtils.deleteCnameIfExist(instancesByCname.keySet(),
-				hostedZoneId, route53);
-		AmazonAwsUtils.createCnamesForInstances(instancesByCname, hostedZoneId,
-				route53);
+        CreateTagsRequest createTagsRequest = new CreateTagsRequest() //
+                .withResources(instance.getInstanceId()) //
+                .withTags(
+                        //
+                        new Tag("Name", serverName), //
+                        new Tag("TeamIdentifier", teamId), //
+                        new Tag("Workshop", "flume-hadoop"), //
+                        new Tag("Role", getTagRole()), //
+                        new Tag("CNAME", cname)//
+                );
 
-		logger.info("Hadoop instances DNS binding SUCCESSFUL");
-	}
+        AmazonAwsUtils.createTags(instance, createTagsRequest, ec2);
+
+    }
 
 
+    private void bindInstancesToDnsCnames(
+            Map<String, Instance> instancesByCname) {
 
-	private Map<String, RunInstancesRequest> createInstanceCreationRequests() {
+        logger.info("Process {}", hostedZoneId);
 
-		Map<String, String> cnamesMasterNodes = createCnamesMasterNodes();
-		Map<String, String> cnamesSlaveNodes = createCnamesSlaveNodes();
-		Map<String, RunInstancesRequest> runInstanceRequestByTeamId = newHashMap();
+        AmazonAwsUtils.deleteCnameIfExist(instancesByCname.keySet(),
+                hostedZoneId, route53);
+        AmazonAwsUtils.createCnamesForInstances(instancesByCname, hostedZoneId,
+                route53);
 
-		for (String teamId : workshopInfrastructure.getTeamIdentifiers()) {
+        logger.info("Hadoop instances DNS binding SUCCESSFUL");
+    }
 
-			
-			RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
-					.withInstanceType(InstanceType.T1Micro.toString())
-					.withImageId(getAMI()).withMinCount(1).withMaxCount(1)
-					.withSecurityGroupIds("accept-all")
-					.withKeyName(workshopInfrastructure.getKeyPairName())
-					.withUserData(generateCloudInit(cnamesMasterNodes.get(teamId), cnamesSlaveNodes.get(teamId)));
 
-			runInstanceRequestByTeamId.put(teamId, runInstancesRequest);
+    private Map<String, RunInstancesRequest> createInstanceCreationRequests() {
 
-		}
-		
-		return runInstanceRequestByTeamId;
-		
-	}
-	
-	private Map<String, String> getCnamesByTeamId() {
-		Map<String, String> cnamesByTeamId = Maps.newHashMap();
-		for(String teamId : workshopInfrastructure.getTeamIdentifiers()) {
-			cnamesByTeamId.put(teamId, getCnamePrefix() + teamId + "."
-				+ hostedZoneId.getName());
-		}
-		return cnamesByTeamId;
-	}
-	
-	@Override
-	public void run() {
-		
-		Map<String, RunInstancesRequest> runInstancesRequestByTeamId = createInstanceCreationRequests();
-		Map<String, Instance> instancesByCname = Maps.newHashMap();
-		
-		for (String teamId : workshopInfrastructure.getTeamIdentifiers()) {
+        Map<String, String> cnamesMasterNodes = createCnamesMasterNodes();
+        Map<String, String> cnamesSlaveNodes = createCnamesSlaveNodes();
+        Map<String, RunInstancesRequest> runInstanceRequestByTeamId = newHashMap();
 
-			List<Instance> instances = AmazonAwsUtils.reliableEc2RunInstances(
-					runInstancesRequestByTeamId.get(teamId), ec2);
+        for (String teamId : workshopInfrastructure.getTeamIdentifiers()) {
 
-			if (instances.size() == 1) {
-				String cname = getCnamesByTeamId().get(teamId);
-				tagInstance(teamId, instances.get(0), cname);
-				instancesByCname.put(cname, instances.get(0));
-			} else {
-				logger.warn(
-						"Unexpected number of instances created: {} instead of {} expected", instances.size(), 1);
-			}
-		}
-		
-		bindInstancesToDnsCnames(instancesByCname);
-		
-	}
-	
-	
-	private Map<String, String> createCnamesMasterNodes() {
-		Map<String, String> cnamesMasterByTeamId = Maps.newHashMap();
-		
-		for(String teamId : workshopInfrastructure.getTeamIdentifiers()) {
-			cnamesMasterByTeamId.put(teamId, getCnameMasterHadoop(teamId));
-		}
-		return cnamesMasterByTeamId;
-	}
-	
-	private Map<String, String> createCnamesSlaveNodes() {
-		Map<String, String> cnamesSlaveByTeamId = Maps.newHashMap();
-		
-		for(String teamId : workshopInfrastructure.getTeamIdentifiers()) {
-			cnamesSlaveByTeamId.put(teamId, getCnameSlaveHadoop(teamId));
-		}
-		return cnamesSlaveByTeamId;
-	}
-	
-	
+            if (this instanceof CreateHadoopSlaveNode) {
+                RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
+                        .withInstanceType(InstanceType.T1Micro.toString())
+                        .withImageId(getAMI()).withMinCount(1).withMaxCount(1)
+                        .withSecurityGroupIds("accept-all")
+                        .withKeyName(workshopInfrastructure.getKeyPairName())
+                        .withUserData(generateCloudInit(cnamesSlaveNodes.get(teamId), cnamesMasterNodes.get(teamId)));
 
-	private String getCnameSlaveHadoop(String teamId) {
-		return CreateHadoopSlaveNode.FLUME_HADOOP_SLAVE_TEAM + teamId +  "."+ hostedZoneId.getName();
-	}
+                runInstanceRequestByTeamId.put(teamId, runInstancesRequest);
+            } else {
+                RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
+                        .withInstanceType(InstanceType.T1Micro.toString())
+                        .withImageId(getAMI()).withMinCount(1).withMaxCount(1)
+                        .withSecurityGroupIds("accept-all")
+                        .withKeyName(workshopInfrastructure.getKeyPairName())
+                        .withUserData(generateCloudInit(cnamesMasterNodes.get(teamId), cnamesMasterNodes.get(teamId)));
 
-	private String getCnameMasterHadoop(String teamId) {
-		return CreateHadoopMasterNode.FLUME_HADOOP_MASTER_TEAM+teamId+ "."+ hostedZoneId.getName();
-	}
+                runInstanceRequestByTeamId.put(teamId, runInstancesRequest);
+            }
+        }
 
-	private String generateCloudInit(String cname, String masterNameNode) {
-		String userDataTeamId = CloudInitUserDataBuilder.start()
-				.addCloudConfigFromFilePath(CLOUD_CONFIG_HADOOP_FLUME)
-				.buildBase64UserData();
-		userDataTeamId.replace("$localhost", cname);
-		userDataTeamId.replace("$namenode", masterNameNode);
-		return userDataTeamId;
-	}
+        return runInstanceRequestByTeamId;
 
-	
+    }
+
+    private Map<String, String> getCnamesByTeamId() {
+        Map<String, String> cnamesByTeamId = Maps.newHashMap();
+        for (String teamId : workshopInfrastructure.getTeamIdentifiers()) {
+            cnamesByTeamId.put(teamId, getCnamePrefix() + teamId + "."
+                    + hostedZoneId.getName());
+        }
+        return cnamesByTeamId;
+    }
+
+    @Override
+    public void run() {
+
+        Map<String, RunInstancesRequest> runInstancesRequestByTeamId = createInstanceCreationRequests();
+        Map<String, Instance> instancesByCname = Maps.newHashMap();
+
+        for (String teamId : workshopInfrastructure.getTeamIdentifiers()) {
+
+            List<Instance> instances = AmazonAwsUtils.reliableEc2RunInstances(
+                    runInstancesRequestByTeamId.get(teamId), ec2);
+
+            if (instances.size() == 1) {
+                String cname = getCnamesByTeamId().get(teamId);
+                tagInstance(teamId, instances.get(0), cname);
+                instancesByCname.put(cname, instances.get(0));
+            } else {
+                logger.warn(
+                        "Unexpected number of instances created: {} instead of {} expected", instances.size(), 1);
+            }
+        }
+
+        bindInstancesToDnsCnames(instancesByCname);
+
+    }
+
+
+    private Map<String, String> createCnamesMasterNodes() {
+        Map<String, String> cnamesMasterByTeamId = Maps.newHashMap();
+
+        for (String teamId : workshopInfrastructure.getTeamIdentifiers()) {
+            cnamesMasterByTeamId.put(teamId, getCnameMasterHadoop(teamId));
+        }
+        return cnamesMasterByTeamId;
+    }
+
+    private Map<String, String> createCnamesSlaveNodes() {
+        Map<String, String> cnamesSlaveByTeamId = Maps.newHashMap();
+
+        for (String teamId : workshopInfrastructure.getTeamIdentifiers()) {
+            cnamesSlaveByTeamId.put(teamId, getCnameSlaveHadoop(teamId));
+        }
+        return cnamesSlaveByTeamId;
+    }
+
+
+    private String getCnameSlaveHadoop(String teamId) {
+        return CreateHadoopSlaveNode.FLUME_HADOOP_SLAVE_TEAM + teamId + "." + hostedZoneId.getName();
+    }
+
+    private String getCnameMasterHadoop(String teamId) {
+        return CreateHadoopMasterNode.FLUME_HADOOP_MASTER_TEAM + teamId + "." + hostedZoneId.getName();
+    }
+
+    private String generateCloudInit(String cname, String masterNameNode) {
+        try {
+            BufferedReader fr = new BufferedReader(new FileReader(new File(CLOUD_CONFIG_HADOOP_FLUME)));
+            StringBuilder sb = new StringBuilder();
+            while (fr.ready()) {
+                sb.append(fr.readLine());
+                sb.append("\n");
+            }
+
+            String data = sb.toString();
+            data = data.replace("$hostname", cname);
+            data = data.replace("$namenode", masterNameNode);
+            String userDataTeamId = CloudInitUserDataBuilder.start().addCloudConfig(data).buildBase64UserData();
+            return userDataTeamId;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
 
 }

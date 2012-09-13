@@ -13,7 +13,7 @@ public class CreateHadoopSlaveNode extends CreateHadoopServers {
 
     @Override
     protected String getAMI() {
-        return "ami-aba9afdf";
+        return "ami-4f46473b";
     }
 
     @Override

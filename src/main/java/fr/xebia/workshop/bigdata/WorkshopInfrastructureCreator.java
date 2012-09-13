@@ -63,8 +63,8 @@ public class WorkshopInfrastructureCreator {
 
         ExecutorService executor = Executors.newFixedThreadPool(3);
 
-        executor.execute(new CreateTomcatServers(ec2, route53,
-                workshopInfrastructure));
+        //executor.execute(new CreateTomcatServers(ec2, route53,
+        //        workshopInfrastructure));
 
         executor.execute(new CreateHadoopMasterNode(ec2, route53, workshopInfrastructure));
 
