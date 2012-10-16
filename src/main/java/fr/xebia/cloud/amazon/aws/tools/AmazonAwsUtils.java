@@ -112,23 +112,26 @@ public class AmazonAwsUtils {
                 try {
                     if (instance.getImageId().equals(InfrastructureCreationStep.GRAPHITE_IMAGE_ID)) {
                         awaitForSshAvailability(instance, "root");
+                    } else if (instance.getImageId().equals(InfrastructureCreationStep.FLUME_HADOOP_APPLI_IMAGE_ID)) {
+                        awaitForSshAvailability(instance, "ubuntu");
                     } else {
                         awaitForSshAvailability(instance, "ec2-user");
                     }
                 } catch (IllegalStateException e) {
                     //Not available => terminate instance
-                    ec2.terminateInstances(new TerminateInstancesRequest(Lists.newArrayList(instance.getInstanceId())));
-                    itInstance.remove();
+                    //ec2.terminateInstances(new TerminateInstancesRequest(Lists.newArrayList(instance.getInstanceId())));
+                    //itInstance.remove();
+                    logger.error("Cannot connect to instance", e);
                 }
             }
 
-
+/*
             if (result.size() < initialInstanceMinCount) {
-                throw new IllegalStateException("Failure to create " + initialInstanceMinCount + " instances, only " + result.size()
+                logger.error("Failure to create " + initialInstanceMinCount + " instances, only " + result.size()
                         + " instances ("
                         + Joiner.on(",").join(Collections2.transform(result, AmazonAwsFunctions.EC2_INSTANCE_TO_INSTANCE_ID))
                         + ") were started on request " + runInstancesRequest);
-            }
+            }*/
 
             return result;
         } finally {
@@ -509,7 +512,7 @@ public class AmazonAwsUtils {
             session.setConfig(config);
 
             jSch.addIdentity(username, keyAsByte, null, new byte[0]);
-            for (int i = 0; i < 60; i++) {
+            for (int i = 0; i < 10; i++) {
                 try {
                     session.connect(5000);
                     session.disconnect();
@@ -592,9 +595,9 @@ public class AmazonAwsUtils {
                     logger.trace("skip terminated environment {}", environment);
                 }
             }
-            if(environmentsToWaitFor .isEmpty()) {
+            if (environmentsToWaitFor.isEmpty()) {
                 break;
-            } else  {
+            } else {
                 try {
                     Thread.sleep(500);
                 } catch (Exception e) {

@@ -116,7 +116,7 @@ public abstract class CreateHadoopServers implements Runnable {
 
             if (this instanceof CreateHadoopSlaveNode) {
                 RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
-                        .withInstanceType(InstanceType.T1Micro.toString())
+                        .withInstanceType(InstanceType.M1Small.toString())
                         .withImageId(getAMI()).withMinCount(1).withMaxCount(1)
                         .withSecurityGroupIds("accept-all")
                         .withKeyName(workshopInfrastructure.getKeyPairName())
@@ -125,7 +125,7 @@ public abstract class CreateHadoopServers implements Runnable {
                 runInstanceRequestByTeamId.put(teamId, runInstancesRequest);
             } else {
                 RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
-                        .withInstanceType(InstanceType.T1Micro.toString())
+                        .withInstanceType(InstanceType.M1Small.toString())
                         .withImageId(getAMI()).withMinCount(1).withMaxCount(1)
                         .withSecurityGroupIds("accept-all")
                         .withKeyName(workshopInfrastructure.getKeyPairName())

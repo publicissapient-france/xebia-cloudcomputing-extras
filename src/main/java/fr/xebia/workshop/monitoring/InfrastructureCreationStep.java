@@ -29,6 +29,7 @@ public abstract class InfrastructureCreationStep {
 
     public static final String NAGIOS_IMAGE_ID = "ami-ff1a278b";
     public static final String GRAPHITE_IMAGE_ID = "ami-e51d2091";
+    public static final String FLUME_HADOOP_APPLI_IMAGE_ID = "ami-7bd2d20f";
 
     public abstract void execute(AmazonEC2 ec2, WorkshopInfrastructure workshopInfrastructure) throws Exception;
 

@@ -47,10 +47,9 @@ public class WorkshopInfrastructureCreator {
         AmazonRoute53 route53 = new AmazonRoute53Client(awsCredentials);
 
         WorkshopInfrastructure workshopInfrastructure = new WorkshopInfrastructure()
-                .withTeamIdentifiers("1" /* ,"2"
-											 * , "3", "4", "5", "6", "7", "8",
-											 * "9", "10", "11"
-											 */)
+               .withTeamIdentifiers("1" )
+               //.withTeamIdentifiers("1"  ,"2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
+                //.withTeamIdentifiers("1", "2", "3")
                 .withAwsAccessKeyId(awsCredentials.getAWSAccessKeyId())
                 .withAwsSecretKey(awsCredentials.getAWSSecretKey())
                 .withKeyPairName("xte-flume");
@@ -61,10 +60,9 @@ public class WorkshopInfrastructureCreator {
 
         AmazonAwsUtils.terminateInstancesByWorkshop("flume-hadoop", ec2);
 
-        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ExecutorService executor = Executors.newCachedThreadPool();
 
-        //executor.execute(new CreateTomcatServers(ec2, route53,
-        //        workshopInfrastructure));
+        executor.execute(new CreateTomcatServers(ec2, route53, workshopInfrastructure));
 
         executor.execute(new CreateHadoopMasterNode(ec2, route53, workshopInfrastructure));
 
@@ -73,7 +71,7 @@ public class WorkshopInfrastructureCreator {
         executor.shutdown();
 
         try {
-            executor.awaitTermination(10, TimeUnit.MINUTES);
+            executor.awaitTermination(60, TimeUnit.MINUTES);
             executor.shutdownNow();
         } catch (Exception e) {
             logger.error(e.getMessage());

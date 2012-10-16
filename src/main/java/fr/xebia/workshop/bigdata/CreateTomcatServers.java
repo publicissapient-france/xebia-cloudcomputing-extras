@@ -47,7 +47,7 @@ public class CreateTomcatServers implements Runnable {
 	protected WorkshopInfrastructure workshopInfrastructure;
 
 	// TODO JMA à remplacer par la bonne AMI
-	protected static final String AMI_TOMCAT_SYSLOG_FLUME = "ami-a56f54d1";
+	protected static final String AMI_TOMCAT_SYSLOG_FLUME = "ami-7bd2d20f";
 
 	public static final String XEBIA_TECH_EVENT_INFO_DOMAIN_NAME = "Z28O5PDK1WPCSR";
 
@@ -63,7 +63,7 @@ public class CreateTomcatServers implements Runnable {
 
 
 	public String getCnamePrefix() {
-		return "tomcat-syslog-teamid";
+		return "application-team-";
 	}
 
 	public String getTagRole() {
@@ -71,16 +71,15 @@ public class CreateTomcatServers implements Runnable {
 	}
 
 	protected void tagInstances(Map<String, List<Instance>> instancesByTeamId) {
-
+        logger.info("Begin tagging tomcat instance");
 		for (Map.Entry<String, List<Instance>> entry : instancesByTeamId
 				.entrySet()) {
-
 			String teamId = entry.getKey();
 			List<Instance> instances = entry.getValue();
 
 			for (int instanceIndex = 0; instanceIndex < instances.size(); instanceIndex++) {
 
-				String serverName = getCnamePrefix() + teamId + "-instance"
+				String serverName = getCnamePrefix() + teamId + "-instance-"
 						+ instanceIndex;
 				Instance instance = instances.get(instanceIndex);
 				logger.info("Tagging {} - {}", serverName,
@@ -104,7 +103,7 @@ public class CreateTomcatServers implements Runnable {
 	}
 
 	protected String buildCname(String teamId, int instanceId) {
-		return getCnamePrefix() + teamId + "-instance" + instanceId + "."
+		return getCnamePrefix() + teamId + "-instance-" + instanceId + "."
 				+ hostedZoneId.getName();
 	}
 
@@ -162,7 +161,7 @@ public class CreateTomcatServers implements Runnable {
 				* workshopInfrastructure.getNumberOfServersPerTeam();
 
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest() //
-				.withInstanceType(InstanceType.T1Micro.toString()) //
+				.withInstanceType(InstanceType.M1Small.toString()) //
 				.withImageId(AMI_TOMCAT_SYSLOG_FLUME) //
 				.withMinCount(instanceCount) //
 				.withMaxCount(instanceCount) //

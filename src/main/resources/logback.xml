@@ -6,11 +6,6 @@
       </encoder>
    </appender>
 
-
-   <logger name="fr.xebia.demo.amazon.aws.AmazonAwsInfrastructureMaker" level="INFO" />
-   
-   <logger name="fr.xebia" level="INFO" />
-
    <root level="INFO">
       <appender-ref ref="console" />
    </root>
