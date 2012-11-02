@@ -1,0 +1,11 @@
+#cloud-config
+
+timezone: Europe/Paris
+
+packages:
+ - yum-utils
+ - httpd
+ - nginx
+
+runcmd:
+ - [service, nginx, start]
