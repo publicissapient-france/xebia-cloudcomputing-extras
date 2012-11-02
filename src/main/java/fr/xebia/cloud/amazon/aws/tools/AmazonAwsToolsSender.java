@@ -211,13 +211,13 @@ public class AmazonAwsToolsSender {
         MimeMultipart cover = new MimeMultipart("alternative");
         htmlAndPlainTextAlternativeBody.setContent(cover);
         BodyPart textHtmlBodyPart = new MimeBodyPart();
-        String textHtmlBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.html.fmt");
+        String textHtmlBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.html.ftl");
         textHtmlBodyPart.setContent(textHtmlBody, "text/html");
         cover.addBodyPart(textHtmlBodyPart);
 
         BodyPart textPlainBodyPart = new MimeBodyPart();
         cover.addBodyPart(textPlainBodyPart);
-        String textPlainBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.txt.fmt");
+        String textPlainBody = FreemarkerUtils.generate(templatesParams, "/fr/xebia/cloud/amazon/aws/tools/amazon-aws-tools-email.txt.ftl");
         textPlainBodyPart.setContent(textPlainBody, "text/plain");
 
         MimeMultipart content = new MimeMultipart("related");

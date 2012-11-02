@@ -1,3 +1,10 @@
+.idea
+target
+*.iml
 src/main/resources/AwsCredentials-training.properties
 src/main/resources/AwsCredentials.properties
 src/main/resources/AwsCredentials-production.properties
+src/main/resources/accounts-to-create.txt
+src/main/resources/web-caching-workshop.pem
+src/main/resources/smtp.properties
+src/main/resources/users-to-notify.txt

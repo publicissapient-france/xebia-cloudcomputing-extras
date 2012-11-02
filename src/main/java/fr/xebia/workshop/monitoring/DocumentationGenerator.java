@@ -58,7 +58,7 @@ public class DocumentationGenerator {
                 try {
                     Map<String, Object> rootMap = Maps.newHashMap();
                     rootMap.put("infrastructure", infrastructure);
-                    String templatePath = TEMPLATE_ROOT_PATH + template + ".fmt";
+                    String templatePath = TEMPLATE_ROOT_PATH + template + ".ftl";
                     rootMap.put("generator", "This page has been generaterd by '{{{" + getClass() + "}}}' with template '{{{" + templatePath + "}}}' on the "
                             + new DateTime());
                     String page = FreemarkerUtils.generate(rootMap, templatePath);

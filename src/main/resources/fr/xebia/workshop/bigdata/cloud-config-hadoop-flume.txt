@@ -1,0 +1,20 @@
+#cloud-config
+
+runcmd:
+ - [sh, -xc, "echo $(date) ': cloudinit begin'"]
+ - [sh, -xc, "echo $(date) ': hostname : $hostname'"]
+ - [sh, -xc, "echo $(date) ': namenode : $namenode'"]
+
+# Stop hadoop
+# - [sh, -xc, "for service in /etc/init.d/hadoop-*; do $service stop; done"]
+
+# Set hostname
+ - [sh, -xc, "hostname $hostname"]
+
+# Replace namenode host and jobtracker host
+ - [sed, -i, 's/%%NAMENODE_HOST%%/$namenode/g', "/etc/hadoop/conf/core-site.xml"]
+ - [sed, -i, 's/%%NAMENODE_HOST%%/$namenode/g', "/etc/hadoop/conf/hdfs-site.xml"]
+ - [sed, -i, 's/%%NAMENODE_HOST%%/$namenode/g', "/etc/hadoop/conf/mapred-site.xml"]
+
+# start hadoop
+ - [sh, -xc, "for service in /etc/init.d/hadoop-*; do $service start; done"]

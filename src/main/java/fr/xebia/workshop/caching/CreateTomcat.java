@@ -20,6 +20,7 @@ import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalk;
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClient;
 import com.amazonaws.services.elasticbeanstalk.model.*;
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,7 @@ import java.util.concurrent.Callable;
 /**
  * @author <a href="mailto:cleclerc@xebia.fr">Cyrille Le Clerc</a>
  */
-public class CreateTomcat {
+public class CreateTomcat implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -59,6 +60,10 @@ public class CreateTomcat {
         this.workshopInfrastructure = workshopInfrastructure;
     }
 
+    public void run(){
+        createServers();
+    }
+
     public void createServers() {
 
 
@@ -69,7 +74,7 @@ public class CreateTomcat {
         AmazonAwsUtils.deleteBeanstalkApplicationIfExists(applicationName, beanstalk);
         CreateApplicationRequest createApplicationRequest = new CreateApplicationRequest()
                 .withApplicationName(applicationName)
-                .withDescription("xfr-cocktail app");
+                .withDescription("xfr-cocktail app created at " + new DateTime());
 
         ApplicationDescription applicationDescription = beanstalk.createApplication(createApplicationRequest).getApplication();
         logger.debug("Application {} created", applicationDescription.getApplicationName());

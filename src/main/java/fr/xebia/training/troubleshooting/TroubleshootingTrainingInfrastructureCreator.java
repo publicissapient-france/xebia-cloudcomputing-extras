@@ -137,7 +137,7 @@ public class TroubleshootingTrainingInfrastructureCreator {
         
         Map<String, Object> rootMap = Maps.newHashMap();
         rootMap.put("infrastructures", tomcatTagsPerTeamIdentifier);
-        String wikiPage = FreemarkerUtils.generate(rootMap, "/fr/xebia/training/troubleshooting/wiki-page.fmt");
+        String wikiPage = FreemarkerUtils.generate(rootMap, "/fr/xebia/training/troubleshooting/wiki-page.ftl");
         System.out.println(wikiPage);
     }
 
@@ -200,7 +200,7 @@ public class TroubleshootingTrainingInfrastructureCreator {
         systemProperties.put("jdbc.username", jdbcUsername);
         systemProperties.put("jdbc.password", jdbcPassword);
 
-        String shellScript = FreemarkerUtils.generate(rootMap, "/fr/xebia/training/troubleshooting/provision_tomcat.py.fmt");
+        String shellScript = FreemarkerUtils.generate(rootMap, "/fr/xebia/training/troubleshooting/provision_tomcat.py.ftl");
 
         // CLOUD CONFIG
         InputStream cloudConfigAsStream = Thread.currentThread().getContextClassLoader()
