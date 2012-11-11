@@ -56,6 +56,7 @@ import com.jcraft.jsch.Session;
 
 public class AmazonAwsUtils {
 
+
     /**
      * private constructor for utils class.
      */
@@ -153,6 +154,8 @@ public class AmazonAwsUtils {
     public final static String AMI_AMZN_LINUX_EU_WEST = "ami-47cefa33";
 
     public final static String AMI_AMZN_LINUX_EU_WEST_2012_03 = "ami-f9231b8d";
+
+    public static final String AMI_AMZN_LINUX_EU_WEST_2012_09 = "ami-c37474b7";
 
 
     /**
