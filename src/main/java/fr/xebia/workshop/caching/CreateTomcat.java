@@ -19,6 +19,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalk;
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClient;
 import com.amazonaws.services.elasticbeanstalk.model.*;
+import com.google.common.base.Strings;
 import fr.xebia.cloud.amazon.aws.tools.AmazonAwsUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class CreateTomcat implements Runnable {
         beanstalk.setEndpoint("elasticbeanstalk.eu-west-1.amazonaws.com");
 
         WorkshopInfrastructure workshopInfrastructure = new WorkshopInfrastructure()
-                .withTeamIdentifiers("1", "2", "3"/*, "4", "5", "6", "7", "8", "9", "10", "11"*/)
+                .withTeamIdentifiers("1" /*, "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"*/)
                 .withAwsAccessKeyId(awsCredentials.getAWSAccessKeyId())
                 .withAwsSecretKey(awsCredentials.getAWSSecretKey())
                 .withKeyPairName("web-caching-workshop")
@@ -60,7 +61,7 @@ public class CreateTomcat implements Runnable {
         this.workshopInfrastructure = workshopInfrastructure;
     }
 
-    public void run(){
+    public void run() {
         createServers();
     }
 
@@ -92,6 +93,12 @@ public class CreateTomcat implements Runnable {
                 .withSourceBundle(new S3Location("xfr-workshop-caching", "cocktail-app-1.1.0-SNAPSHOT.war"));
         ApplicationVersionDescription applicationVersion11Description = beanstalk.createApplicationVersion(createApplicationVersion11Request).getApplicationVersion();
         logger.debug("Application version {}:{} created", applicationVersion11Description.getApplicationName(), applicationVersion11Description.getVersionLabel());
+        CreateApplicationVersionRequest createApplicationVersion12Request = new CreateApplicationVersionRequest()
+                .withApplicationName(applicationDescription.getApplicationName())
+                .withVersionLabel("1.2.0")
+                .withSourceBundle(new S3Location("xfr-workshop-caching", "cocktail-app-1.2.0-SNAPSHOT.war"));
+        ApplicationVersionDescription applicationVersion12Description = beanstalk.createApplicationVersion(createApplicationVersion12Request).getApplicationVersion();
+        logger.debug("Application version {}:{} created", applicationVersion12Description.getApplicationName(), applicationVersion12Description.getVersionLabel());
 
         // CREATE CONFIGURATION TEMPLATE
         CreateConfigurationTemplateRequest createConfigurationTemplateRequest = new CreateConfigurationTemplateRequest()
@@ -108,7 +115,7 @@ public class CreateTomcat implements Runnable {
                         new ConfigurationOptionSetting("aws:elasticbeanstalk:application:environment", "AWS_SECRET_KEY", workshopInfrastructure.getAwsSecretKey())
                 );
         CreateConfigurationTemplateResult configurationTemplateResult = beanstalk.createConfigurationTemplate(createConfigurationTemplateRequest);
-        logger.debug("Configuration {}:{} created", new Object[]{configurationTemplateResult.getApplicationName(), configurationTemplateResult.getTemplateName(), configurationTemplateResult});
+        logger.debug("Configuration {}:{} created", configurationTemplateResult.getApplicationName(), configurationTemplateResult.getTemplateName(), configurationTemplateResult);
 
         for (String teamIdentifier : workshopInfrastructure.getTeamIdentifiers()) {
             // CREATE ENVIRONMENT
@@ -121,11 +128,11 @@ public class CreateTomcat implements Runnable {
 
             CreateEnvironmentResult createEnvironmentResult = beanstalk.createEnvironment(createEnvironmentRequest);
 
-            logger.info("Environment {}:{}:{} created at {}", new Object[]{
+            logger.info("Environment {}:{}:{} created at {}",
                     createEnvironmentResult.getApplicationName(),
                     createEnvironmentResult.getVersionLabel(),
                     createEnvironmentResult.getEnvironmentName(),
-                    createEnvironmentResult.getEndpointURL()});
+                    Strings.nullToEmpty(createEnvironmentResult.getEndpointURL()));
 
         }
     }

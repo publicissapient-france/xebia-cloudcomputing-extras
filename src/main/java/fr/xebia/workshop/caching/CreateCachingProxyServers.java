@@ -167,7 +167,7 @@ public class CreateCachingProxyServers implements Runnable {
         AmazonAwsUtils.deleteCnameIfExist(cnamesToInstance.keySet(), hostedZone, route53);
         AmazonAwsUtils.createCnamesForInstances(cnamesToInstance, hostedZone, route53);
 
-        logger.info("Caching Proxy servers creationSUCCESSFUL");
+        logger.info("Caching Proxy servers creation SUCCESSFUL");
     }
 
     protected String buildCname(String teamId) {
