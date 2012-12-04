@@ -1,0 +1,85 @@
+#cloud-config
+
+timezone: Europe/Paris
+
+ssh_authorized_keys:
+ - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDX/P7IUU99UkfG/vHolJvk8kJRpyOqYvYmFKvBbbt7/VJ8dBdJSzVpuRAAigcqC2y14HBfvkll5TMytY3OhJLRvcbbyDuUlPNSvQzqHTGoaUrqjGMeb32/pB6kzT9y1QHEyB7AHGx5ZP1aemI1AhC5wge8X6+TYKppxMFFQmJmSifeSWCDvpMQNbRMbxWZswgfXD5lU0qQ8Vr2EP6Yb8Gld/PQUllffTQrZFia+q2TneSwbvPkfEjGivkdOBOAmQj8w8OgilINhV2RPC2C/AqiN8X5x7kM6Q/t0v3/kqrJs5A5ZX7SSJd/NiRBTqRCVAtDPiVYkWQuJa8SZs8Ol9Zv continuous-delivery-workshop
+
+packages:
+ - yum-utils
+ - java-1.6.0-openjdk
+ - java-1.6.0-openjdk-devel
+
+runcmd:
+
+ - [useradd, --create-home, --home, "/home/tomcat", --user-group, -G, users, tomcat]
+ #  Fix "Authentication refused: bad ownership or modes for directory /opt/tomcat"
+ - [mkdir, "/home/tomcat/.ssh"]
+ - [chown, -R, "tomcat:tomcat", "/home/tomcat"]
+ - [chmod, -R, "og-rwx", "/home/tomcat/.ssh"]
+ 
+ # provision ssh authorized_keys
+ - [sh, -xc, "echo '/home/tomcat/.ssh/authorized_keys provisionned with accounts: tomcat, admin and manager'"]
+ - [cp, -r, "/home/ec2-user/.ssh/authorized_keys", "/home/tomcat/.ssh"]
+ - [chown, -R, "tomcat:tomcat", "/home/tomcat/.ssh"]
+ 
+ # install the instance 1 of tomcat
+ - ["wget", --no-check-certificate, "http://apache.opensourcemirror.com/tomcat/tomcat-6/v6.0.36/bin/apache-tomcat-6.0.36.tar.gz", "--output-document", "/tmp/apache-tomcat-6.0.36.tar.gz"]
+ - ["tar", "-zxvf", "/tmp/apache-tomcat-6.0.36.tar.gz"]
+ - ["rm", "-rf", "apache-tomcat-6.0.36/webapps/ROOT"]
+ - ["mv", "apache-tomcat-6.0.36/", "/opt/apache-tomcat-6.0.36-instance1"]
+ - ["chown", "-R", "tomcat:tomcat", "/opt/apache-tomcat-6.0.36-instance1"]
+
+ # install the instance 2 of tomcat
+ - ["cp", "-R", "-p", "/opt/apache-tomcat-6.0.36-instance1", "/opt/apache-tomcat-6.0.36-instance2"]
+ - ["sed", "-i", "s/8005/8105/g", "/opt/apache-tomcat-6.0.36-instance2/conf/server.xml"]
+ - ["sed", "-i", "s/8080/8180/g", "/opt/apache-tomcat-6.0.36-instance2/conf/server.xml"]
+ - ["sed", "-i", "s/8009/8109/g", "/opt/apache-tomcat-6.0.36-instance2/conf/server.xml"]
+
+ # install the cocktail app WAR file
+ - ["wget", --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/xfr-workshop-caching/cocktail-app-1.0.0-SNAPSHOT.war", "--output-document", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war"]
+ - ["chown", "tomcat:tomcat", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war"]
+ - ["cp", "-p", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war", "/opt/apache-tomcat-6.0.36-instance1/webapps/ROOT.war"]
+ - ["cp", "-p", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war", "/opt/apache-tomcat-6.0.36-instance2/webapps/ROOT.war"]
+
+ # register the instance 1 of tomcat as a linux service
+ - [sh, -xc, "echo '#!/bin/sh' > /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo '# Tomcat init script for Linux.' >> /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo '#' >> /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo '# chkconfig: 2345 20 80' >> /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo '# description: The Apache Tomcat servlet/JSP container.' >> /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo '' >> /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo 'CATALINA_HOME=/opt/apache-tomcat-6.0.36-instance1' >> /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo 'export CATALINA_HOME' >> /etc/init.d/tomcat6-1"]
+ - [sh, -xc, "echo '' >> /etc/init.d/tomcat6-1"]
+ # in yaml, dollar does not need to be escaped by backslash as in shell
+ - [sh, -xc, "echo '/bin/su tomcat $CATALINA_HOME/bin/catalina.sh $*' >> /etc/init.d/tomcat6-1"]
+ - ["chmod", "a+x", "/etc/init.d/tomcat6-1"]
+ - ["chkconfig", "--add", "tomcat6-1"]
+
+ # register the instance 2 of tomcat as a linux service
+ - [sh, -xc, "echo '#!/bin/sh' > /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo '# Tomcat init script for Linux.' >> /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo '#' >> /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo '# chkconfig: 2345 20 80' >> /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo '# description: The Apache Tomcat servlet/JSP container.' >> /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo '' >> /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo 'CATALINA_HOME=/opt/apache-tomcat-6.0.36-instance2' >> /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo 'export CATALINA_HOME' >> /etc/init.d/tomcat6-2"]
+ - [sh, -xc, "echo '' >> /etc/init.d/tomcat6-2"]
+ # in yaml, dollar does not need to be escaped by backslash as in shell
+ - [sh, -xc, "echo '/bin/su tomcat $CATALINA_HOME/bin/catalina.sh $*' >> /etc/init.d/tomcat6-2"]
+ - ["chmod", "a+x", "/etc/init.d/tomcat6-2"]
+ - ["chkconfig", "--add", "tomcat6-2"]
+ 
+ # start tomcat service
+ - [service, tomcat6-1, start]
+ - [service, tomcat6-2, start]
+
+ # add user ec2-user to group tomcat
+ - [usermod, -G, tomcat, ec2-user]
+ 
+ 
+ 
+ 
+ 

@@ -58,16 +58,12 @@ public class NginxLabCreator {
         CreateNginxProxyServers job = new CreateNginxProxyServers(ec2, route53, workshopInfrastructure);
         job.run();
 
-        log.info("All Nginx instance created DNS is http://www-nginx-${team}.aws.xebiatechevent.info/");
+        log.info("All Nginx instances created DNS is http://www-nginx-${team}.aws.xebiatechevent.info/");
 
+        CreateTomcatServers tomcatServers = new CreateTomcatServers(ec2, route53, workshopInfrastructure);
+        tomcatServers.run();
 
-
-        AWSElasticBeanstalk beanstalk = new AWSElasticBeanstalkClient(awsCredentials);
-        beanstalk.setEndpoint("elasticbeanstalk.eu-west-1.amazonaws.com");
-        CreateTomcat createTomcat = new CreateTomcat(beanstalk, workshopInfrastructure);
-        createTomcat.createServers();
-
-        log.info("All BeanStalk instance created Route53 is http://xfr-cocktail-nginx-${team}-[1/2].elasticbeanstalk.com/");
+        log.info("All Tomcat instances created Route53 is http://xfr-cocktail-nginx-${team}.aws.xebiatechevent.info:[8080/8180]/");
     }
 
 
