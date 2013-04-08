@@ -37,10 +37,10 @@ runcmd:
  - ["sed", "-i", "s/8009/8109/g", "/opt/apache-tomcat-6.0.36-instance2/conf/server.xml"]
 
  # install the cocktail app WAR file
- - ["wget", --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/xfr-workshop-caching/cocktail-app-1.0.0-SNAPSHOT.war", "--output-document", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war"]
- - ["chown", "tomcat:tomcat", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war"]
- - ["cp", "-p", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war", "/opt/apache-tomcat-6.0.36-instance1/webapps/ROOT.war"]
- - ["cp", "-p", "/tmp/cocktail-app-1.0.0-SNAPSHOT.war", "/opt/apache-tomcat-6.0.36-instance2/webapps/ROOT.war"]
+ - ["wget", --no-check-certificate, "https://s3-eu-west-1.amazonaws.com/xfr-workshop-caching/cocktail-app-1.0.1-SNAPSHOT.war", "--output-document", "/tmp/cocktail-app-1.0.1-SNAPSHOT.war"]
+ - ["chown", "tomcat:tomcat", "/tmp/cocktail-app-1.0.1-SNAPSHOT.war"]
+ - ["cp", "-p", "/tmp/cocktail-app-1.0.1-SNAPSHOT.war", "/opt/apache-tomcat-6.0.36-instance1/webapps/ROOT.war"]
+ - ["cp", "-p", "/tmp/cocktail-app-1.0.1-SNAPSHOT.war", "/opt/apache-tomcat-6.0.36-instance2/webapps/ROOT.war"]
 
  # register the instance 1 of tomcat as a linux service
  - [sh, -xc, "echo '#!/bin/sh' > /etc/init.d/tomcat6-1"]
